@@ -3,6 +3,8 @@
   import Footer from '$lib/components/hanime/Footer.svelte';
   import PlayerCard from '$lib/components/hanime/watch/PlayerCard.svelte';
   import AdultWarning from '$lib/components/hanime/AdultWarning.svelte';
+  import { onMount } from 'svelte';
+  import { goto } from '$app/navigation'; // Import goto
 
   export let data;
 
@@ -85,7 +87,6 @@
     window.location.href = '/';
   }
 
-  import { onMount } from 'svelte';
   let searchResults: any[] = [];
   let searchLoading = true;
 
@@ -219,12 +220,18 @@
                     18+
                   </span>
                   {#if type}
-                    <span class="bg-[#2a0008] text-[#ffb3c6] px-2 py-1 rounded-sm">
+                    <span
+                      class="bg-[#2a0008] text-[#ffb3c6] px-2 py-1 rounded-sm cursor-pointer hover:bg-[#ff003c] hover:text-black transition"
+                      on:click={() => goto(`/hanime/genre/${encodeURIComponent(type.replace(/\s+/g, '-').toLowerCase())}`)}
+                    >
                       {type}
                     </span>
                   {/if}
                   {#if brand}
-                    <span class="bg-[#2a0008] text-[#ffb3c6] px-2 py-1 rounded-sm">
+                    <span
+                      class="bg-[#2a0008] text-[#ffb3c6] px-2 py-1 rounded-sm cursor-pointer hover:bg-[#ff003c] hover:text-black transition"
+                      on:click={() => goto(`/hanime/studio/${encodeURIComponent(brand.replace(/\s+/g, '-').toLowerCase())}`)}
+                    >
                       {brand}
                     </span>
                   {/if}
@@ -304,13 +311,19 @@
                       </div>
                     {/if}
                     {#if brand}
-                      <div class="bg-[#2a0008] p-2 rounded-sm">
+                      <div
+                        class="bg-[#2a0008] p-2 rounded-sm cursor-pointer hover:bg-[#ff003c]/10 transition"
+                        on:click={() => goto(`/hanime/studio/${encodeURIComponent(brand.replace(/\s+/g, '-').toLowerCase())}`)}
+                      >
                         <span class="text-[#ff003c] font-medium">Brand:</span>
                         <div class="text-[#ffb3c6]">{brand}</div>
                       </div>
                     {/if}
                     {#if type}
-                      <div class="bg-[#2a0008] p-2 rounded-sm col-span-2 sm:col-span-1">
+                      <div
+                        class="bg-[#2a0008] p-2 rounded-sm col-span-2 sm:col-span-1 cursor-pointer hover:bg-[#ff003c]/10 transition"
+                        on:click={() => goto(`/hanime/genre/${encodeURIComponent(type.replace(/\s+/g, '-').toLowerCase())}`)}
+                      >
                         <span class="text-[#ff003c] font-medium">Type:</span>
                         <div class="text-[#ffb3c6]">{type}</div>
                       </div>
