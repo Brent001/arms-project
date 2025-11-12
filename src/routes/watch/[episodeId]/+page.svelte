@@ -259,6 +259,18 @@
   }
 
   let showPageDropdown = false;
+  let isFullScreen = false;
+
+  function updateIsFullScreen() {
+    if (browser) {
+      isFullScreen = window.innerWidth >= 1024; // Desktop breakpoint
+    }
+  }
+
+  if (browser) {
+    updateIsFullScreen();
+    window.addEventListener('resize', updateIsFullScreen);
+  }
 
   // Helper to format ranges as "EPS: 1-50"
   function formatRange(range: string, i: number) {
@@ -284,6 +296,8 @@
       }
     }
   }
+
+  $: isGridMode = episodes.length > 30;
 </script>
 
 <svelte:head>
@@ -305,7 +319,7 @@
       </div>
     {:else}
       <div class="max-w-[1920px] w-full mx-auto flex flex-col gap-10">
-        <section class="flex-1 flex flex-col gap-8 mb-6"> <!-- was mb-12 -->
+        <section class="flex-1 flex flex-col gap-3 mb-6"> <!-- changed from gap-8 to gap-3 -->
           <!-- Player Card -->
           <div class="flex flex-col gap-2 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-3 sm:p-8">
             <PlayerCard
@@ -344,19 +358,23 @@
               />
             </div>
 
-            <ServerSelector
-              {servers}
-              {currentServer}
-              {category}
-              {changeServerManual}
-            />
-
-            <PlayerSelector
-              {useIframePlayer}
-              setUseIframePlayer={setUseIframePlayer}
-              animeId={data.anime?.info?.id}
-              serverName={currentServer}
-            />
+            <div class="bg-gray-800 rounded-lg p-4 shadow-lg">
+              <PlayerSelector
+                {useIframePlayer}
+                setUseIframePlayer={setUseIframePlayer}
+                animeId={data.anime?.info?.id}
+                serverName={currentServer}
+              />
+              
+              <div class="my-3"></div>
+              
+              <ServerSelector
+                {servers}
+                {currentServer}
+                {category}
+                {changeServerManual}
+              />
+            </div>
 
             <!-- Paging dropdown OUTSIDE the scroll area -->
             {#if episodes.length > 1 && totalPages > 1}
@@ -402,7 +420,7 @@
             {/if}
 
             <!-- EpisodeSelector with mobile scroll -->
-            <div class="episode-selector-scroll">
+            <div class="episode-selector-scroll" class:list-mode-limited={!isGridMode}>
               <EpisodeSelector
                 {episodes}
                 {pagedEpisodes}
@@ -674,6 +692,12 @@
       margin-left: auto;
       margin-right: auto;
     }
+
+    .player-full-width {
+      width: 100%; /* Make player full width on mobile */
+      margin-left: 0; /* Remove any left margin */
+      margin-right: 0; /* Remove any right margin */
+    }
   }
 
   /* Add to your <style> block if not using Tailwind line-clamp */
@@ -724,5 +748,30 @@
       width: auto;
       margin: 0 auto;
     }
+  }
+
+  :global(.episode-selector-scroll.list-mode-limited) {
+    max-height: 400px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 0.5rem;
+  }
+
+  :global(.episode-selector-scroll.list-mode-limited::-webkit-scrollbar) {
+    width: 6px;
+  }
+
+  :global(.episode-selector-scroll.list-mode-limited::-webkit-scrollbar-track) {
+    background: rgba(31, 41, 55, 0.5);
+    border-radius: 0.25rem;
+  }
+
+  :global(.episode-selector-scroll.list-mode-limited::-webkit-scrollbar-thumb) {
+    background: rgba(249, 115, 22, 0.5);
+    border-radius: 0.25rem;
+  }
+
+  :global(.episode-selector-scroll.list-mode-limited::-webkit-scrollbar-thumb:hover) {
+    background: rgba(249, 115, 22, 0.7);
   }
 </style>
