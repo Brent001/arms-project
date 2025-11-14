@@ -327,6 +327,30 @@
   const DESCRIPTION_LIMIT = 450; // character limit for desktop
   let isMobile = false;
 
+  // Add these new variables for genre/studio/producer expand/collapse
+  let showAllGenres = false;
+  let showAllStudios = false;
+  let showAllProducers = false;
+
+  // Derived variables for studios and producers for cleaner logic
+  $: allStudios =
+    moreInfo?.studios
+      ? (Array.isArray(moreInfo.studios)
+          ? moreInfo.studios
+          : moreInfo.studios.split(',').map((s: string) => s.trim())
+        ).filter((s: string) => s)
+      : [];
+  $: displayedStudios = isMobile && !showAllStudios ? allStudios.slice(0, 3) : allStudios;
+
+  $: allProducers =
+    moreInfo?.producers
+      ? (Array.isArray(moreInfo.producers)
+          ? moreInfo.producers
+          : moreInfo.producers.split(',').map((s: string) => s.trim())
+        ).filter((s: string) => s)
+      : [];
+  $: displayedProducers = isMobile && !showAllProducers ? allProducers.slice(0, 3) : allProducers;
+
   function updateIsMobile() {
     if (browser) {
       isMobile = window.innerWidth <= 768;
@@ -417,16 +441,79 @@
                   <!-- Move type and rating to the top, then title below -->
 
                   <div class="flex items-center gap-2 sm:gap-3 md:ml-0 ml-[-8px]">
-                    <h1 class="text-2xl sm:text-3xl font-bold text-orange-400 
+                    <h1 class="text-xl sm:text-3xl font-bold text-orange-400 
                       {isMobile ? 'w-full text-center' : ''}">
                     {anime.name || 'Unknown Anime'}
                     </h1>
                   </div>
+
+                  <!-- Anime Stats -->
+                  {#if anime.stats}
+                    <div class="flex flex-wrap items-center gap-3 text-sm text-gray-300 md:ml-0 ml-[-8px] {isMobile ? 'justify-center' : ''}">
+                      <!-- Badges Group -->
+                      <div class="flex items-center gap-1">
+                        {#if anime.stats.rating}
+                          <span class="bg-white text-gray-900 px-2 py-0.5 rounded text-xs font-bold">{anime.stats.rating}</span>
+                        {/if}
+                        {#if anime.stats.quality}
+                          <span style="background-color: #ff7693;" class="text-white px-2 py-0.5 rounded text-xs font-bold">{anime.stats.quality}</span>
+                        {/if}
+                      </div>
+
+                      <!-- Type & Duration Group -->
+                      <div class="flex items-center gap-1.5 text-xs font-semibold">
+                        {#if anime.stats.type}
+                          <span>•</span>
+                          <span>{anime.stats.type}</span>
+                        {/if}
+                        
+                        {#if anime.stats.duration}
+                          <!-- The dot will only appear if type also exists. -->
+                          {#if anime.stats.type}
+                            <span>•</span>
+                          {/if}
+                          <span>{anime.stats.duration}</span>
+                        {/if}
+                      </div>
+                    </div>
+                  {/if}
+                  
                   <div class="space-y-3">
+                    <!-- Mobile Watch Button -->
+                    {#if isMobile}
+                      <div class="flex justify-center py-2">
+                        {#if firstEpisodeId !== null}
+                          <a
+                            href={`/watch/${encodeURIComponent(firstEpisodeId)}`}
+                            class="inline-flex items-center justify-center gap-2 bg-orange-400 hover:bg-orange-500 text-gray-900 font-bold px-12 py-2 rounded-lg shadow transition text-sm"
+                          >
+                            <!-- Watch Icon SVG -->
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
+                              <polygon points="10,8 16,12 10,16" fill="currentColor"/>
+                            </svg>
+                            Watch
+                          </a>
+                        {:else}
+                          <button
+                            class="inline-flex items-center justify-center gap-2 bg-gray-700 text-gray-400 font-bold px-12 py-2 rounded-lg shadow transition text-sm cursor-not-allowed opacity-60"
+                            disabled
+                            aria-disabled="true"
+                          >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
+                              <polygon points="10,8 16,12 10,16" fill="currentColor"/>
+                            </svg>
+                            Watch
+                          </button>
+                        {/if}
+                      </div>
+                    {/if}
+
                     <!-- Genres at the top -->
-                    {#if moreInfo.genres}
-                      <div class="flex flex-wrap gap-1.5 md:ml-0 ml-[-8px]">
-                        {#each moreInfo.genres as genre}
+                    {#if moreInfo.genres && moreInfo.genres.length > 0}
+                      <div class="flex flex-wrap items-center gap-1.5 md:ml-0 ml-[-8px]">
+                        {#each (isMobile && !showAllGenres ? moreInfo.genres.slice(0, 3) : moreInfo.genres) as genre}
                           <a
                             href={`/genre/${encodeURIComponent(genre.toLowerCase())}`}
                             class="bg-gray-800 text-orange-300 px-2 py-1 rounded text-xs font-medium hover:bg-gray-700 transition"
@@ -434,21 +521,23 @@
                             {genre}
                           </a>
                         {/each}
+                        {#if isMobile && moreInfo.genres.length > 3}
+                          <button
+                            class="text-orange-300 hover:text-orange-400 text-xs font-semibold"
+                            on:click={() => (showAllGenres = !showAllGenres)}
+                            style="background: none; border: none; cursor: pointer; padding: 0;"
+                          >
+                            {showAllGenres ? '- Less' : `+${moreInfo.genres.length - 3} More`}
+                          </button>
+                        {/if}
                       </div>
                     {/if}
 
                     <!-- Studios below genres (simplified, no box/background) -->
-                    {#if moreInfo.studios && (
-                      (Array.isArray(moreInfo.studios) && moreInfo.studios.filter((s: string) => s && s.trim()).length > 0) ||
-                      (typeof moreInfo.studios === 'string' && moreInfo.studios.split(',').filter((s: string) => s.trim()).length > 0)
-                    )}
+                    {#if allStudios.length > 0}
                       <div class="text-sm flex flex-wrap items-center gap-2 md:ml-0 ml-[-8px]">
-                        <span class="text-orange-300 font-medium">Studio{Array.isArray(moreInfo.studios) && moreInfo.studios.length > 1 ? 's' : ''}:</span>
-                        {#each (
-                          Array.isArray(moreInfo.studios)
-                            ? moreInfo.studios
-                            : moreInfo.studios.split(',').map((s: string) => s.trim())
-                        ).filter((s: string) => s) as studio, i}
+                        <span class="text-orange-300 font-medium">Studio{allStudios.length > 1 ? 's' : ''}:</span>
+                        {#each displayedStudios as studio, i}
                           <span
                             role="link"
                             tabindex="0"
@@ -456,28 +545,26 @@
                             on:click={() => goto(`/producer/${encodeURIComponent(studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`)}
                             on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/producer/${encodeURIComponent(studio.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`); }}
                           >
-                            {studio}{i < (
-                              Array.isArray(moreInfo.studios)
-                                ? moreInfo.studios.filter((s: string) => s)
-                                : moreInfo.studios.split(',').map((s: string) => s.trim()).filter((s: string) => s)
-                            ).length - 1 ? ',' : ''}
+                            {studio}{i < displayedStudios.length - 1 ? ',' : ''}
                           </span>
                         {/each}
+                        {#if isMobile && allStudios.length > 3}
+                          <button
+                            class="text-orange-300 hover:text-orange-400 text-xs font-semibold"
+                            on:click={() => (showAllStudios = !showAllStudios)}
+                            style="background: none; border: none; cursor: pointer; padding: 0; margin-left: 4px;"
+                          >
+                            {showAllStudios ? '- Less' : `+${allStudios.length - 3} More`}
+                          </button>
+                        {/if}
                       </div>
                     {/if}
 
                     <!-- Producers below studios (simplified, no box/background) -->
-                    {#if moreInfo.producers && (
-                      (Array.isArray(moreInfo.producers) && moreInfo.producers.filter((s: string) => s && s.trim()).length > 0) ||
-                      (typeof moreInfo.producers === 'string' && moreInfo.producers.split(',').filter((s: string) => s.trim()).length > 0)
-                    )}
+                    {#if allProducers.length > 0}
                       <div class="text-sm flex flex-wrap items-center gap-2 md:ml-0 ml-[-8px]">
-                        <span class="text-orange-300 font-medium">Producer{Array.isArray(moreInfo.producers) && moreInfo.producers.length > 1 ? 's' : ''}:</span>
-                        {#each (
-                          Array.isArray(moreInfo.producers)
-                            ? moreInfo.producers
-                            : moreInfo.producers.split(',').map((s: string) => s.trim())
-                        ).filter((s: string) => s) as producer, i}
+                        <span class="text-orange-300 font-medium">Producer{allProducers.length > 1 ? 's' : ''}:</span>
+                        {#each displayedProducers as producer, i}
                           <span
                             role="link"
                             tabindex="0"
@@ -485,13 +572,18 @@
                             on:click={() => goto(`/producer/${encodeURIComponent(producer.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`)}
                             on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(`/producer/${encodeURIComponent(producer.replace(/\./g, '').replace(/\s+/g, '-').toLowerCase())}`); }}
                           >
-                            {producer}{i < (
-                              Array.isArray(moreInfo.producers)
-                                ? moreInfo.producers.filter((s: string) => s)
-                                : moreInfo.producers.split(',').map((s: string) => s.trim()).filter((s: string) => s)
-                            ).length - 1 ? ',' : ''}
+                            {producer}{i < displayedProducers.length - 1 ? ',' : ''}
                           </span>
                         {/each}
+                        {#if isMobile && allProducers.length > 3}
+                          <button
+                            class="text-orange-300 hover:text-orange-400 text-xs font-semibold"
+                            on:click={() => (showAllProducers = !showAllProducers)}
+                            style="background: none; border: none; cursor: pointer; padding: 0; margin-left: 4px;"
+                          >
+                            {showAllProducers ? '- Less' : `+${allProducers.length - 3} More`}
+                          </button>
+                        {/if}
                       </div>
                     {/if}
 
@@ -547,32 +639,34 @@
                     {/if}
 
                     <!-- Watch Button below description -->
-                    {#if firstEpisodeId !== null}
-                      <a
-                        href={`/watch/${encodeURIComponent(firstEpisodeId)}`}
-                        class="inline-flex items-center gap-2 bg-orange-400 hover:bg-orange-500 text-gray-900 font-bold px-5 py-2 rounded-lg shadow transition text-sm md:ml-0 ml-[-8px]"
-                        style="margin-bottom: 0.5rem;"
-                      >
-                        <!-- Watch Icon SVG -->
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
-                          <polygon points="10,8 16,12 10,16" fill="currentColor"/>
-                        </svg>
-                        Watch
-                      </a>
-                    {:else}
-                      <button
-                        class="inline-flex items-center gap-2 bg-gray-700 text-gray-400 font-bold px-5 py-2 rounded-lg shadow transition text-sm cursor-not-allowed opacity-60 md:ml-0 ml-[-8px]"
-                        style="margin-bottom: 0.5rem;"
-                        disabled
-                        aria-disabled="true"
-                      >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
-                          <polygon points="10,8 16,12 10,16" fill="currentColor"/>
-                        </svg>
-                        Watch
-                      </button>
+                    {#if !isMobile}
+                      {#if firstEpisodeId !== null}
+                        <a
+                          href={`/watch/${encodeURIComponent(firstEpisodeId)}`}
+                          class="inline-flex items-center gap-2 bg-orange-400 hover:bg-orange-500 text-gray-900 font-bold px-5 py-2 rounded-lg shadow transition text-sm md:ml-0 ml-[-8px]"
+                          style="margin-bottom: 0.5rem;"
+                        >
+                          <!-- Watch Icon SVG -->
+                          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
+                            <polygon points="10,8 16,12 10,16" fill="currentColor"/>
+                          </svg>
+                          Watch
+                        </a>
+                      {:else}
+                        <button
+                          class="inline-flex items-center gap-2 bg-gray-700 text-gray-400 font-bold px-5 py-2 rounded-lg shadow transition text-sm cursor-not-allowed opacity-60 md:ml-0 ml-[-8px]"
+                          style="margin-bottom: 0.5rem;"
+                          disabled
+                          aria-disabled="true"
+                        >
+                          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
+                            <polygon points="10,8 16,12 10,16" fill="currentColor"/>
+                          </svg>
+                          Watch
+                        </button>
+                      {/if}
                     {/if}
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-1 text-xs">
                       <div class="bg-gray-800 p-2 rounded">
@@ -687,11 +781,6 @@
                             <span class="bg-orange-400 text-gray-900 px-2 py-0.5 rounded text-[10px] font-bold">
                               {rec.type || 'Unknown'}
                             </span>
-                            {#if rec.episodes && (rec.episodes.sub || rec.episodes.dub)}
-                              <span class="bg-gray-900 text-orange-300 px-2 py-0.5 rounded text-[10px]">
-                                {rec.episodes.sub || 0} Sub / {rec.episodes.dub || 0} Dub
-                              </span>
-                            {/if}
                           </div>
                         </div>
                       </a>
@@ -729,11 +818,6 @@
                             <span class="bg-orange-400 text-gray-900 px-1.5 py-0.5 rounded text-[10px] font-bold">
                               {rel.type || 'Unknown'}
                             </span>
-                            {#if rel.episodes && (rel.episodes.sub || rel.episodes.dub)}
-                              <span class="bg-gray-900 text-orange-300 px-1.5 py-0.5 rounded text-[10px]">
-                                {rel.episodes.sub || 0} Sub / {rel.episodes.dub || 0} Dub
-                              </span>
-                            {/if}
                           </div>
                         </div>
                       </a>
