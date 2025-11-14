@@ -1,7 +1,7 @@
 <script lang="ts">
   import Footer from '$lib/components/Footer.svelte';
   import { goto } from '$app/navigation';
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
 
   export let data: {
     pages: { page: number, img: string, headerForImage?: Record<string, string> }[],
@@ -176,6 +176,20 @@
     }, 100);
   }
 
+  $: if (showSidebar) {
+    const scrollToActive = async () => {
+      await tick(); // Wait for sidebar to render
+      const activeChapterElement = document.getElementById(`sidebar-chapter-${chapterId}`);
+      if (activeChapterElement) {
+        activeChapterElement.scrollIntoView({
+          block: 'center',
+          behavior: 'auto'
+        });
+      }
+    };
+    scrollToActive();
+  }
+
   $: if (data.chapterId !== previousChapterId) {
     pages = data.pages;
     chapterList = data.chapterList;
@@ -249,6 +263,16 @@
   $: if (pages.length > 0) {
     imageLoaded = new Array(pages.length).fill(false);
   }
+
+  onMount(() => {
+    $: {
+      if (showSidebar) {
+        document.body.style.overflow = 'hidden';
+      } else if (!zoomed) {
+        document.body.style.overflow = '';
+      }
+    }
+  });
 </script>
 
 <svelte:head>
@@ -448,6 +472,7 @@
         <div class="flex-1 p-1 space-y-1 overflow-y-auto no-scrollbar">
           {#each chapterList as chapter}
             <button
+              id={`sidebar-chapter-${chapter.shortId}`}
               class="w-full text-left p-2 rounded-lg transition-all duration-200 group text-[0.92rem]
                 {chapterId === chapter.shortId
                   ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-lg scale-[1.02]'
