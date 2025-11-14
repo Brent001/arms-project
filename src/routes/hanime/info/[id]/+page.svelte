@@ -16,6 +16,7 @@
   let isLongDescription = false;
   let isMobile = false;
   const DESCRIPTION_LIMIT = 450;
+  let showAllGenres = false;
 
   // Cookie helpers
   function getCookie(name: string) {
@@ -136,7 +137,7 @@
                 <div class="flex-1 space-y-3">
                   <!-- Title -->
                   <div class="flex items-center gap-2 sm:gap-3 md:ml-0 ml-[-8px]">
-                    <h1 class="text-2xl sm:text-3xl font-bold text-[#ff003c] 
+                    <h1 class="text-xl sm:text-3xl font-bold text-[#ff003c] 
                       {isMobile ? 'w-full text-center' : ''}">
                       {info.name}
                     </h1>
@@ -145,7 +146,7 @@
                   <div class="space-y-3">
                     <!-- Genres -->
                     <div class="flex flex-wrap gap-1.5 md:ml-0 ml-[-8px]">
-                      {#each info.genre as genre}
+                      {#each (isMobile && !showAllGenres ? info.genre.slice(0, 3) : info.genre) as genre}
                         <a
                           href={`/hanime/genre/${genre.replace(/\s+/g, '-').toLowerCase()}`}
                           class="bg-[#ff003c]/20 text-[#ff003c] px-2 py-1 rounded text-xs font-medium hover:bg-[#ff003c]/30 transition"
@@ -154,14 +155,14 @@
                           {genre}
                         </a>
                       {/each}
-                      {#if info.type}
-                        <span
-                          class="bg-[#ff003c] text-white px-2 py-1 rounded text-xs font-bold uppercase cursor-pointer hover:bg-[#c2002e] transition"
-                          style="text-decoration: none;"
-                          on:click={() => goto(`/hanime/genre/${info.type.toLowerCase()}`)}
+                      {#if isMobile && info.genre.length > 3}
+                        <button
+                          class="text-[#ff003c] hover:text-[#c2002e] text-xs font-semibold"
+                          on:click={() => (showAllGenres = !showAllGenres)}
+                          style="background: none; border: none; cursor: pointer; padding: 0;"
                         >
-                          {info.type}
-                        </span>
+                          {showAllGenres ? '- Less' : `+${info.genre.length - 3} More`}
+                        </button>
                       {/if}
                     </div>
 
@@ -230,17 +231,32 @@
                     {/if}
 
                     <!-- Watch Button -->
-                    <a
-                      href={`/hanime/watch/${info.id}`}
-                      class="inline-flex items-center gap-2 bg-[#ff003c] hover:bg-[#c2002e] text-white font-bold px-5 py-2 rounded-lg shadow transition text-sm md:ml-0 ml-[-8px]"
-                      style="margin-bottom: 0.5rem;"
-                    >
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 20 20">
-                        <rect x="1" y="1" width="18" height="18" rx="4" stroke="currentColor" fill="none"/>
-                        <polygon points="8,6 14,10 8,14" fill="currentColor"/>
-                      </svg>
-                      <span class="tracking-wide font-semibold">Watch</span>
-                    </a>
+                    {#if isMobile}
+                      <div class="flex justify-center py-2">
+                        <a
+                          href={`/hanime/watch/${info.id}`}
+                          class="inline-flex items-center justify-center gap-2 bg-[#ff003c] hover:bg-[#c2002e] text-white font-bold px-12 py-2 rounded-lg shadow transition text-sm"
+                        >
+                          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 20 20">
+                            <rect x="1" y="1" width="18" height="18" rx="4" stroke="currentColor" fill="none" />
+                            <polygon points="8,6 14,10 8,14" fill="currentColor" />
+                          </svg>
+                          <span class="tracking-wide font-semibold">Watch</span>
+                        </a>
+                      </div>
+                    {:else}
+                      <a
+                        href={`/hanime/watch/${info.id}`}
+                        class="inline-flex items-center gap-2 bg-[#ff003c] hover:bg-[#c2002e] text-white font-bold px-5 py-2 rounded-lg shadow transition text-sm md:ml-0 ml-[-8px]"
+                        style="margin-bottom: 0.5rem;"
+                      >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 20 20">
+                          <rect x="1" y="1" width="18" height="18" rx="4" stroke="currentColor" fill="none" />
+                          <polygon points="8,6 14,10 8,14" fill="currentColor" />
+                        </svg>
+                        <span class="tracking-wide font-semibold">Watch</span>
+                      </a>
+                    {/if}
 
                     <!-- Stats Grid -->
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-1 text-xs">

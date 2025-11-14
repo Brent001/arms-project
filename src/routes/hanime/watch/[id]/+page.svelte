@@ -38,7 +38,8 @@
   let showFullDescription = false;
   let isLongDescription = false;
   let isMobile = false;
-  const DESCRIPTION_LIMIT = 620;
+  const DESCRIPTION_LIMIT = 450; // Adjusted from 620
+  let showAllGenres = false;
 
   // Player selection state
   let useArtPlayer = true;
@@ -153,9 +154,9 @@
         </div>
       {:else}
         {#if info && watch}
-          <section class="flex-1 flex flex-col gap-8 mb-6">
+          <section class="flex-1 flex flex-col gap-3 mb-6">
             <!-- Player Card - Reduced from rounded-lg to rounded-sm -->
-            <div class="flex flex-col gap-6 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-sm shadow-2xl border border-[#ff003c]/20 p-3 sm:p-8">
+            <div class="flex flex-col gap-3 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-sm shadow-2xl border border-[#ff003c]/20 p-3 sm:p-8">
               <PlayerCard
                 videoSrc={videoSrc}
                 poster={poster}
@@ -163,7 +164,7 @@
               />
 
               {#if subSource || rawSource}
-                <div class="mt-4 flex items-center gap-3 justify-start">
+                <div class="flex items-center gap-3 justify-start">
                   <span class="font-semibold text-[#ff003c] text-sm">Source:</span>
                   {#if subSource}
                     <button
@@ -189,143 +190,135 @@
               {/if}
             </div>
 
-            <!-- Enhanced Info Card - Reduced from rounded-lg to rounded-sm -->
-            <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-sm shadow-2xl p-6 md:p-10 border border-[#ff003c]/20">
-              <!-- Move icon to the left column -->
+            <!-- Enhanced Info Card - Updated -->
+            <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-lg shadow-2xl p-6 md:p-10 border border-[#ff003c]/20">
+              <!-- Poster -->
               <div class="flex flex-col items-center md:items-start flex-shrink-0 mx-auto md:mx-0">
                 <img
                   src={poster}
                   alt={title}
-                  class="rounded-sm shadow-2xl w-64 h-auto object-cover border-4 border-[#2a0008]"
+                  class="rounded-lg shadow-2xl w-64 h-auto object-cover border-4 border-[#3a0d16]"
                 />
               </div>
+              <!-- Details -->
               <div class="flex-1 space-y-3">
                 <!-- Title -->
-                <div class="flex items-center gap-2 sm:gap-3 leading-relaxed md:ml-0 ml-[-8px]">
-                  <h1 class="text-2xl sm:text-3xl font-bold text-[#ff003c] {isMobile ? 'w-full text-center' : ''}">
+                <div class="flex items-center gap-2 sm:gap-3 md:ml-0 ml-[-8px]">
+                  <h1 class="text-xl sm:text-3xl font-bold text-[#ff003c] {isMobile ? 'w-full text-center' : ''}">
                     {title}
                   </h1>
                 </div>
-                
+
                 <!-- Alt Title if exists -->
                 {#if altTitle}
-                  <div class="text-[#ffb3c6]/80 text-lg font-medium mb-2 italic w-full text-center md:text-left">
+                  <div class="text-[#ffb3c6]/80 text-lg font-medium italic w-full text-center md:text-left md:ml-0 ml-[-8px]">
                     {altTitle}
                   </div>
                 {/if}
                 
-                <!-- Content Info -->
-                <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs sm:text-sm leading-relaxed md:ml-0 ml-[-8px]">
-                  <span class="bg-[#ff003c] text-black px-2 py-1 rounded-sm font-semibold">
-                    18+
-                  </span>
-                  {#if type}
-                    <span
-                      class="bg-[#2a0008] text-[#ffb3c6] px-2 py-1 rounded-sm cursor-pointer hover:bg-[#ff003c] hover:text-black transition"
-                      on:click={() => goto(`/hanime/genre/${encodeURIComponent(type.replace(/\s+/g, '-').toLowerCase())}`)}
-                    >
-                      {type}
-                    </span>
-                  {/if}
-                  {#if brand}
-                    <span
-                      class="bg-[#2a0008] text-[#ffb3c6] px-2 py-1 rounded-sm cursor-pointer hover:bg-[#ff003c] hover:text-black transition"
-                      on:click={() => goto(`/hanime/studio/${encodeURIComponent(brand.replace(/\s+/g, '-').toLowerCase())}`)}
-                    >
-                      {brand}
-                    </span>
-                  {/if}
-                  {#if views}
-                    <span class="bg-[#2a0008] text-[#ffb3c6] px-2 py-1 rounded-sm">
-                      ⭐ {views}
-                    </span>
-                  {/if}
-                </div>
-
-                <!-- Detailed Info - Always Visible -->
                 <div class="space-y-3">
+                  <!-- Genres -->
                   {#if genres.length}
-                    <div class="flex flex-wrap gap-1.5 leading-relaxed md:ml-0 ml-[-8px]">
-                      {#each genres as genre}
+                    <div class="flex flex-wrap gap-1.5 md:ml-0 ml-[-8px]">
+                      {#each (isMobile && !showAllGenres ? genres.slice(0, 3) : genres) as genre}
                         <a
                           href={`/hanime/genre/${genre.replace(/\s+/g, '-').toLowerCase()}`}
-                          class="bg-[#2a0008] text-[#ffb3c6] px-2 py-1 rounded-sm text-xs font-medium hover:bg-[#ff003c] hover:text-black transition"
+                          class="bg-[#ff003c]/20 text-[#ff003c] px-2 py-1 rounded text-xs font-medium hover:bg-[#ff003c]/30 transition"
+                          style="text-decoration: none;"
                         >
                           {genre}
                         </a>
                       {/each}
+                      {#if isMobile && genres.length > 3}
+                        <button
+                          class="text-[#ff003c] hover:text-[#c2002e] text-xs font-semibold"
+                          on:click={() => (showAllGenres = !showAllGenres)}
+                          style="background: none; border: none; cursor: pointer; padding: 0;"
+                        >
+                          {showAllGenres ? '- Less' : `+${genres.length - 3} More`}
+                        </button>
+                      {/if}
+                    </div>
+                  {/if}
+
+                  <!-- Brand/Studio -->
+                  {#if brand}
+                    <div class="text-sm flex flex-wrap items-center gap-2 md:ml-0 ml-[-8px]">
+                      <span class="text-[#ff003c] font-medium">Studio:</span>
+                      <span
+                        class="text-[#ffb3c6] text-xs cursor-pointer hover:text-[#ff003c] transition"
+                        style="text-decoration: none;"
+                        role="link"
+                        tabindex="0"
+                        on:click={() => goto(`/hanime/studio/${encodeURIComponent(brand.replace(/\s+/g, '-').toLowerCase())}`)}
+                        on:keydown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ')
+                            goto(`/hanime/studio/${encodeURIComponent(brand.replace(/\s+/g, '-').toLowerCase())}`);
+                        }}
+                      >
+                        {brand}
+                      </span>
                     </div>
                   {/if}
                   
-                  <!-- Overview label above description -->
-                  <span class="text-[#ff003c] font-semibold block md:ml-0 ml-[-8px] mt-1">Overview:</span>
+                  <!-- Overview -->
+                  <span class="text-[#ff003c] font-semibold block mb-1 md:ml-0 ml-[-8px]">Overview:</span>
                   {#if isMobile}
                     <div
-                      class="text-[#ffb3c6] text-sm leading-relaxed md:ml-0 ml-[-8px]"
-                      style="max-height: 220px; overflow-y: auto;"
+                      class="text-[#ffb3c6] text-sm leading-tight md:ml-0 ml-[-8px]"
+                      style="max-height: 220px; overflow-y: auto; line-height: 1.4;"
                     >
-                      {description}
+                      {description || 'No description available.'}
                     </div>
                   {:else if isLongDescription && !showFullDescription}
                     <div
-                      class="text-[#ffb3c6] text-sm leading-relaxed md:ml-0 ml-[-8px] line-clamp-3 sm:line-clamp-5"
-                      style="overflow: hidden; position: relative;"
+                      class="text-[#ffb3c6] text-sm leading-tight md:ml-0 ml-[-8px]"
+                      style="line-height: 1.4; position: relative;"
                     >
-                      {description.slice(0, DESCRIPTION_LIMIT) + '...'}
+                      <span>{description?.slice(0, DESCRIPTION_LIMIT) || 'No description available.'}...</span>
                       <button
-                        class="text-[#ff003c] hover:text-[#ff4d79] text-xs font-semibold ml-1"
-                        on:click={() => showFullDescription = true}
-                        style="background: none; border: none; cursor: pointer;"
+                        class="text-[#ff003c] hover:text-[#c2002e] text-xs font-semibold mt-1 block"
+                        on:click={() => (showFullDescription = true)}
+                        style="background: none; border: none; cursor: pointer; padding: 0; margin: 0;"
                       >
                         + More
                       </button>
                     </div>
                   {:else if isLongDescription && showFullDescription}
-                    <div
-                      class="text-[#ffb3c6] text-sm leading-relaxed md:ml-0 ml-[-8px]"
-                      style="overflow: hidden;"
-                    >
-                      {description}
+                    <div class="text-[#ffb3c6] text-sm leading-tight md:ml-0 ml-[-8px]" style="line-height: 1.4;">
+                      <span>{description}</span>
                       <button
-                        class="text-[#ff003c] hover:text-[#ff4d79] text-xs font-semibold ml-1"
-                        on:click={() => showFullDescription = false}
-                        style="background: none; border: none; cursor: pointer;"
+                        class="text-[#ff003c] hover:text-[#c2002e] text-xs font-semibold mt-1 block"
+                        on:click={() => (showFullDescription = false)}
+                        style="background: none; border: none; cursor: pointer; padding: 0; margin: 0;"
                       >
-                        Less
+                        - Less
                       </button>
                     </div>
                   {:else}
-                    <div
-                      class="text-[#ffb3c6] text-sm leading-relaxed md:ml-0 ml-[-8px]"
-                      style="overflow: hidden;"
-                    >
-                      {description}
+                    <div class="text-[#ffb3c6] text-sm leading-tight md:ml-0 ml-[-8px]" style="line-height: 1.4;">
+                      {description || 'No description available.'}
                     </div>
                   {/if}
 
+                  <!-- Stats Grid -->
                   <div class="grid grid-cols-2 sm:grid-cols-3 gap-1 text-xs">
                     {#if releaseDate}
-                      <div class="bg-[#2a0008] p-2 rounded-sm">
-                        <span class="text-[#ff003c] font-medium">Released:</span>
+                      <div class="bg-[#ff003c]/10 p-2 rounded border border-[#ff003c]/20">
+                        <span class="text-[#ff003c] font-medium block">Released:</span>
                         <div class="text-[#ffb3c6]">{releaseDate}</div>
                       </div>
                     {/if}
-                    {#if brand}
-                      <div
-                        class="bg-[#2a0008] p-2 rounded-sm cursor-pointer hover:bg-[#ff003c]/10 transition"
-                        on:click={() => goto(`/hanime/studio/${encodeURIComponent(brand.replace(/\s+/g, '-').toLowerCase())}`)}
-                      >
-                        <span class="text-[#ff003c] font-medium">Brand:</span>
-                        <div class="text-[#ffb3c6]">{brand}</div>
+                    {#if type}
+                       <div class="bg-[#ff003c]/10 p-2 rounded border border-[#ff003c]/20">
+                        <span class="text-[#ff003c] font-medium block">Type:</span>
+                        <div class="text-[#ffb3c6]">{type}</div>
                       </div>
                     {/if}
-                    {#if type}
-                      <div
-                        class="bg-[#2a0008] p-2 rounded-sm col-span-2 sm:col-span-1 cursor-pointer hover:bg-[#ff003c]/10 transition"
-                        on:click={() => goto(`/hanime/genre/${encodeURIComponent(type.replace(/\s+/g, '-').toLowerCase())}`)}
-                      >
-                        <span class="text-[#ff003c] font-medium">Type:</span>
-                        <div class="text-[#ffb3c6]">{type}</div>
+                    {#if views}
+                      <div class="bg-[#ff003c]/10 p-2 rounded border border-[#ff003c]/20 col-span-2 sm:col-span-1">
+                        <span class="text-[#ff003c] font-medium block">Views:</span>
+                        <div class="text-[#ffb3c6]">{views}</div>
                       </div>
                     {/if}
                   </div>
@@ -373,15 +366,9 @@
                     />
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                     <!-- Make Related and Views on the same line -->
-                    <div class="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
+                    <div class="absolute top-2 left-2">
                       <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded-sm text-[10px] font-semibold shadow">
                         Related
-                      </span>
-                      <span class="bg-black/70 backdrop-blur-sm text-[#ffb3c6] px-2 py-0.5 rounded-sm text-[10px] flex items-center gap-1">
-                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 18.657l-6.828-6.829a4 4 0 010-5.656z"/>
-                        </svg>
-                        {ep.views?.toLocaleString() || '0'}
                       </span>
                     </div>
                     <div class="absolute bottom-0 left-0 right-0 p-2">
@@ -390,7 +377,12 @@
                       </h3>
                       <div class="flex items-center justify-between">
                         <span class="bg-[#ff003c] text-white px-1.5 py-0.5 rounded-sm text-[10px] font-bold">18+</span>
-                        <span class="text-[#ffb3c6] text-[10px]">{ep.duration || '--:--'}</span>
+                        <span class="text-[#ffb3c6] text-[10px] flex items-center gap-1">
+                          <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 18.657l-6.828-6.829a4 4 0 010-5.656z"/>
+                          </svg>
+                          {ep.views?.toLocaleString() || '0'}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -431,12 +423,5 @@
     line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
-  }
-  
-  @media (min-width: 640px) {
-    .line-clamp-3 {
-      -webkit-line-clamp: 5;
-      line-clamp: 5;
-    }
   }
 </style>
