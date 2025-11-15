@@ -113,12 +113,12 @@
     </div>
   {:else}
     <div class="flex-1 w-full">
-      <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-2 sm:px-6">
+      <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-1 sm:px-6">
         <div class="flex flex-col xl:flex-row gap-6 sm:gap-10 w-full">
           <!-- Main content -->
           <div class="flex-1 flex flex-col gap-6 sm:gap-10">
             <!-- Anime Results -->
-            <section class="max-w-[1800px] mx-auto px-2">
+            <section class="max-w-[1800px] mx-auto px-1">
               <h2 class="text-xl sm:text-2xl font-bold text-orange-400 mb-4 sm:mb-6 flex items-center gap-3">
                 <svg class="w-6 h-6 sm:w-7 sm:h-7 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20m10-10H2" /></svg>
                 Anime Results for "{query}"
@@ -128,7 +128,7 @@
               {:else}
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
                   {#each animeResults as anime}
-                    <a 
+                    <a
                       href={`/info/${anime.id}`}
                       class="group relative bg-gray-800 rounded-xl overflow-hidden shadow transition-transform duration-200 border border-transparent hover:border-orange-400 hover:shadow-orange-400/40 cursor-pointer block hover:scale-[1.03]"
                       style="min-height: 120px;"
@@ -175,14 +175,14 @@
             </section>
             <!-- Manga Results (show only on page 1 and if there are results) -->
             {#if page === 1 && mangaResults.length > 0}
-              <section class="max-w-[1800px] mx-auto px-2 mt-10">
+              <section class="max-w-[1800px] mx-auto px-1 mt-10">
                 <h2 class="text-xl sm:text-2xl font-bold text-orange-400 mb-4 sm:mb-6 flex items-center gap-3">
                   <svg class="w-6 h-6 sm:w-7 sm:h-7 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20m10-10H2" /></svg>
                   Manga Results for "{query}"
                 </h2>
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
                   {#each mangaResults as manga}
-                    <a 
+                    <a
                       href={`/manga/info/${manga.id}`}
                       class="group relative bg-gray-800 rounded-xl overflow-hidden shadow border border-transparent hover:border-orange-400 hover:shadow-orange-400/40 cursor-pointer block hover:scale-[1.03] transition-transform duration-200"
                       style="min-height: 120px;"
