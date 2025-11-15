@@ -1,12 +1,14 @@
 import type { PageLoad } from './$types.js';
 import { error } from '@sveltejs/kit';
 
-export const load: PageLoad = async ({ params, fetch }) => {
+export const load: PageLoad = async ({ params, fetch, url }) => { // Add 'url' to destructuring
   const anilistId = params.anilistId;
   const mangaId = params.mangaId;
-  // Support rest parameter for chapterId (array or string)
   const chapterIdParam = params.chapterId;
   const chapterId = Array.isArray(chapterIdParam) ? chapterIdParam.join('/') : chapterIdParam;
+
+  // Get provider from URL query parameter, or default to 'mangahere'
+  const provider = url.searchParams.get('provider') || 'mangahere';
 
   if (!anilistId || !mangaId || !chapterId) {
     throw error(400, 'Missing required parameters');
@@ -14,12 +16,14 @@ export const load: PageLoad = async ({ params, fetch }) => {
 
   try {
     // Info API now uses AniList ID for fetching chapters
-    const infoUrl = `/api/manga?type=info&id=${encodeURIComponent(anilistId)}`;
+    // Pass the provider to the info API call
+    const infoUrl = `/api/manga?type=info&id=${encodeURIComponent(anilistId)}&provider=${encodeURIComponent(provider)}`;
     const infoRes = await fetch(infoUrl);
     const infoData = await infoRes.json();
 
     // Read API still uses provider mangaId/chapterId
-    const readUrl = `/api/manga?type=read&chapterId=${encodeURIComponent(`${mangaId}/${chapterId}`)}`;
+    // Pass the provider to the read API call
+    const readUrl = `/api/manga?type=read&chapterId=${encodeURIComponent(`${mangaId}/${chapterId}`)}&provider=${encodeURIComponent(provider)}`;
     const readRes = await fetch(readUrl);
     const readData = await readRes.json();
 
@@ -40,17 +44,10 @@ export const load: PageLoad = async ({ params, fetch }) => {
     let allChapters = infoData?.data?.chapters ?? [];
     if (!Array.isArray(allChapters)) allChapters = [];
 
-    // Always use string for id and ensure id is in the format "mangaId/chapterId"
     const chapterList = allChapters
-      .filter(
-        (ch: any) =>
-          typeof ch.id === 'string' &&
-          (ch.id.startsWith(mangaId + '/') || ch.id.startsWith(anilistId + '/'))
-      )
       .map((ch: any) => ({
         ...ch,
         id: String(ch.id),
-        // For shortId, get everything after the first slash (may contain slashes)
         shortId: String(ch.id).split('/').slice(1).join('/')
       }));
 
@@ -72,11 +69,13 @@ export const load: PageLoad = async ({ params, fetch }) => {
 
     pages = pages
       .map((page: any, index: number) => {
-        const referer = page.headerForImage?.Referer || '';
-        const proxiedImg = `/api/manga?type=image&url=${encodeURIComponent(page.img)}&referer=${encodeURIComponent(referer)}`;
+        // The 'img' here should be the ORIGINAL image URL from the upstream API.
+        // The proxy prefix is added in the Svelte component's getProxiedImageUrl function.
+        // We also need to explicitly ensure page.img is a string to avoid potential errors.
+        const originalImgUrl = typeof page.img === 'string' ? page.img : '';
         return {
           page: page.page ?? index,
-          img: proxiedImg,
+          img: originalImgUrl, // Keep the original image URL
           headerForImage: page.headerForImage || undefined
         };
       })
@@ -100,7 +99,6 @@ export const load: PageLoad = async ({ params, fetch }) => {
       extractChapterNumber(chapterId) ||
       'Unknown';
 
-    // Fix: prev/next chapter and selector use the correct id
     const prevChapter = currentIndex > 0 ? chapterList[currentIndex - 1] : null;
     const nextChapter = currentIndex >= 0 && currentIndex < chapterList.length - 1 ? chapterList[currentIndex + 1] : null;
 
@@ -108,7 +106,6 @@ export const load: PageLoad = async ({ params, fetch }) => {
       pages,
       chapterList: chapterList.map((chapter: any) => ({
         id: chapter.id,
-        // Always show the chapter id part after the slash(es) for navigation
         shortId: String(chapter.id).split('/').slice(1).join('/'),
         title: chapter.title || chapter.name || '',
         chapterNumber: chapter.chapterNumber || chapter.chapter || chapter.number || '',
@@ -139,7 +136,7 @@ export const load: PageLoad = async ({ params, fetch }) => {
             chapterNumber: nextChapter.chapterNumber || nextChapter.chapter || nextChapter.number || ''
           }
         : null,
-      provider: readData.provider || 'unknown',
+      provider, // Pass the provider used to fetch this chapter data
       loadedAt: new Date().toISOString()
     };
 
