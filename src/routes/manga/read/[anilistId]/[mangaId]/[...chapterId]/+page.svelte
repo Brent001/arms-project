@@ -11,7 +11,8 @@
     chapterNumber: string,
     mangaId: string,
     chapterId: string,
-    anilistId: string
+    anilistId: string,
+    provider: string // Add provider to the data prop
   };
 
   let pages = data.pages;
@@ -22,6 +23,7 @@
   let mangaId = data.mangaId;
   let chapterId = data.chapterId;
   let anilistId = data.anilistId;
+  let provider = data.provider; // Initialize provider from data
   let previousChapterId = chapterId;
 
   let error = '';
@@ -35,29 +37,38 @@
   let isFullscreen = false;
   let isMobile = false;
   let observers: IntersectionObserver[] = [];
-  let isHorizontal: boolean[] = [];
+  let isHorizontal: boolean[] = []; // Initialize as empty array
 
-  $: if (pages.length > 0) {
+  // Function to initialize all page-related states
+  function initializePageStates() {
     imageLoaded = new Array(pages.length).fill(false);
     imageLoadingStates = new Array(pages.length).fill(true);
-  }
-
-  function initializeLoadingStates() {
-    imageLoadingStates = new Array(pages.length).fill(true);
     imageErrors = new Array(pages.length).fill(false);
+    isHorizontal = new Array(pages.length).fill(false); // Also reset orientation states
   }
 
+  // Reactive statement to re-initialize all page states when the 'pages' array reference or length changes.
   $: if (pages.length > 0) {
-    initializeLoadingStates();
+    initializePageStates();
   }
 
-  function getProxiedImageUrl(page: { img: string }) {
-    if (page.img.startsWith('/api/manga?type=image&url=')) return page.img;
-    return `/api/manga?type=image&url=${encodeURIComponent(page.img)}`;
+  function getProxiedImageUrl(page: { img: string, headerForImage?: Record<string, string> }) {
+    const originalImageUrl = page.img;
+    const referer = page.headerForImage?.Referer;
+
+    let proxyUrl = `/api/manga?type=image&url=${encodeURIComponent(originalImageUrl)}`;
+    if (referer) {
+      proxyUrl += `&referer=${encodeURIComponent(referer)}`;
+    }
+    // Always include the provider that was used to fetch this chapter.
+    proxyUrl += `&provider=${encodeURIComponent(provider)}`;
+
+    return proxyUrl;
   }
 
   function goToChapterByShortId(shortId: string) {
-    goto(`/manga/read/${anilistId}/${mangaId}/${shortId}`);
+    // Include the provider in the navigation URL
+    goto(`/manga/read/${anilistId}/${mangaId}/${shortId}?provider=${encodeURIComponent(provider)}`);
   }
 
   function goToPrevChapter() {
@@ -130,7 +141,7 @@
     document.addEventListener('msfullscreenchange', handleFullscreenChange);
     // document.addEventListener('keydown', handleKeydown); // Removed keyboard control
     observePages();
-    window.addEventListener('resize', observePages);
+    window.addEventListener('resize', observePages); // Re-observe on resize
     return () => {
       observers.forEach((obs) => obs.disconnect());
       window.removeEventListener('resize', observePages);
@@ -149,23 +160,23 @@
     const img = document.querySelector(`#page-${idx} img`) as HTMLImageElement;
     if (img) {
       isHorizontal[idx] = img.naturalWidth > img.naturalHeight;
-      isHorizontal = [...isHorizontal];
+      isHorizontal = [...isHorizontal]; // Trigger reactivity
     }
-    imageLoadingStates = [...imageLoadingStates];
+    imageLoadingStates = [...imageLoadingStates]; // Trigger reactivity
   }
 
   function handleImageError(idx: number) {
     imageLoadingStates[idx] = false;
     imageErrors[idx] = true;
-    imageLoadingStates = [...imageLoadingStates];
+    imageLoadingStates = [...imageLoadingStates]; // Trigger reactivity
     if (idx === 0) error = 'Failed to load current page image.';
   }
 
   function retryImageLoad(idx: number) {
     imageErrors[idx] = false;
     imageLoadingStates[idx] = true;
-    imageLoadingStates = [...imageLoadingStates];
-    imageErrors = [...imageErrors];
+    imageLoadingStates = [...imageLoadingStates]; // Trigger reactivity
+    imageErrors = [...imageErrors]; // Trigger reactivity
     setTimeout(() => {
       const img = document.querySelector(`#page-${idx} img`) as HTMLImageElement;
       if (img) {
@@ -190,8 +201,9 @@
     scrollToActive();
   }
 
+  // This block triggers when navigating to a new chapter
   $: if (data.chapterId !== previousChapterId) {
-    pages = data.pages;
+    pages = data.pages; // Update pages array
     chapterList = data.chapterList;
     currentIndex = data.currentIndex;
     title = data.title;
@@ -199,14 +211,15 @@
     mangaId = data.mangaId;
     chapterId = data.chapterId;
     anilistId = data.anilistId;
+    provider = data.provider; // Update provider when chapter data changes
     previousChapterId = chapterId;
     error = '';
     loading = false;
     currentPage = 0;
     zoomed = false;
     setTimeout(() => {
-      initializeLoadingStates();
-      observePages();
+      // initializePageStates(); // This is now handled by the reactive $: if (pages.length > 0) block
+      observePages(); // Re-observe new pages
     }, 50);
   }
 
@@ -217,7 +230,7 @@
     zoomed = !zoomed;
     if (zoomed && !isFullscreen) enterFullscreen();
     else if (!zoomed && isFullscreen) exitFullscreen();
-    document.body.style.overflow = zoomed ? 'hidden' : '';
+    // Body overflow is now handled by the top-level reactive statement
   }
 
   function toggleFullscreen() {
@@ -260,19 +273,14 @@
     }
   }
 
-  $: if (pages.length > 0) {
-    imageLoaded = new Array(pages.length).fill(false);
-  }
-
-  onMount(() => {
-    $: {
-      if (showSidebar) {
-        document.body.style.overflow = 'hidden';
-      } else if (!zoomed) {
-        document.body.style.overflow = '';
-      }
+  // Top-level reactive statement for body overflow
+  $: {
+    if (showSidebar || zoomed) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
     }
-  });
+  }
 </script>
 
 <svelte:head>
