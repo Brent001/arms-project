@@ -335,7 +335,7 @@
 <Navbar/>
 
 <div class="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white flex flex-col">
-  <div class="flex-1 px-4 py-4 pt-16 flex flex-col">
+  <div class="flex-1 px-2.5 sm:px-4 py-4 pt-16 flex flex-col">
     {#if loading && !updatingSources}
       <div class="flex-1 flex items-center justify-center">
         <img src="/assets/loader.gif" alt="Loading..." style="max-width: 120px; max-height: 110px;" />
@@ -515,7 +515,7 @@
                   <!-- Genres at the top -->
                   {#if data.anime.moreInfo.genres && data.anime.moreInfo.genres.length > 0}
                     <div class="flex flex-wrap items-center gap-1.5 md:ml-0 ml-[-8px]">
-                      {#each (isMobile && !showAllGenres ? data.anime.moreInfo.genres.slice(0, 4) : data.anime.moreInfo.genres) as genre}
+                      {#each (isMobile && !showAllGenres ? data.anime.moreInfo.genres.slice(0, 3) : data.anime.moreInfo.genres) as genre}
                         <a
                           href={`/genre/${encodeURIComponent(genre.toLowerCase())}`}
                           class="bg-gray-800 text-orange-300 px-2 py-1 rounded text-xs font-medium hover:bg-gray-700 transition"

@@ -293,40 +293,46 @@
     width: 100%;
     margin-left: auto;
     margin-right: auto;
-    padding-left: 1rem;
-    padding-right: 1rem;
+    padding-left: 0.5rem; /* Reduced from 1rem for mobile */
+    padding-right: 0.5rem; /* Reduced from 1rem for mobile */
   }
 
   @media (min-width: 640px) {
     .container-custom {
-      padding-left: 1.5rem;
-      padding-right: 1.5rem;
+      padding-left: 1rem; /* Reduced from 1.5rem for sm */
+      padding-right: 1rem; /* Reduced from 1.5rem for sm */
     }
   }
 
   @media (min-width: 1024px) {
     .container-custom {
       max-width: 1280px;
-      padding-left: 2rem;
-      padding-right: 2rem;
+      padding-left: 1.5rem; /* Reduced from 2rem for lg */
+      padding-right: 1.5rem; /* Reduced from 2rem for lg */
     }
   }
 
   @media (min-width: 1280px) {
     .container-custom {
       max-width: 1536px;
+      padding-left: 1.5rem; /* Consistent with lg, adjust if more reduction needed */
+      padding-right: 1.5rem; /* Consistent with lg, adjust if more reduction needed */
     }
   }
 
   @media (min-width: 1536px) {
     .container-custom {
       max-width: 1792px;
+      padding-left: 1.5rem; /* Consistent */
+      padding-right: 1.5rem; /* Consistent */
     }
   }
 
   @media (min-width: 1920px) {
     .container-custom {
       max-width: 1920px;
+      padding-left: 1.5rem; /* Consistent */
+      padding-right: 1.5rem; /* Consistent */
     }
   }
 
@@ -340,38 +346,42 @@
   @media (min-width: 640px) {
     .grid-responsive {
       grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.5rem;
     }
   }
 
   @media (min-width: 768px) {
     .grid-responsive {
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 0.75rem;
+      gap: 0.5rem;
     }
   }
 
   @media (min-width: 1024px) {
     .grid-responsive {
       grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 1rem;
+      gap: 0.5rem;
     }
   }
 
   @media (min-width: 1280px) {
     .grid-responsive {
       grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 0.5rem;
     }
   }
 
   @media (min-width: 1536px) {
     .grid-responsive {
       grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 0.5rem;
     }
   }
 
   @media (min-width: 1920px) {
     .grid-responsive {
       grid-template-columns: repeat(8, minmax(0, 1fr));
+      gap: 0.5rem;
     }
   }
 

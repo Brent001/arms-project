@@ -4,12 +4,13 @@
   import Footer from '$lib/components/Footer.svelte';
   import CharacterVoiceActorRow from '$lib/components/CharacterVoiceActorRow.svelte';
   import CharacterModal from '$lib/components/CharacterModal.svelte';
-  import type { PageData } from './$types.js';
+  import type { PageData } from './$types.js'; // This type needs to reflect pageLoadError
   import { goto } from '$app/navigation';
   import { onDestroy, onMount } from 'svelte';
   import { browser } from '$app/environment';
 
-  export let data: PageData;
+  // Extend PageData to include the optional pageLoadError
+  export let data: PageData & { pageLoadError?: string };
 
   // Error handling state
   let error: string | null = null;
@@ -115,7 +116,13 @@
       initializedAnimeId = id;
       (async () => {
         loading = true;
-        error = null;
+        error = null; // Clear previous errors
+        if (data.pageLoadError) { // If pageLoad function already reported a critical error
+          error = data.pageLoadError;
+          loading = false;
+          return; // Don't proceed with client-side initialization if server-side already failed critically
+        }
+
         loadingAbortController?.abort();
         loadingAbortController = new AbortController();
         
@@ -133,7 +140,7 @@
       })();
     } else if (!id && mounted) {
       loading = false;
-      error = 'No anime ID provided';
+      error = data.pageLoadError || 'No anime ID provided or failed to load initial data.'; // Use pageLoadError if available
     }
   }
 
@@ -420,8 +427,8 @@
     </div>
   {:else}
     <div class="flex-1 w-full">
-      <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-2 sm:px-6">
-        <div class="flex flex-col xl:flex-row gap-2 sm:gap-4 w-full"> <!-- Reduced gap from 6/10 to 4/6 -->
+      <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-2 sm:px-4">
+        <div class="flex flex-col xl:flex-row gap-2 sm:gap-4 w-full">
           <!-- Main content -->
           <div class="flex-1 flex flex-col gap-6 sm:gap-10">
             <!-- Main Info Card -->

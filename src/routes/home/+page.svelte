@@ -200,7 +200,7 @@
   {:else}
     <!-- Main content -->
     <div class="flex-1 w-full">
-      <div class="max-w-[125rem] mx-auto flex flex-col px-2 sm:px-6">
+      <div class="max-w-[125rem] mx-auto flex flex-col px-1 sm:px-6">
         {#if error}
           <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-xl my-4">
             <p class="font-bold">ERROR: {error}</p>
@@ -208,7 +208,7 @@
         {:else}
           <!-- Performance: Only render carousel if data exists -->
           {#if spotlightAnimes.length > 0}
-            <section class="mb-0">
+            <section class="mb-0 px-1.5 sm:px-6">
               <Carousel
                 animes={spotlightAnimes}
                 intervalMs={10000}

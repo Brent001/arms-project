@@ -116,7 +116,7 @@
     </div>
   {:else}
     <div class="flex-1 w-full">
-      <div class="max-w-7xl mx-auto flex flex-col gap-8 px-2 sm:px-6">
+      <div class="max-w-[125rem] mx-auto flex flex-col gap-8 px-2 sm:px-4">
         {#if info}
           <!-- Main Content -->
           <div class="flex-1 flex flex-col gap-8 mb-12">
@@ -283,11 +283,11 @@
                 </div>
               </div>
 
-              <!-- Related Hanime with Modern Landscape Design -->
+              <!-- Related Hanime -->
               {#if related.length}
                 <section>
                   <h2 class="text-2xl font-bold text-[#ff003c] mb-4">Related Titles</h2>
-                  <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1">
+                  <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1">
                     {#each related as rel}
                       <a
                         href={`/hanime/info/${rel.id}`}

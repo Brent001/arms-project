@@ -4,7 +4,7 @@
   import PlayerCard from '$lib/components/hanime/watch/PlayerCard.svelte';
   import AdultWarning from '$lib/components/hanime/AdultWarning.svelte';
   import { onMount } from 'svelte';
-  import { goto } from '$app/navigation'; // Import goto
+  import { goto } from '$app/navigation';
 
   export let data;
 
@@ -30,34 +30,21 @@
   $: srtUrl = srtSource?.src || null;
 
   let showWarning = true;
-
-  // Loading state
   let loading = true;
-
-  // Description handling variables
   let showFullDescription = false;
   let isLongDescription = false;
   let isMobile = false;
-  const DESCRIPTION_LIMIT = 450; // Adjusted from 620
+  const DESCRIPTION_LIMIT = 450;
   let showAllGenres = false;
 
-  // Player selection state
-  let useArtPlayer = true;
-  function setUseArtPlayer(v: boolean) {
-    useArtPlayer = v;
-  }
-
-  // Reactive statement for description length
   $: isLongDescription = !!description && description.length > DESCRIPTION_LIMIT;
 
-  // Mobile detection function
   function updateIsMobile() {
     if (typeof window !== 'undefined') {
       isMobile = window.innerWidth <= 768;
     }
   }
 
-  // Cookie helpers
   function getCookie(name: string) {
     const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
     return match ? decodeURIComponent(match[2]) : null;
@@ -67,7 +54,6 @@
     document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
   }
 
-  // Check for 18+ on mount
   if (
     typeof document !== 'undefined' && getCookie('arms18plus') === 'yes' ||
     typeof localStorage !== 'undefined' && localStorage.getItem('arms18plus') === 'yes'
@@ -91,33 +77,29 @@
   let searchResults: any[] = [];
   let searchLoading = true;
 
-  // Fetch search results for episodes
   onMount(() => {
-      // Mobile detection setup
-      if (typeof window !== 'undefined') {
-        updateIsMobile();
-        window.addEventListener('resize', updateIsMobile);
+    if (typeof window !== 'undefined') {
+      updateIsMobile();
+      window.addEventListener('resize', updateIsMobile);
+    }
+
+    (async () => {
+      if (data?.search) {
+        searchLoading = true;
+        const res = await fetch(`/api/hanime/search?query=${encodeURIComponent(data.search)}`);
+        const json = await res.json();
+        searchResults = json?.data?.results ?? [];
+        searchLoading = false;
       }
-  
-      (async () => {
-        if (data?.search) {
-          searchLoading = true;
-          const res = await fetch(`/api/hanime/search?query=${encodeURIComponent(data.search)}`);
-          const json = await res.json();
-          searchResults = json?.data?.results ?? [];
-          searchLoading = false;
-        }
-        // Data is ready, stop loading
-        loading = false;
-      })();
-  
-      // Cleanup function
-      return () => {
-        if (typeof window !== 'undefined') {
-          window.removeEventListener('resize', updateIsMobile);
-        }
-      };
-    });
+      loading = false;
+    })();
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('resize', updateIsMobile);
+      }
+    };
+  });
 
   function goToEpisode(id: string) {
     window.location.href = `/hanime/watch/${id}`;
@@ -136,13 +118,12 @@
 {/if}
 
 <div class="min-h-screen bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] text-white flex flex-col relative overflow-x-hidden">
-  <!-- Decorative Background -->
   <div class="pointer-events-none fixed inset-0 z-0">
     <div class="absolute inset-0 bg-[radial-gradient(circle_at_60%_40%,rgba(255,0,60,0.08),transparent_70%)]"></div>
   </div>
 
   <main class="relative z-10 flex-1 w-full pt-20 pb-2">
-    <div class="max-w-7xl mx-auto flex flex-col gap-6 px-2 sm:px-0">
+    <div class="max-w-[1920px] mx-auto flex flex-col gap-6 px-2.5 sm:px-4">
       {#if loading}
         <div class="flex items-center justify-center min-h-[300px]">
           <img
@@ -155,7 +136,7 @@
       {:else}
         {#if info && watch}
           <section class="flex-1 flex flex-col gap-3 mb-6">
-            <!-- Player Card - Reduced from rounded-lg to rounded-sm -->
+            <!-- Player Card -->
             <div class="flex flex-col gap-3 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-sm shadow-2xl border border-[#ff003c]/20 p-3 sm:p-8">
               <PlayerCard
                 videoSrc={videoSrc}
@@ -190,7 +171,7 @@
               {/if}
             </div>
 
-            <!-- Enhanced Info Card - Updated -->
+            <!-- Info Card -->
             <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-lg shadow-2xl p-6 md:p-10 border border-[#ff003c]/20">
               <!-- Poster -->
               <div class="flex flex-col items-center md:items-start flex-shrink-0 mx-auto md:mx-0">
@@ -209,7 +190,6 @@
                   </h1>
                 </div>
 
-                <!-- Alt Title if exists -->
                 {#if altTitle}
                   <div class="text-[#ffb3c6]/80 text-lg font-medium italic w-full text-center md:text-left md:ml-0 ml-[-8px]">
                     {altTitle}
@@ -348,7 +328,7 @@
           {#if searchLoading}
             <div class="text-[#ffb3c6]">Loading related...</div>
           {:else if searchResults.length}
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2">
               {#each searchResults as ep, idx}
                 <button
                   type="button"
@@ -365,7 +345,6 @@
                       loading={idx < 12 ? 'eager' : 'lazy'}
                     />
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                    <!-- Make Related and Views on the same line -->
                     <div class="absolute top-2 left-2">
                       <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded-sm text-[10px] font-semibold shadow">
                         Related
@@ -408,7 +387,6 @@
     }
   }
   
-  /* Add to your <style> block if not using Tailwind line-clamp */
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -423,5 +401,12 @@
     line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  /* Add responsive container widths */
+  @media (min-width: 1920px) {
+    .max-w-\[1920px\] {
+      max-width: 90vw;
+    }
   }
 </style>

@@ -81,7 +81,7 @@
     </div>
   {:else}
     <div class="flex-1 w-full">
-      <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-2 sm:px-6">
+      <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-1 sm:px-2">
         {#if error}
           <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-xl my-4">
             <p class="font-bold">ERROR: {error}</p>
@@ -95,17 +95,17 @@
         {:else}
           <section class="mb-4 sm:mb-8">
             <h1 class="text-3xl sm:text-4xl font-bold text-orange-400 mb-4 capitalize">
-              {data?.producerName || 'Producer'}
+              {decodeURIComponent(data.producerName).replace(/-/g, ' ') || 'Producer'}
             </h1>
             <p class="text-gray-300 text-sm sm:text-base">
-              Explore the best animes by <span class="font-bold text-orange-400 capitalize">{data.producerName}</span>.
+              Explore the best animes by <span class="font-bold text-orange-400 capitalize">{decodeURIComponent(data.producerName).replace(/-/g, ' ')}</span>.
             </p>
             <p class="text-gray-400 text-xs mt-2">
               Page {data.currentPage} of {data.totalPages} • {data.animes?.length || 0} animes
             </p>
           </section>
 
-          <section class="max-w-[1800px] mx-auto px-2">
+          <section class="max-w-[1800px] mx-auto px-1">
             {#if data.animes && data.animes.length > 0}
               <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
                 {#each data.animes as anime (anime.id)}
@@ -142,7 +142,7 @@
               </div>
             {:else}
               <div class="text-center py-12">
-                <p class="text-gray-400 text-lg">No animes found in this genre.</p>
+                <p class="text-gray-400 text-lg">No animes found for this producer.</p>
               </div>
             {/if}
           </section>

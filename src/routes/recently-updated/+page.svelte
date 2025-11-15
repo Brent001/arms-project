@@ -115,12 +115,12 @@
       />
     </div>
   {:else}
-    <div class="flex-1 w-full">
-      <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-2 sm:px-6">
+    <div class="flex-1">
+      <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-1 sm:px-2 lg:px-4">
         {#if error}
           <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-xl my-4">
             <p class="font-bold">ERROR: {error}</p>
-            <button 
+            <button
               class="mt-2 px-4 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
               on:click={() => { error = null; loadPage(data.currentPage || 1); }}
             >
@@ -128,7 +128,7 @@
             </button>
           </div>
         {:else}
-          <!-- Header for Latest Completed -->
+          <!-- Header for Recently Updated -->
           <section class="mb-4 sm:mb-8">
             <h1 class="text-3xl sm:text-4xl font-bold text-orange-400 mb-4">
               Recently Updated
@@ -142,7 +142,7 @@
           </section>
 
           <!-- Anime Grid -->
-          <section class="max-w-[1800px] mx-auto px-2">
+          <section class="max-w-[1800px] mx-auto px-1">
             {#if data.animes && data.animes.length > 0}
               <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
                 {#each data.animes as anime (anime.id)}
@@ -179,7 +179,7 @@
               </div>
             {:else}
               <div class="text-center py-12">
-                <p class="text-gray-400 text-lg">No completed animes found.</p>
+                <p class="text-gray-400 text-lg">No recently updated animes found.</p>
               </div>
             {/if}
           </section>
