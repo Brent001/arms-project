@@ -117,39 +117,40 @@ export const GET: RequestHandler = async ({ url }) => {
         return new Response(JSON.stringify({ success: false, error: 'Missing image URL' }), { status: 400 });
       }
 
-      // Create cache key for image
-      const CACHE_KEY = `manga_image_${Buffer.from(imageUrl).toString('base64').slice(0, 50)}`;
+      // Create cache key for image - include provider for better cache isolation
+      const imageHash = Buffer.from(imageUrl).toString('base64').slice(0, 50);
+      const CACHE_KEY = `manga_image_${provider}_${imageHash}`;
 
-      // Try to get cached image first
-      if (redis) {
-        try {
-          const cached = await redis.get(CACHE_KEY) as CachedImageData | null; // Type assertion here
-          if (cached && cached.data && cached.contentType) {
-            const imageData = Buffer.from(cached.data, 'base64');
-            return new Response(imageData, {
-              status: 200,
-              headers: {
-                'Content-Type': cached.contentType,
-                'Access-Control-Allow-Origin': '*',
-                'Cache-Control': 'public, max-age=86400',
-                'X-Cache': 'HIT'
-              }
-            });
-          }
-        } catch (cacheError) {
-          console.warn('Cache read error:', cacheError);
-        }
-      }
+      // // Try to get cached image first
+      // if (redis) {
+      //   try {
+      //     const cached = await redis.get(CACHE_KEY) as CachedImageData | null; // Type assertion here
+      //     if (cached && cached.data && cached.contentType) {
+      //       const imageData = Buffer.from(cached.data, 'base64');
+      //       return new Response(imageData, {
+      //         status: 200,
+      //         headers: {
+      //           'Content-Type': cached.contentType,
+      //           'Access-Control-Allow-Origin': '*',
+      //           'Cache-Control': 'public, max-age=86400',
+      //           'X-Cache': 'HIT'
+      //         }
+      //       });
+      //     }
+      //   } catch (cacheError) {
+      //     console.warn('Cache read error:', cacheError);
+      //   }
+      // }
 
       // Determine referer based on image URL or provider
       // Only set referer if it wasn't explicitly provided in the URL
       if (!referer) {
         const imageHost = new URL(imageUrl).hostname;
         
-        // Set appropriate referers based on common manga image hosts
-        if (imageHost.includes('mangapill')) {
+        // Set appropriate referers based on provider and image host
+        if (provider === 'mangapill' || imageHost.includes('mangapill')) {
           referer = 'https://mangapill.com/';
-        } else if (imageHost.includes('mangahere')) {
+        } else if (provider === 'mangahere' || imageHost.includes('mangahere')) {
           referer = 'https://www.mangahere.cc/';
         } else if (imageHost.includes('manganelo') || imageHost.includes('manganato')) {
           referer = 'https://manganato.com/';
@@ -158,8 +159,8 @@ export const GET: RequestHandler = async ({ url }) => {
         } else if (imageHost.includes('mangadex')) {
           referer = 'https://mangadex.org/';
         } else {
-          // Default referer
-          referer = 'https://mangapill.com/'; // Keep mangapill as a general default for unknown image hosts
+          // Default referer based on provider
+          referer = provider === 'mangapill' ? 'https://mangapill.com/' : 'https://www.mangahere.cc/';
         }
       }
 
@@ -178,10 +179,11 @@ export const GET: RequestHandler = async ({ url }) => {
           headers['Referer'] = referer;
         }
 
-        // Add origin header for some sites
-        const imageHost = new URL(imageUrl).hostname;
-        if (imageHost.includes('mangapill')) {
+        // Add origin header based on provider
+        if (provider === 'mangapill') {
           headers['Origin'] = 'https://mangapill.com';
+        } else if (provider === 'mangahere') {
+          headers['Origin'] = 'https://www.mangahere.cc';
         }
 
         const controller = new AbortController();
@@ -204,18 +206,18 @@ export const GET: RequestHandler = async ({ url }) => {
         const contentType = resp.headers.get('content-type') || 'image/jpeg';
         const arrayBuffer = await resp.arrayBuffer();
 
-        // Cache the image if Redis is available
-        if (redis && arrayBuffer.byteLength > 0) {
-          try {
-            const imageData = Buffer.from(arrayBuffer).toString('base64');
-            await redis.set(CACHE_KEY, {
-              data: imageData,
-              contentType: contentType
-            } satisfies CachedImageData, { ex: CACHE_TTL_IMAGE }); // Type assertion for caching
-          } catch (cacheError) {
-            console.warn('Cache write error:', cacheError);
-          }
-        }
+        // // Cache the image if Redis is available - REMOVED TO PREVENT CACHING IMAGES
+        // if (redis && arrayBuffer.byteLength > 0) {
+        //   try {
+        //     const imageData = Buffer.from(arrayBuffer).toString('base64');
+        //     await redis.set(CACHE_KEY, {
+        //       data: imageData,
+        //       contentType: contentType
+        //     } satisfies CachedImageData, { ex: CACHE_TTL_IMAGE }); // Type assertion for caching
+        //   } catch (cacheError) {
+        //     console.warn('Cache write error:', cacheError);
+        //   }
+        // }
 
         return new Response(arrayBuffer, {
           status: 200,
@@ -225,7 +227,7 @@ export const GET: RequestHandler = async ({ url }) => {
             'Access-Control-Allow-Methods': 'GET, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type',
             'Cache-Control': 'public, max-age=86400',
-            'X-Cache': 'MISS',
+            'X-Cache': 'NONE', // Changed to NONE as caching is disabled
             // Add these headers for better caching
             'ETag': `"${Buffer.from(imageUrl).toString('base64').slice(0, 16)}"`,
             'Vary': 'Accept-Encoding'
