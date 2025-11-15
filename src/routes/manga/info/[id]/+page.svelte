@@ -14,11 +14,21 @@
   $: characters = data.characters ?? [];
 
   // Chapter management
-  let chapters: any[] = [];
-  let selectedProvider: string = 'mangahere'; // Default provider
+  // `chapters` array is only updated explicitly by `fetchChaptersData`.
+  let chapters: any[] = []; // Start empty, will be filled by onMount or fetches
+
+  // `selectedProviderUi` holds the provider currently selected in the UI dropdown.
+  // It's initially set from `data.selectedProvider` (from load function) and can be
+  // overridden by localStorage or user interaction.
+  let selectedProviderUi: string = data.selectedProvider || 'mangahere';
   let chapterLoading: boolean = false;
   let chapterError: string | null = null;
-  let initialChaptersLoaded = false; // To ensure initial data is processed before reacting to provider changes
+  
+  // Track which manga's and provider's chapters are currently loaded into the `chapters` array.
+  let currentMangaIdForChapters: string | null = null; 
+  let currentProviderForChapters: string | null = null; 
+  
+  let isMounted = false; // Flag to indicate if onMount has run
 
   // Map internal provider names to display names
   const providerDisplayNames: { [key: string]: string } = {
@@ -41,7 +51,8 @@
 
   async function handleMangaClick(id: string) {
     try {
-      await goto(`/manga/info/${id}`);
+      // When navigating to a new manga info page, always include the current selected provider.
+      await goto(`/manga/info/${id}?provider=${encodeURIComponent(selectedProviderUi)}`);
     } catch (e) {
       console.error('Navigation error:', e);
     }
@@ -94,26 +105,46 @@
   }
 
   // Function to fetch chapters dynamically
-  async function fetchChaptersData(provider: string, mangaId: string) {
-    if (!mangaId) return; // Prevent fetching if manga ID is not available
+  async function fetchChaptersData(provider: string, mangaId: string, forceFetch: boolean = false) {
+    if (!mangaId) return;
+
+    // Prevent re-fetching if chapters for this manga and provider are already loaded and not forced
+    // This check is important for client-side navigation.
+    if (!forceFetch && !chapterLoading && currentMangaIdForChapters === mangaId && currentProviderForChapters === provider) {
+      // If we have chapters and they match what's requested, no need to fetch again
+      if (chapters.length > 0) return;
+    }
 
     chapterLoading = true;
     chapterError = null;
     chapterPage = 0; // Reset pagination when provider changes
+    currentMangaIdForChapters = mangaId; // Set the mangaId we're fetching chapters for
+    currentProviderForChapters = provider; // Set the provider we're fetching chapters for
 
     // Save the selected provider to localStorage
     if (browser && provider) {
       localStorage.setItem('selectedMangaProvider', provider);
     }
+    
+    // Update the URL to reflect the selected provider using replaceState
+    // Only update if it's actually different to avoid unnecessary history entries
+    if (browser && provider && manga && manga.id) {
+        const currentUrl = new URL(window.location.href);
+        if (currentUrl.searchParams.get('provider') !== provider) {
+            currentUrl.searchParams.set('provider', provider);
+            window.history.replaceState({}, '', currentUrl.toString());
+        }
+    }
 
     try {
-      const resp = await fetch(`/api/manga?type=info&id=${encodeURIComponent(mangaId)}&provider=${provider}`);
+      // Pass the selected provider to the API call
+      const resp = await fetch(`/api/manga?type=info&id=${encodeURIComponent(mangaId)}&provider=${encodeURIComponent(provider)}`);
       if (!resp.ok) {
         throw new Error(`Failed to load chapters from ${provider}.`);
       }
       const json = await resp.json();
       if (json.success && json.data?.chapters) {
-        chapters = json.data.chapters;
+        chapters = json.data.chapters; // Explicitly update `chapters` when fetching
       } else {
         chapterError = json.error || `No chapters found for ${providerDisplayNames[provider] || provider}.`;
         chapters = []; // Clear chapters on error
@@ -127,6 +158,15 @@
     }
   }
 
+  // Reactive statement to trigger chapter fetch when `manga.id` changes (client-side navigation)
+  // or when `selectedProviderUi` changes (from localStorage or user dropdown).
+  // This will only run after `onMount` has completed (`isMounted` is true).
+  $: if (browser && isMounted && manga?.id) {
+    // Only trigger fetch if the current chapters loaded don't match the active manga/provider in UI
+    if (currentMangaIdForChapters !== manga.id || currentProviderForChapters !== selectedProviderUi) {
+        fetchChaptersData(selectedProviderUi, manga.id, true); // Force fetch new chapters
+    }
+  }
 
   onMount(async () => {
     if (browser) {
@@ -137,43 +177,32 @@
       }
       document.addEventListener('click', handleClickOutside);
 
-      // Load selected provider from localStorage, or default if not found
       const storedProvider = localStorage.getItem('selectedMangaProvider');
-      if (storedProvider && (storedProvider === 'mangahere' || storedProvider === 'mangapill')) {
-        selectedProvider = storedProvider;
-      } else {
-        selectedProvider = 'mangahere'; // Fallback to default if nothing stored or invalid
-      }
+      let initialProviderToFetch = data.selectedProvider || 'mangahere';
 
-      // Initialize chapters using the (potentially) stored provider
-      // If data.chapters is already populated from initial SSR/load function, use it.
-      // Otherwise, fetch chapters.
-      if (data.chapters && data.chapters.length > 0) {
-        chapters = data.chapters;
-        // Also ensure the selectedProvider matches the source of the initially loaded chapters, if available
-        // This prioritizes the specific manga's default if it overrides the user's stored preference
-        const initialSource = data.manga?.source?.toLowerCase();
-        if (initialSource === 'mangahere' || initialSource === 'mangapill') {
-          selectedProvider = initialSource;
-          // IMPORTANT: If we're using the initialSource, we should also save it
-          // to localStorage to reflect the "intended" provider for this specific manga.
-          localStorage.setItem('selectedMangaProvider', selectedProvider);
+      // If a stored provider exists and differs from the one initially loaded (data.selectedProvider),
+      // update `selectedProviderUi` to reflect this preference.
+      if (storedProvider && (storedProvider === 'mangahere' || storedProvider === 'mangapill')) {
+        if (storedProvider !== initialProviderToFetch) {
+          selectedProviderUi = storedProvider; // Update UI dropdown to show stored provider
+          initialProviderToFetch = storedProvider; // Use stored provider for the very first fetch
         }
-        // If the initial chapters came from `data.chapters` but don't have a source
-        // or the source is not one of our providers, still respect the stored preference,
-        // so no change to `selectedProvider` here.
-      } else {
-        // If no chapters from initial load, fetch using the current `selectedProvider`
-        await fetchChaptersData(selectedProvider, manga?.id);
       }
-      initialChaptersLoaded = true;
+      
+      // Perform the initial fetch for chapters. This handles:
+      // 1. Initial page load (SSR might not have chapters if API failed, or we're overriding with localStorage provider).
+      // 2. Client-side navigation where `selectedProviderUi` might have been updated by localStorage
+      //    (before the reactive block triggers due to `isMounted` being false).
+      await fetchChaptersData(initialProviderToFetch, manga?.id, true); // Always force initial fetch
+
+      isMounted = true; // Mark component as mounted, allowing reactive blocks to run for subsequent changes.
     }
   });
 
   onDestroy(() => {
     if (browser) {
       window.removeEventListener('resize', updateIsMobile);
-      document.removeEventListener('click', handleClickOutside); // Remove click listener
+      document.removeEventListener('click', handleClickOutside);
     }
   });
 </script>
@@ -362,7 +391,7 @@
                             aria-haspopup="true"
                             on:click={() => (showProviderDropdown = !showProviderDropdown)}
                           >
-                            {providerDisplayNames[selectedProvider] || selectedProvider.charAt(0).toUpperCase() + selectedProvider.slice(1)}
+                            {providerDisplayNames[selectedProviderUi] || selectedProviderUi.charAt(0).toUpperCase() + selectedProviderUi.slice(1)}
                             <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                               <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                             </svg>
@@ -380,12 +409,12 @@
                             <div class="py-1" role="none">
                               {#each ['mangahere', 'mangapill'] as providerOption}
                                 <button
-                                  class="text-gray-300 block px-4 py-2 text-sm w-full text-left hover:bg-gray-700 hover:text-white {selectedProvider === providerOption ? 'bg-gray-700 text-white' : ''}"
+                                  class="text-gray-300 block px-4 py-2 text-sm w-full text-left hover:bg-gray-700 hover:text-white {selectedProviderUi === providerOption ? 'bg-gray-700 text-white' : ''}"
                                   role="menuitem"
                                   tabindex="-1"
                                   on:click={() => {
-                                    selectedProvider = providerOption;
-                                    fetchChaptersData(selectedProvider, manga?.id); // This already saves to localStorage
+                                    selectedProviderUi = providerOption; // Update the UI state
+                                    fetchChaptersData(selectedProviderUi, manga?.id, true); // Force fetch new chapters
                                     showProviderDropdown = false;
                                   }}
                                 >
@@ -415,7 +444,7 @@
                       <p class="font-bold">ERROR: {chapterError}</p>
                       <button
                         class="mt-2 px-4 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
-                        on:click={() => fetchChaptersData(selectedProvider, manga?.id)}
+                        on:click={() => fetchChaptersData(selectedProviderUi, manga?.id, true)}
                       >
                         Try Again
                       </button>
@@ -433,7 +462,7 @@
                             {/if}
                           </div>
                           <a
-                            href={`/manga/read/${manga.id}/${chapter.id}`}
+                            href={`/manga/read/${manga.id}/${chapter.id}?provider=${encodeURIComponent(selectedProviderUi)}`}
                             class="bg-orange-400 hover:bg-orange-500 text-gray-900 font-bold px-4 py-1 rounded-lg shadow transition text-sm ml-4 flex-shrink-0"
                           >
                             Read
@@ -451,7 +480,7 @@
                     <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
                       {#each recommendations as rec}
                         <a
-                          href={`/manga/info/${rec.id}`}
+                          href={`/manga/info/${rec.id}?provider=${encodeURIComponent(selectedProviderUi)}`}
                           on:click|preventDefault={() => handleMangaClick(rec.id)}
                           class="group relative bg-gray-800 rounded-xl overflow-hidden shadow transition-transform duration-200 border border-transparent hover:border-orange-400 hover:shadow-orange-400/40 cursor-pointer block hover:scale-[1.03]"
                           style="min-height: 120px;"
@@ -487,7 +516,7 @@
                     <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
                       {#each relations as rel}
                         <a
-                          href={`/manga/info/${rel.id}`}
+                          href={`/manga/info/${rel.id}?provider=${encodeURIComponent(selectedProviderUi)}`}
                           class="group relative bg-gray-800 rounded-xl overflow-hidden shadow transition-transform duration-200 border border-transparent hover:border-orange-400 hover:shadow-orange-400/40 cursor-pointer block hover:scale-[1.03]"
                           style="min-height: 120px;"
                         >
