@@ -38,8 +38,8 @@
   // Performance: Debounced reactive statement
   let updateTimeout: number;
   $: {
-    clearTimeout(updateTimeout);
-    updateTimeout = setTimeout(() => {
+    window.clearTimeout(updateTimeout);
+    updateTimeout = window.setTimeout(() => {
       visibleGenres = data?.genres ? (showAllGenres ? data.genres : data.genres.slice(0, 12)) : [];
     }, 50);
   }
@@ -48,9 +48,9 @@
 
   // Performance: Optimize carousel interval
   function startCarousel() {
-    if (carouselInterval) clearInterval(carouselInterval);
+    if (carouselInterval) window.clearInterval(carouselInterval);
     
-    carouselInterval = setInterval(() => {
+    carouselInterval = window.setInterval(() => {
       if (data?.spotlightAnimes?.length > 0) {
         carouselIndex = (carouselIndex + 1) % data.spotlightAnimes.length;
       }
@@ -59,7 +59,7 @@
 
   function stopCarousel() {
     if (carouselInterval) {
-      clearInterval(carouselInterval);
+      window.clearInterval(carouselInterval);
       carouselInterval = null;
     }
   }
@@ -118,7 +118,7 @@
       abortController.abort();
     }
     stopCarousel();
-    clearTimeout(updateTimeout);
+    window.clearTimeout(updateTimeout);
     detailsCache.clear();
   });
 
