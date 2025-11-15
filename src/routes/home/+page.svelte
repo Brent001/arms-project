@@ -19,7 +19,7 @@
 
   // Carousel state
   let carouselIndex = 0;
-  let carouselInterval: number | null = null;
+  let carouselInterval: ReturnType<typeof globalThis.setInterval> | null = null; // Explicitly use browser's setInterval return type
 
   // Tab states
   let activeTab: 'popular' | 'topRated' | 'topAiring' | 'completed' = 'popular';
@@ -36,10 +36,10 @@
   }
 
   // Performance: Debounced reactive statement
-  let updateTimeout: number;
+  let updateTimeout: ReturnType<typeof globalThis.setTimeout> | undefined; // Explicitly use browser's setTimeout return type, allow undefined
   $: {
-    window.clearTimeout(updateTimeout);
-    updateTimeout = window.setTimeout(() => {
+    clearTimeout(updateTimeout);
+    updateTimeout = globalThis.setTimeout(() => { // Use globalThis.setTimeout for explicit browser typing
       visibleGenres = data?.genres ? (showAllGenres ? data.genres : data.genres.slice(0, 12)) : [];
     }, 50);
   }
@@ -48,9 +48,9 @@
 
   // Performance: Optimize carousel interval
   function startCarousel() {
-    if (carouselInterval) window.clearInterval(carouselInterval);
+    if (carouselInterval) clearInterval(carouselInterval);
     
-    carouselInterval = window.setInterval(() => {
+    carouselInterval = globalThis.setInterval(() => { // Use globalThis.setInterval for explicit browser typing
       if (data?.spotlightAnimes?.length > 0) {
         carouselIndex = (carouselIndex + 1) % data.spotlightAnimes.length;
       }
@@ -59,7 +59,7 @@
 
   function stopCarousel() {
     if (carouselInterval) {
-      window.clearInterval(carouselInterval);
+      clearInterval(carouselInterval);
       carouselInterval = null;
     }
   }
@@ -118,7 +118,7 @@
       abortController.abort();
     }
     stopCarousel();
-    window.clearTimeout(updateTimeout);
+    clearTimeout(updateTimeout);
     detailsCache.clear();
   });
 
