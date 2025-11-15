@@ -285,10 +285,10 @@
         'play-large', 'play', 'progress', 'current-time', 'mute', 'volume',
         'captions', 'settings', 'quality', 'fullscreen'
       ],
-      captions: { 
+      captions: {
         active: false, // Start with captions off, let user enable
-        language: 'auto', 
-        update: true 
+        language: 'auto',
+        update: true
       },
       settings: ['captions', 'quality', 'speed'],
       tooltips: { controls: true, seek: true },
@@ -298,6 +298,13 @@
     // Wait for all tracks to load properly
     plyr.on('ready', () => {
       console.log('Plyr ready');
+
+      // Attempt to play the video automatically
+      plyr.play().catch(error => {
+        // Autoplay can be blocked by browsers, log a warning if it happens.
+        // User might need to interact with the page to start playback.
+        console.warn('Autoplay prevented:', error);
+      });
 
       // Wait for text tracks to be available
       setTimeout(() => {
@@ -445,6 +452,8 @@
     bind:this={videoRef}
     controls
     playsinline
+    autoplay
+    muted
     {poster}
     class="responsive-video"
     preload="metadata"
@@ -475,11 +484,11 @@
     width: 100% !important;
     max-width: 100% !important;
     height: 100% !important;
-    object-fit: contain !important;
+    object-fit: cover !important; /* Changed from 'contain' to 'cover' to address zoom/fill issues for various video aspect ratios */
     background: black;
     display: block;
     box-sizing: border-box;
-    border-radius: 0.25rem; /* Reduced from 0.75rem to 0.25rem */
+    border-radius: 0.25rem;
   }
 
   /* Reddish accent for Plyr */
