@@ -241,12 +241,17 @@
           Home
         </button>
       </li>
-      <li in:fly={{ x: -100, duration: 300, delay: 150 }}>
+      <li in:fly={{ x: -100, duration: 300, delay: 175 }}>
         <button class="menu-item" on:click={() => navigateTo('/hanime/random')} aria-label="Go to Random Hanime">
           Random
         </button>
       </li>
       <li in:fly={{ x: -100, duration: 300, delay: 200 }}>
+        <button class="menu-item" on:click={() => navigateTo('/hanime/studios')} aria-label="Go to Studios">
+          Studios
+        </button>
+      </li>
+      <li in:fly={{ x: -100, duration: 300, delay: 225 }}>
         <button class="menu-item" on:click={() => navigateTo('/home')} aria-label="Go to Home">
           Exit Hanime
         </button>
