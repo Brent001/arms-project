@@ -2,6 +2,7 @@
   import Footer from '$lib/components/Footer.svelte';
   import { goto } from '$app/navigation';
   import { onMount, tick } from 'svelte';
+  import { browser } from '$app/environment'; // Import browser from SvelteKit environment
 
   export let data: {
     pages: { page: number, img: string, headerForImage?: Record<string, string> }[],
@@ -26,6 +27,8 @@
   let provider = data.provider; // Initialize provider from data
   let previousChapterId = chapterId;
 
+  let searchTerm = ''; // New: State for the chapter search input
+
   let error = '';
   let loading = false;
   let imageLoaded: boolean[] = [];
@@ -39,6 +42,10 @@
   let observers: IntersectionObserver[] = [];
   let isHorizontal: boolean[] = []; // Initialize as empty array
 
+  // New state for auto-hiding controls
+  let showControls = true; // Initially visible
+  let scrollTimeout: NodeJS.Timeout | null = null; // Keep for safety, though it won't be used for auto-hide
+
   // Function to initialize all page-related states
   function initializePageStates() {
     imageLoaded = new Array(pages.length).fill(false);
@@ -51,6 +58,12 @@
   $: if (pages.length > 0) {
     initializePageStates();
   }
+
+  // Reactive statement to filter the chapter list based on the search term
+  $: filteredChapterList = chapterList.filter(chapter =>
+    chapter.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (chapter.chapterNumber && chapter.chapterNumber.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   function getProxiedImageUrl(page: { img: string, headerForImage?: Record<string, string> }) {
     const originalImageUrl = page.img;
@@ -86,6 +99,7 @@
   }
 
   function observePages() {
+    if (!browser) return; // Guard for SSR
     observers.forEach((obs) => obs.disconnect());
     observers = [];
     if (!isMobile) return;
@@ -106,6 +120,7 @@
   }
 
   function enterFullscreen() {
+    if (!browser) return; // Guard for SSR
     if (document.documentElement.requestFullscreen) {
       document.documentElement.requestFullscreen();
     } else if ((document.documentElement as any).webkitRequestFullscreen) {
@@ -116,6 +131,7 @@
   }
 
   function exitFullscreen() {
+    if (!browser) return; // Guard for SSR
     if (document.exitFullscreen) {
       document.exitFullscreen();
     } else if ((document as any).webkitExitFullscreen) {
@@ -126,13 +142,45 @@
   }
 
   function handleFullscreenChange() {
+    if (!browser) return; // Guard for SSR
     isFullscreen = !!(document.fullscreenElement ||
       (document as any).webkitFullscreenElement ||
       (document as any).msFullscreenElement);
     if (!isFullscreen && zoomed) zoomed = false;
   }
 
+  // New: Handle click/tap on main content area to toggle controls
+  function handleMainClick() {
+    if (!browser) return; // Guard for SSR
+    if (isMobile && !zoomed && !showSidebar) { // Only on mobile, when not zoomed, and sidebar is not open
+      // clearTimeout(scrollTimeout!); // Clear any pending timeout - no longer needed for auto-hide
+
+      // If on page 0, controls should always be visible. Tapping does not hide them.
+      // On other pages, tapping toggles visibility.
+      // The previous logic for currentPage === 0 already ensures they stay visible.
+      // So, if we are not on page 0, tapping will toggle visibility.
+      if (currentPage !== 0) {
+        showControls = !showControls;
+      }
+      // Removed: auto-hide timeout logic
+    }
+  }
+
+  // New: Handle scroll to hide controls on mobile
+  function handleScroll() {
+    if (!browser) return; // Guard for SSR
+    if (isMobile && !zoomed) { // Only on mobile and not zoomed
+      if (currentPage === 0) {
+        // If on page 0, controls should stay visible
+        showControls = true;
+        // clearTimeout(scrollTimeout!); // Ensure no auto-hide timeout is active for page 0 - no longer needed for auto-hide
+      } 
+      // Removed: else if (showControls) { showControls = false; } - This was the auto-hide on scroll
+    }
+  }
+
   onMount(() => {
+    if (!browser) return; // Ensure onMount callbacks run only in browser
     isMobile = window.innerWidth < 768;
     const handleResize = () => { isMobile = window.innerWidth < 768; };
     window.addEventListener('resize', handleResize);
@@ -142,7 +190,14 @@
     // document.addEventListener('keydown', handleKeydown); // Removed keyboard control
     observePages();
     window.addEventListener('resize', observePages); // Re-observe on resize
+    
+    // New: Add scroll listener for mobile auto-hide
+    window.addEventListener('scroll', handleScroll);
+    // Initial state: controls are visible (showControls = true) and currentPage = 0,
+    // so no auto-hide timeout is set here. Logic handled by event listeners.
+
     return () => {
+      if (!browser) return; // Ensure cleanup runs only in browser
       observers.forEach((obs) => obs.disconnect());
       window.removeEventListener('resize', observePages);
       // document.removeEventListener('keydown', handleKeydown); // Removed keyboard control
@@ -150,6 +205,9 @@
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
       document.removeEventListener('msfullscreenchange', handleFullscreenChange);
+      // New: Remove scroll listener and clear timeout
+      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(scrollTimeout!); // Keep this for robust cleanup, even if timeout isn't actively set for auto-hide
     };
   });
 
@@ -157,10 +215,12 @@
     imageLoadingStates[idx] = false;
     imageErrors[idx] = false;
     // Detect orientation
-    const img = document.querySelector(`#page-${idx} img`) as HTMLImageElement;
-    if (img) {
-      isHorizontal[idx] = img.naturalWidth > img.naturalHeight;
-      isHorizontal = [...isHorizontal]; // Trigger reactivity
+    if (browser) { // Guard for SSR
+      const img = document.querySelector(`#page-${idx} img`) as HTMLImageElement;
+      if (img) {
+        isHorizontal[idx] = img.naturalWidth > img.naturalHeight;
+        isHorizontal = [...isHorizontal]; // Trigger reactivity
+      }
     }
     imageLoadingStates = [...imageLoadingStates]; // Trigger reactivity
   }
@@ -177,25 +237,29 @@
     imageLoadingStates[idx] = true;
     imageLoadingStates = [...imageLoadingStates]; // Trigger reactivity
     imageErrors = [...imageErrors]; // Trigger reactivity
-    setTimeout(() => {
-      const img = document.querySelector(`#page-${idx} img`) as HTMLImageElement;
-      if (img) {
-        const originalSrc = img.src;
-        img.src = '';
-        img.src = originalSrc + (originalSrc.includes('?') ? '&' : '?') + 't=' + Date.now();
-      }
-    }, 100);
+    if (browser) { // Guard for SSR
+      setTimeout(() => {
+        const img = document.querySelector(`#page-${idx} img`) as HTMLImageElement;
+        if (img) {
+          const originalSrc = img.src;
+          img.src = '';
+          img.src = originalSrc + (originalSrc.includes('?') ? '&' : '?') + 't=' + Date.now();
+        }
+      }, 100);
+    }
   }
 
   $: if (showSidebar) {
     const scrollToActive = async () => {
       await tick(); // Wait for sidebar to render
-      const activeChapterElement = document.getElementById(`sidebar-chapter-${chapterId}`);
-      if (activeChapterElement) {
-        activeChapterElement.scrollIntoView({
-          block: 'center',
-          behavior: 'auto'
-        });
+      if (browser) { // Guard for SSR
+        const activeChapterElement = document.getElementById(`sidebar-chapter-${chapterId}`);
+        if (activeChapterElement) {
+          activeChapterElement.scrollIntoView({
+            block: 'center',
+            behavior: 'auto'
+          });
+        }
       }
     };
     scrollToActive();
@@ -215,8 +279,10 @@
     previousChapterId = chapterId;
     error = '';
     loading = false;
-    currentPage = 0;
+    currentPage = 0; // Reset to page 0 on new chapter load
     zoomed = false;
+    showControls = true; // Always show controls on new chapter load
+    clearTimeout(scrollTimeout!); // Clear any existing timeout (no new one needed for page 0)
     setTimeout(() => {
       // initializePageStates(); // This is now handled by the reactive $: if (pages.length > 0) block
       observePages(); // Re-observe new pages
@@ -239,8 +305,10 @@
   }
 
   function scrollToCurrentPage() {
-    const pageElement = document.getElementById(`page-${currentPage}`);
-    if (pageElement) pageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (browser) { // Guard for SSR
+      const pageElement = document.getElementById(`page-${currentPage}`);
+      if (pageElement) pageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   }
 
   let touchStartX = 0;
@@ -274,11 +342,14 @@
   }
 
   // Top-level reactive statement for body overflow
+  // IMPORTANT: This block must be guarded with `if (browser)` to prevent ReferenceError during SSR.
   $: {
-    if (showSidebar || zoomed) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
+    if (browser) {
+      if (showSidebar || zoomed) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
     }
   }
 </script>
@@ -291,7 +362,10 @@
 <div class="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 text-white flex flex-col relative">
   <!-- Mobile Header -->
   {#if isMobile}
-    <header class="sticky top-0 z-50 bg-gradient-to-r from-gray-950 via-gray-900 to-gray-950 border-b border-gray-800 shadow-xl">
+    <header
+      class="sticky top-0 z-50 bg-gradient-to-r from-gray-950 via-gray-900 to-gray-950 border-b border-gray-800 shadow-xl
+             transition-all duration-300 ease-in-out {showControls ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'}"
+    >
       <div class="flex items-center justify-between px-2 py-2">
         <!-- Left: Back Button -->
         <button
@@ -352,15 +426,23 @@
         <button
           class="bg-gradient-to-r from-purple-500 to-purple-400 hover:from-purple-400 hover:to-purple-300 text-white px-3 py-2 rounded-xl transition-all duration-200 shadow-lg text-sm flex items-center justify-center gap-1"
           on:click={toggleFullscreen}
-          title="Toggle Fullscreen (F)"
+          title="Toggle Fullscreen"
         >
           {#if isFullscreen}
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9l6 6m0-6l-6 6M3 12h18M12 3v18" />
+            <!-- Exit Fullscreen Icon -->
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M 8 8 L 8 3 L 6 3 L 6 6 L 3 6 L 3 8 Z" />
+              <path d="M 16 8 L 16 3 L 18 3 L 18 6 L 21 6 L 21 8 Z" />
+              <path d="M 8 16 L 8 21 L 6 21 L 6 18 L 3 18 L 3 16 Z" />
+              <path d="M 16 16 L 16 21 L 18 21 L 18 18 L 21 18 L 21 16 Z" />
             </svg>
           {:else}
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4" />
+            <!-- Enter Fullscreen Icon -->
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M 3 3 L 3 8 L 5 8 L 5 5 L 8 5 L 8 3 Z" />
+              <path d="M 21 3 L 21 8 L 19 8 L 19 5 L 16 5 L 16 3 Z" />
+              <path d="M 3 21 L 3 16 L 5 16 L 5 19 L 8 19 L 8 21 Z" />
+              <path d="M 21 21 L 21 16 L 19 16 L 19 19 L 16 19 L 16 21 Z" />
             </svg>
           {/if}
         </button>
@@ -425,15 +507,23 @@
           <button
             class="bg-gradient-to-r from-purple-500 to-purple-400 hover:from-purple-400 hover:to-purple-300 text-white p-2 rounded-xl transition-all duration-200 shadow-lg"
             on:click={toggleFullscreen}
-            title="Toggle Fullscreen (F)"
+            title="Toggle Fullscreen"
           >
             {#if isFullscreen}
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9l6 6m0-6l-6 6M3 12h18M12 3v18" />
+              <!-- Exit Fullscreen Icon -->
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M 8 8 L 8 3 L 6 3 L 6 6 L 3 6 L 3 8 Z" />
+                <path d="M 16 8 L 16 3 L 18 3 L 18 6 L 21 6 L 21 8 Z" />
+                <path d="M 8 16 L 8 21 L 6 21 L 6 18 L 3 18 L 3 16 Z" />
+                <path d="M 16 16 L 16 21 L 18 21 L 18 18 L 21 18 L 21 16 Z" />
               </svg>
             {:else}
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4" />
+              <!-- Enter Fullscreen Icon -->
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M 3 3 L 3 8 L 5 8 L 5 5 L 8 5 L 8 3 Z" />
+                <path d="M 21 3 L 21 8 L 19 8 L 19 5 L 16 5 L 16 3 Z" />
+                <path d="M 3 21 L 3 16 L 5 16 L 5 19 L 8 19 L 8 21 Z" />
+                <path d="M 21 21 L 21 16 L 19 16 L 19 19 L 16 19 L 16 21 Z" />
               </svg>
             {/if}
           </button>
@@ -477,8 +567,17 @@
             </svg>
           </button>
         </div>
+        <!-- New: Chapter search input -->
+        <div class="p-3 border-b border-gray-700 bg-gray-800/50">
+          <input
+            type="text"
+            placeholder="Search chapters..."
+            class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 placeholder-gray-400"
+            bind:value={searchTerm}
+          />
+        </div>
         <div class="flex-1 p-1 space-y-1 overflow-y-auto no-scrollbar">
-          {#each chapterList as chapter}
+          {#each filteredChapterList as chapter}
             <button
               id={`sidebar-chapter-${chapter.shortId}`}
               class="w-full text-left p-2 rounded-lg transition-all duration-200 group text-[0.92rem]
@@ -507,6 +606,9 @@
               {/if}
             </button>
           {/each}
+          {#if filteredChapterList.length === 0}
+            <p class="text-gray-500 text-center py-4 text-sm">No chapters found for "{searchTerm}".</p>
+          {/if}
         </div>
       </div>
     </aside>
@@ -517,6 +619,7 @@
     class="flex-1 px-2 py-3 md:px-6 md:py-8"
     on:touchstart={handleTouchStart}
     on:touchend={handleTouchEnd}
+    on:click={handleMainClick}
   >
     {#if loading}
       <div class="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
@@ -533,7 +636,7 @@
           </svg>
           <p class="font-bold text-lg mb-2">Error Loading Chapter</p>
           <p class="mb-4 text-red-200">{error}</p>
-          <button 
+          <button
             class="bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white px-6 py-3 rounded-xl transition-all duration-200 shadow-lg"
             on:click={() => error = ''}
           >
@@ -628,7 +731,7 @@
 
   <!-- Zoom Overlay with Fullscreen -->
   {#if zoomed}
-    <div 
+    <div
       class="fixed inset-0 bg-black z-50 flex items-center justify-center p-4"
       on:click={toggleZoom}
       on:keydown={(e) => e.key === 'Escape' && toggleZoom()}
@@ -642,7 +745,7 @@
         class="max-w-full max-h-full object-contain cursor-zoom-out shadow-2xl"
         on:click|stopPropagation={zoomed && isMobile ? handleZoomedImageClick : undefined}
       />
-      
+
       <!-- Navigation arrows for zoomed view -->
       <div class="absolute inset-y-0 left-4 flex items-center">
         <button
@@ -655,7 +758,7 @@
           </svg>
         </button>
       </div>
-      
+
       <div class="absolute inset-y-0 right-4 flex items-center">
         <button
           class="bg-black/70 backdrop-blur-sm text-white p-3 rounded-full hover:bg-black/80 transition-all duration-200 {currentPage === pages.length - 1 ? 'opacity-50 cursor-not-allowed' : ''}"
@@ -673,30 +776,27 @@
         <span class="text-sm font-medium">Page {currentPage + 1} of {pages.length}</span>
       </div>
       
-      <!-- Close button -->
+      <!-- Close/Fullscreen button -->
       <button
-        class="absolute top-6 right-6 bg-black/70 backdrop-blur-sm text-white p-2 rounded-xl hover:bg-black/80 transition-all duration-200"
-        on:click|stopPropagation={toggleZoom}
-        tabindex="0"
-      >
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-
-      <!-- Fullscreen toggle in zoom mode -->
-      <button
-        class="absolute bottom-6 right-6 bg-black/70 backdrop-blur-sm text-white p-2 rounded-xl hover:bg-black/80 transition-all duration-200"
+        class="absolute top-6 right-6 bg-gradient-to-r from-purple-500 to-purple-400 hover:from-purple-400 hover:to-purple-300 text-white p-3 rounded-xl transition-all duration-200 shadow-lg"
         on:click|stopPropagation={toggleFullscreen}
         title="Toggle Fullscreen"
       >
         {#if isFullscreen}
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9l6 6m0-6l-6 6M3 12h18M12 3v18" />
+          <!-- Exit Fullscreen Icon -->
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M 8 8 L 8 3 L 6 3 L 6 6 L 3 6 L 3 8 Z" />
+            <path d="M 16 8 L 16 3 L 18 3 L 18 6 L 21 6 L 21 8 Z" />
+            <path d="M 8 16 L 8 21 L 6 21 L 6 18 L 3 18 L 3 16 Z" />
+            <path d="M 16 16 L 16 21 L 18 21 L 18 18 L 21 18 L 21 16 Z" />
           </svg>
         {:else}
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4" />
+          <!-- Enter Fullscreen Icon -->
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M 3 3 L 3 8 L 5 8 L 5 5 L 8 5 L 8 3 Z" />
+            <path d="M 21 3 L 21 8 L 19 8 L 19 5 L 16 5 L 16 3 Z" />
+            <path d="M 3 21 L 3 16 L 5 16 L 5 19 L 8 19 L 8 21 Z" />
+            <path d="M 21 21 L 21 16 L 19 16 L 19 19 L 16 19 L 16 21 Z" />
           </svg>
         {/if}
       </button>
@@ -713,11 +813,14 @@
 
   <!-- Mobile Reading Progress Bar -->
   {#if isMobile && !zoomed}
-    <div class="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm border-t border-gray-800 p-3 z-30">
+    <div
+      class="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm border-t border-gray-800 p-3 z-30
+             transition-all duration-300 ease-in-out"
+    >
       <div class="flex items-center gap-3">
         <span class="text-xs text-gray-400 min-w-0">Progress</span>
         <div class="flex-1 bg-gray-700 rounded-full h-2 overflow-hidden">
-          <div 
+          <div
             class="bg-gradient-to-r from-orange-500 to-orange-400 h-full transition-all duration-300 ease-out"
             style="width: {((currentPage + 1) / pages.length) * 100}%"
           ></div>
@@ -743,7 +846,7 @@
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
   }
-  
+
   /* Hide scrollbars for dropdown and chapters list */
   .no-scrollbar {
     scrollbar-width: none; /* Firefox */
@@ -752,7 +855,7 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
   }
-  
+
   select.touch-manipulation {
     /* Makes dropdown easier to use on touch devices */
     font-size: 1.05rem;
@@ -773,7 +876,7 @@
     box-shadow: none !important;
     background: transparent !important;
   }
-  
+
   .relative .absolute {
     box-shadow: none !important;
     border-radius: 0 !important;
@@ -789,13 +892,13 @@
     touch-action: none;
     overflow: hidden;
   }
-  
+
   .mobile-zoom-image {
     touch-action: none;
     transform-origin: center center;
     will-change: transform;
   }
-  
+
   /* Prevent text selection during zoom gestures */
   .mobile-zoom-image,
   .mobile-zoom-container {
@@ -804,7 +907,7 @@
     -ms-user-select: none;
     user-select: none;
   }
-  
+
   /* Smooth zoom transitions */
   .zoom-transition {
     transition: transform 0.3s cubic-bezier(0.2, 0, 0.2, 1);
