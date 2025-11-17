@@ -456,6 +456,7 @@
                 {currentEpisodeId}
                 {handlePageChange}
                 {goToEpisode}
+                animeType={data.anime?.info?.stats?.type}
               />
             </div>
           </div>
