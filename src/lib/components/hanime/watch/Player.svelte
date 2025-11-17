@@ -484,7 +484,7 @@
     width: 100% !important;
     max-width: 100% !important;
     height: 100% !important;
-    object-fit: cover !important; /* Changed from 'contain' to 'cover' to address zoom/fill issues for various video aspect ratios */
+    object-fit: contain !important; /* Changed from 'cover' to 'contain' to prevent zooming */
     background: black;
     display: block;
     box-sizing: border-box;
