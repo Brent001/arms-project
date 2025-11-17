@@ -42,9 +42,9 @@
   let observers: IntersectionObserver[] = [];
   let isHorizontal: boolean[] = []; // Initialize as empty array
 
-  // New state for auto-hiding controls
+  // State for header visibility
   let showControls = true; // Initially visible
-  let scrollTimeout: NodeJS.Timeout | null = null; // Keep for safety, though it won't be used for auto-hide
+  let lastScrollY = 0; // For tracking scroll direction
 
   // Function to initialize all page-related states
   function initializePageStates() {
@@ -149,65 +149,65 @@
     if (!isFullscreen && zoomed) zoomed = false;
   }
 
-  // New: Handle click/tap on main content area to toggle controls
+  // Handle click/tap on main content area to manually toggle controls
   function handleMainClick() {
-    if (!browser) return; // Guard for SSR
-    if (isMobile && !zoomed && !showSidebar) { // Only on mobile, when not zoomed, and sidebar is not open
-      // clearTimeout(scrollTimeout!); // Clear any pending timeout - no longer needed for auto-hide
-
-      // If on page 0, controls should always be visible. Tapping does not hide them.
-      // On other pages, tapping toggles visibility.
-      // The previous logic for currentPage === 0 already ensures they stay visible.
-      // So, if we are not on page 0, tapping will toggle visibility.
-      if (currentPage !== 0) {
-        showControls = !showControls;
-      }
-      // Removed: auto-hide timeout logic
+    if (isMobile && !zoomed && !showSidebar) {
+      showControls = !showControls;
     }
   }
 
-  // New: Handle scroll to hide controls on mobile
+  // Handle scroll to auto-hide/show controls on mobile
   function handleScroll() {
-    if (!browser) return; // Guard for SSR
-    if (isMobile && !zoomed) { // Only on mobile and not zoomed
-      if (currentPage === 0) {
-        // If on page 0, controls should stay visible
-        showControls = true;
-        // clearTimeout(scrollTimeout!); // Ensure no auto-hide timeout is active for page 0 - no longer needed for auto-hide
-      } 
-      // Removed: else if (showControls) { showControls = false; } - This was the auto-hide on scroll
+    if (!browser || !isMobile || zoomed) return;
+
+    const currentScrollY = window.scrollY;
+    const scrollThreshold = 10; // Prevent flickering on small scrolls
+
+    // At the very top of the page, always show controls
+    if (currentScrollY < 5) {
+      showControls = true;
+      lastScrollY = currentScrollY;
+      return;
     }
+
+    // Ignore minor scroll changes
+    if (Math.abs(currentScrollY - lastScrollY) < scrollThreshold) {
+      return;
+    }
+
+    // Only hide controls when scrolling down. They are shown manually or at the very top.
+    if (currentScrollY > lastScrollY) {
+      showControls = false;
+    }
+    
+    lastScrollY = currentScrollY <= 0 ? 0 : currentScrollY;
   }
 
   onMount(() => {
     if (!browser) return; // Ensure onMount callbacks run only in browser
+    lastScrollY = window.scrollY; // Initialize scroll position
     isMobile = window.innerWidth < 768;
     const handleResize = () => { isMobile = window.innerWidth < 768; };
     window.addEventListener('resize', handleResize);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
     document.addEventListener('msfullscreenchange', handleFullscreenChange);
-    // document.addEventListener('keydown', handleKeydown); // Removed keyboard control
     observePages();
     window.addEventListener('resize', observePages); // Re-observe on resize
     
-    // New: Add scroll listener for mobile auto-hide
-    window.addEventListener('scroll', handleScroll);
-    // Initial state: controls are visible (showControls = true) and currentPage = 0,
-    // so no auto-hide timeout is set here. Logic handled by event listeners.
+    // Add scroll listener for mobile auto-hide
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
       if (!browser) return; // Ensure cleanup runs only in browser
       observers.forEach((obs) => obs.disconnect());
       window.removeEventListener('resize', observePages);
-      // document.removeEventListener('keydown', handleKeydown); // Removed keyboard control
       window.removeEventListener('resize', handleResize);
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
       document.removeEventListener('msfullscreenchange', handleFullscreenChange);
-      // New: Remove scroll listener and clear timeout
+      // Remove scroll listener
       window.removeEventListener('scroll', handleScroll);
-      clearTimeout(scrollTimeout!); // Keep this for robust cleanup, even if timeout isn't actively set for auto-hide
     };
   });
 
@@ -282,7 +282,6 @@
     currentPage = 0; // Reset to page 0 on new chapter load
     zoomed = false;
     showControls = true; // Always show controls on new chapter load
-    clearTimeout(scrollTimeout!); // Clear any existing timeout (no new one needed for page 0)
     setTimeout(() => {
       // initializePageStates(); // This is now handled by the reactive $: if (pages.length > 0) block
       observePages(); // Re-observe new pages
