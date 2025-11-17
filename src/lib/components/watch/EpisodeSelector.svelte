@@ -7,13 +7,27 @@
   export let handlePageChange: (event: Event) => void;
   export let goToEpisode: (episodeId: string) => void;
   export let searchedEpisode: string | null = null;
+  export let animeType: string | undefined | null = '';
+
+  function getEpisodeDisplayInfo(ep: any) {
+    if (ep.title) {
+      return { number: ep.number, title: ep.title };
+    }
+
+    const type = animeType?.toUpperCase();
+    if (type === 'MOVIE') return { number: ep.number, title: 'Full Movie' };
+    if (type === 'OVA') return { number: ep.number, title: `OVA ${ep.number}` };
+    if (type === 'SPECIAL') return { number: ep.number, title: `Special ${ep.number}` };
+    
+    return { number: ep.number, title: `Episode ${ep.number}` };
+  }
 </script>
 
-{#if episodes.length > 1}
+{#if episodes.length > 0}
   <div class="mb-2 flex flex-col gap-1">
     {#if episodes.length > 30}
       <!-- Grid View for many episodes -->
-      <div class="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-8 gap-1">
+      <div class="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-10 gap-1">
         {#each pagedEpisodes as ep, index}
           {@const isActive = currentEpisodeId === ep.episodeId}
           {@const isSearched = searchedEpisode === ep.episodeId}
@@ -38,9 +52,10 @@
         {#each episodes as ep, index}
           {@const isActive = currentEpisodeId === ep.episodeId}
           {@const isSearched = searchedEpisode === ep.episodeId}
+          {@const display = getEpisodeDisplayInfo(ep)}
           <button
             data-episode-id={ep.episodeId}
-            class="w-full px-2 sm:px-4 py-2 sm:py-3 flex items-center gap-2 sm:gap-6 cursor-pointer transition group
+            class="w-full pl-3 pr-4 py-2.5 flex items-center gap-3 cursor-pointer transition group
               {isActive 
                 ? 'bg-gray-800 text-orange-400' 
                 : (index + 1) % 2 === 0 
@@ -50,13 +65,13 @@
             on:click={() => { goToEpisode(ep.episodeId); }}
             disabled={isActive}
           >
-            <span class="text-xs sm:text-sm font-bold min-w-[1.5rem] sm:min-w-[2rem]">{ep.number}</span>
+            <span class="text-sm font-bold min-w-[2rem]">{display.number}</span>
             <div class="flex-1 flex items-center justify-between gap-2 min-w-0">
-              <h3 class="text-xs sm:text-sm font-semibold text-left line-clamp-1 group-hover:text-orange-400 transition">
-                {ep.title || `Episode ${ep.number}`}
+              <h3 class="text-sm font-semibold text-left line-clamp-1 group-hover:text-orange-400 transition">
+                {display.title}
               </h3>
               {#if isActive}
-                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-orange-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <svg class="w-4 h-4 text-orange-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
                 </svg>
               {/if}
