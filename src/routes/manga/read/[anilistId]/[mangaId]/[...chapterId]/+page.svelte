@@ -98,6 +98,13 @@
     }
   }
 
+  function goBackToInfo() {
+    if (isFullscreen) {
+      exitFullscreen();
+    }
+    goto(`/manga/info/${anilistId}`);
+  }
+
   function observePages() {
     if (!browser) return; // Guard for SSR
     observers.forEach((obs) => obs.disconnect());
@@ -152,7 +159,10 @@
   // Handle click/tap on main content area to manually toggle controls
   function handleMainClick() {
     if (isMobile && !zoomed && !showSidebar) {
-      showControls = !showControls;
+      // Only allow manual toggling if not at the very top of the page.
+      if (window.scrollY > 50) {
+        showControls = !showControls;
+      }
     }
   }
 
@@ -164,7 +174,7 @@
     const scrollThreshold = 10; // Prevent flickering on small scrolls
 
     // At the very top of the page, always show controls
-    if (currentScrollY < 5) {
+    if (currentScrollY < 150) {
       showControls = true;
       lastScrollY = currentScrollY;
       return;
@@ -369,7 +379,7 @@
         <!-- Left: Back Button -->
         <button
           class="flex items-center gap-1 bg-gray-800/80 hover:bg-gray-700/80 text-orange-400 px-2 py-1 rounded-lg transition-all duration-200 shadow"
-          on:click={() => goto(`/manga/info/${anilistId}`)}
+          on:click={goBackToInfo}
           aria-label="Back to Info"
         >
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -463,7 +473,7 @@
       <div class="flex items-center px-6 py-2">
         <button
           class="mr-4 bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600 text-orange-400 px-3 py-2 rounded-xl flex items-center gap-3 transition-all duration-200 shadow-lg"
-          on:click={() => goto(`/manga/info/${anilistId}`)}
+          on:click={goBackToInfo}
         >
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
