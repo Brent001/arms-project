@@ -13,6 +13,11 @@
   $: relations = data.relations ?? [];
   $: characters = data.characters ?? [];
 
+  // Filter recommendations and relations to only show manga-related content
+  const allowedMangaTypes = ['MANGA', 'NOVEL', 'LIGHT_NOVEL', 'ONE_SHOT', 'DOUJINSHI', 'MANHWA', 'MANHUA'];
+  $: filteredRecommendations = recommendations.filter((item: { type?: string }) => allowedMangaTypes.includes(item.type ?? ''));
+  $: filteredRelations = relations.filter((item: { type?: string }) => allowedMangaTypes.includes(item.type ?? ''));
+
   // Chapter management
   // `chapters` array is only updated explicitly by `fetchChaptersData`.
   let chapters: any[] = []; // Start empty, will be filled by onMount or fetches
@@ -474,11 +479,11 @@
                 </section>
 
                 <!-- Recommendations -->
-                {#if recommendations.length}
+                {#if filteredRecommendations.length}
                   <section class="mb-12">
                     <h2 class="text-2xl font-bold text-orange-400 mb-4">Recommended Manga</h2>
                     <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
-                      {#each recommendations as rec}
+                      {#each filteredRecommendations as rec}
                         <a
                           href={`/manga/info/${rec.id}?provider=${encodeURIComponent(selectedProviderUi)}`}
                           on:click|preventDefault={() => handleMangaClick(rec.id)}
@@ -510,11 +515,11 @@
                 {/if}
 
                 <!-- Relations -->
-                {#if relations.length}
+                {#if filteredRelations.length}
                   <section class="mb-12">
                     <h2 class="text-2xl font-bold text-orange-400 mb-4">Related Works</h2>
                     <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
-                      {#each relations as rel}
+                      {#each filteredRelations as rel}
                         <a
                           href={`/manga/info/${rel.id}?provider=${encodeURIComponent(selectedProviderUi)}`}
                           class="group relative bg-gray-800 rounded-xl overflow-hidden shadow transition-transform duration-200 border border-transparent hover:border-orange-400 hover:shadow-orange-400/40 cursor-pointer block hover:scale-[1.03]"
