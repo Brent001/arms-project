@@ -370,7 +370,7 @@
             </div>
             
             <!-- Sidebar as a component -->
-            <div class="hidden xl:flex flex-col gap-2">
+            <div class="flex flex-col gap-2">
               {#if data}
                 <Sidebar
                   sidebarTab={sidebarTab}
@@ -379,7 +379,9 @@
                   top10Week={data.top10Animes?.week ?? []}
                   top10Month={data.top10Animes?.month ?? []}
                 />
-                <Genre data={data.genres ?? []} />
+                <div class="hidden xl:block">
+                  <Genre data={data.genres ?? []} />
+                </div>
               {/if}
             </div>
           </div>
@@ -388,7 +390,7 @@
     </div>
     
     <!-- Add AnimeSchedule Component at the Bottom -->
-    <section class="wrapper-container my-8 px-2 sm:px-4">
+    <section class="wrapper-container my-4 sm:my-8 px-2 sm:px-4">
       <div class="schedule-wrapper bg-gray-800 rounded-lg shadow-lg p-4">
         <AnimeSchedule />
       </div>
