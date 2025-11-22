@@ -49,7 +49,7 @@
                 <img src={anime.poster} alt={anime.name} class="w-10 h-14 sm:w-12 sm:h-16 object-cover rounded-md" />
                 <div class="flex-1 min-w-0">
                   <div
-                    class="font-semibold truncate text-xs max-w-full group-hover:text-white transition-colors"
+                    class="font-semibold truncate text-xs sm:text-[13px] max-w-full group-hover:text-white transition-colors"
                     style="max-width:100%;"
                     title={anime.name}
                   >
@@ -57,14 +57,14 @@
                   </div>
                   <div class="flex items-center gap-1 mt-1">
                     {#if anime.episodes?.sub}
-                      <span class="flex items-center bg-green-200 text-black text-[10px] font-bold px-1.5 py-0.5 rounded">
-                        <i class="fas fa-closed-captioning text-[12px] mr-1"></i>
+                      <span class="flex items-center bg-green-200 text-black text-[10px] sm:text-[12px] font-bold px-1.5 py-0.5 rounded">
+                        <i class="fas fa-closed-captioning text-[12px] sm:text-[14px] mr-1"></i>
                         {anime.episodes.sub}
                       </span>
                     {/if}
                     {#if anime.episodes?.dub}
-                      <span class="flex items-center bg-blue-200 text-black text-[10px] font-bold px-1.5 py-0.5 rounded">
-                        <i class="fas fa-microphone text-[12px] mr-1"></i>
+                      <span class="flex items-center bg-blue-200 text-black text-[10px] sm:text-[12px] font-bold px-1.5 py-0.5 rounded">
+                        <i class="fas fa-microphone text-[12px] sm:text-[14px] mr-1"></i>
                         {anime.episodes.dub}
                       </span>
                     {/if}
@@ -84,7 +84,7 @@
                 <img src={anime.poster} alt={anime.name} class="w-10 h-14 sm:w-12 sm:h-16 object-cover rounded-md" />
                 <div class="flex-1 min-w-0">
                   <div
-                    class="font-semibold truncate text-xs max-w-full group-hover:text-white transition-colors"
+                    class="font-semibold truncate text-xs sm:text-[13px] max-w-full group-hover:text-white transition-colors"
                     style="max-width:100%;"
                     title={anime.name}
                   >
@@ -92,14 +92,14 @@
                   </div>
                   <div class="flex items-center gap-1 mt-1">
                     {#if anime.episodes?.sub}
-                      <span class="flex items-center bg-green-200 text-black text-[10px] font-bold px-1.5 py-0.5 rounded">
-                        <i class="fas fa-closed-captioning text-[12px] mr-1"></i>
+                      <span class="flex items-center bg-green-200 text-black text-[10px] sm:text-[12px] font-bold px-1.5 py-0.5 rounded">
+                        <i class="fas fa-closed-captioning text-[12px] sm:text-[14px] mr-1"></i>
                         {anime.episodes.sub}
                       </span>
                     {/if}
                     {#if anime.episodes?.dub}
-                      <span class="flex items-center bg-blue-200 text-black text-[10px] font-bold px-1.5 py-0.5 rounded">
-                        <i class="fas fa-microphone text-[12px] mr-1"></i>
+                      <span class="flex items-center bg-blue-200 text-black text-[10px] sm:text-[12px] font-bold px-1.5 py-0.5 rounded">
+                        <i class="fas fa-microphone text-[12px] sm:text-[14px] mr-1"></i>
                         {anime.episodes.dub}
                       </span>
                     {/if}
@@ -119,7 +119,7 @@
                 <img src={anime.poster} alt={anime.name} class="w-10 h-14 sm:w-12 sm:h-16 object-cover rounded-md" />
                 <div class="flex-1 min-w-0">
                   <div
-                    class="font-semibold truncate text-xs max-w-full group-hover:text-white transition-colors"
+                    class="font-semibold truncate text-xs sm:text-[13px] max-w-full group-hover:text-white transition-colors"
                     style="max-width:100%;"
                     title={anime.name}
                   >
@@ -127,14 +127,14 @@
                   </div>
                   <div class="flex items-center gap-1 mt-1">
                     {#if anime.episodes?.sub}
-                      <span class="flex items-center bg-green-200 text-black text-[10px] font-bold px-1.5 py-0.5 rounded">
-                        <i class="fas fa-closed-captioning text-[12px] mr-1"></i>
+                      <span class="flex items-center bg-green-200 text-black text-[10px] sm:text-[12px] font-bold px-1.5 py-0.5 rounded">
+                        <i class="fas fa-closed-captioning text-[12px] sm:text-[14px] mr-1"></i>
                         {anime.episodes.sub}
                       </span>
                     {/if}
                     {#if anime.episodes?.dub}
-                      <span class="flex items-center bg-blue-200 text-black text-[10px] font-bold px-1.5 py-0.5 rounded">
-                        <i class="fas fa-microphone text-[12px] mr-1"></i>
+                      <span class="flex items-center bg-blue-200 text-black text-[10px] sm:text-[12px] font-bold px-1.5 py-0.5 rounded">
+                        <i class="fas fa-microphone text-[12px] sm:text-[14px] mr-1"></i>
                         {anime.episodes.dub}
                       </span>
                     {/if}
