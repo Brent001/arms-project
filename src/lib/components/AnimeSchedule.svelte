@@ -184,7 +184,7 @@
     </div>
 
     <button
-      class="absolute left-0 sm:left-4 top-1/2 -translate-y-1/2 rounded-full bg-orange-400 text-gray-900 hover:bg-orange-500 hover:text-white px-2 sm:px-4 py-2 shadow transition z-10"
+      class="absolute left-0 top-1/2 -translate-y-1/2 rounded-full bg-orange-400 text-gray-900 hover:bg-orange-500 hover:text-white px-2 sm:px-4 py-2 shadow transition z-10"
       on:click={() => navigateWeek('prev')}
       aria-label="Previous Week"
     >
@@ -193,7 +193,7 @@
       </svg>
     </button>
     <button
-      class="absolute right-0 sm:right-4 top-1/2 -translate-y-1/2 rounded-full bg-orange-400 text-gray-900 hover:bg-orange-500 hover:text-white px-2 sm:px-4 py-2 shadow transition z-10"
+      class="absolute right-0 top-1/2 -translate-y-1/2 rounded-full bg-orange-400 text-gray-900 hover:bg-orange-500 hover:text-white px-2 sm:px-4 py-2 shadow transition z-10"
       on:click={() => navigateWeek('next')}
       aria-label="Next Week"
     >

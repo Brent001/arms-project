@@ -1,5 +1,5 @@
 <script lang="ts">
-  import AnimeCard from '$lib/components/AnimeCard.svelte';
+  import AnimeCard from '$lib/components/QtipCard.svelte';
   import '@fortawesome/fontawesome-free/css/all.css';
   
   export let data: any;
