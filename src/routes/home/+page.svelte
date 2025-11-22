@@ -7,7 +7,7 @@
   import Footer from '$lib/components/Footer.svelte';
   import AnimeSchedule from '$lib/components/AnimeSchedule.svelte';
   import Carousel from '$lib/components/Carousel.svelte';
-  import AnimeCard from '$lib/components/AnimeCard.svelte';
+  import QtipCard from '$lib/components/QtipCard.svelte';
   import HomeAnimeColumns from '$lib/components/HomeAnimeColumns.svelte';
   import Genre from '$lib/components/genre.svelte';
 
@@ -221,7 +221,7 @@
           <div class="block md:hidden">
             <!-- Trending Anime Section - Mobile First -->
             {#if trendingAnimeSlice.length > 0}
-              <section class="max-w-[1800px] mx-auto px-2 mt-6" data-section="trending">
+              <section class="max-w-[1800px] mx-auto mt-6" data-section="trending">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-4">
                   <h2 class="text-xl sm:text-2xl font-bold text-orange-400 flex items-center gap-3">
                     <svg class="w-6 h-6 sm:w-7 sm:h-7 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -232,7 +232,7 @@
                 </div>
                 <div class="trending-anime-grid">
                   {#each trendingAnimeSlice as anime (anime.id)}
-                    <AnimeCard 
+                    <QtipCard 
                       {anime}
                       showRank={true}
                       showDescription={true}
@@ -248,7 +248,7 @@
 
             <!-- Home Anime Columns - Mobile Second -->
             {#if data}
-              <div class="mt-6">
+              <div class="mt-6 -mx-2 sm:-mx-6">
                 <HomeAnimeColumns {data} />
               </div>
             {/if}
@@ -272,7 +272,7 @@
               <!-- Trending Anime Section - Desktop Only -->
               <div class="hidden md:block">
                 {#if trendingAnimeSlice.length > 0}
-                  <section class="max-w-[1800px] mx-auto px-2" data-section="trending">
+                  <section class="max-w-[1800px] mx-auto" data-section="trending">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-4">
                       <h2 class="text-xl sm:text-2xl font-bold text-orange-400 flex items-center gap-3">
                         <svg class="w-6 h-6 sm:w-7 sm:h-7 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -283,7 +283,7 @@
                     </div>
                     <div class="trending-anime-grid">
                       {#each trendingAnimeSlice as anime (anime.id)}
-                        <AnimeCard 
+                        <QtipCard 
                           {anime}
                           showRank={true}
                           showDescription={true}
@@ -300,7 +300,7 @@
 
               <!-- Latest Episodes Section -->
               {#if latestEpisodeSlice.length > 0}
-                <section class="max-w-[1800px] mx-auto px-2 mt-2">
+                <section class="max-w-[1800px] mx-auto mt-2">
                   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 sm:mb-2 gap-2">
                     <div class="flex items-center justify-between w-full">
                       <h2 class="text-xl sm:text-2xl font-bold text-orange-400 flex items-center gap-3">
@@ -319,7 +319,7 @@
                   </div>
                   <div class="responsive-anime-grid">
                     {#each latestEpisodeSlice as ep (ep.id)}
-                      <AnimeCard 
+                      <QtipCard 
                         anime={ep}
                         showEpisodes={true}
                         showDescription={true}
@@ -335,7 +335,7 @@
 
               <!-- New Anime Section -->
               {#if latestAddedSlice.length > 0}
-                <section class="max-w-[1800px] mx-auto px-2 mt-2">
+                <section class="max-w-[1800px] mx-auto mt-2">
                   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 sm:mb-2 gap-2">
                     <div class="flex items-center justify-between w-full">
                       <h2 class="text-xl sm:text-2xl font-bold text-orange-400 flex items-center gap-3">
@@ -354,7 +354,7 @@
                   </div>
                   <div class="responsive-anime-grid">
                     {#each latestAddedSlice as anime (anime.id)}
-                      <AnimeCard 
+                      <QtipCard 
                         anime={anime}
                         showEpisodes={true}
                         showDescription={true}
@@ -388,7 +388,7 @@
     </div>
     
     <!-- Add AnimeSchedule Component at the Bottom -->
-    <section class="wrapper-container my-8 px-4">
+    <section class="wrapper-container my-8 px-2 sm:px-4">
       <div class="schedule-wrapper bg-gray-800 rounded-lg shadow-lg p-4">
         <AnimeSchedule />
       </div>
