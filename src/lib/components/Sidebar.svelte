@@ -49,7 +49,7 @@
                 <img src={anime.poster} alt={anime.name} class="w-10 h-14 sm:w-12 sm:h-16 object-cover rounded-md" />
                 <div class="flex-1 min-w-0">
                   <div
-                    class="font-semibold truncate text-xs sm:text-[13px] max-w-full text-white xl:group-hover:text-orange-400 transition-colors"
+                    class="font-semibold truncate text-xs sm:text-[13px] max-w-full group-hover:text-white transition-colors"
                     style="max-width:100%;"
                     title={anime.name}
                   >
@@ -84,7 +84,7 @@
                 <img src={anime.poster} alt={anime.name} class="w-10 h-14 sm:w-12 sm:h-16 object-cover rounded-md" />
                 <div class="flex-1 min-w-0">
                   <div
-                    class="font-semibold truncate text-xs sm:text-[13px] max-w-full text-white xl:group-hover:text-orange-400 transition-colors"
+                    class="font-semibold truncate text-xs sm:text-[13px] max-w-full group-hover:text-white transition-colors"
                     style="max-width:100%;"
                     title={anime.name}
                   >
@@ -119,7 +119,7 @@
                 <img src={anime.poster} alt={anime.name} class="w-10 h-14 sm:w-12 sm:h-16 object-cover rounded-md" />
                 <div class="flex-1 min-w-0">
                   <div
-                    class="font-semibold truncate text-xs sm:text-[13px] max-w-full text-white xl:group-hover:text-orange-300 transition-colors"
+                    class="font-semibold truncate text-xs sm:text-[13px] max-w-full group-hover:text-white transition-colors"
                     style="max-width:100%;"
                     title={anime.name}
                   >
