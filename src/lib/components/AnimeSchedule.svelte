@@ -159,21 +159,22 @@
     </p>
   </div>
 
-  <div class="relative px-2 sm:px-4">
+  <!-- This is the container for the date selector and navigation buttons -->
+  <div class="relative w-full mx-auto max-w-screen-xl"> <!-- Added mx-auto and max-w for centering on wider screens -->
     <div
       bind:this={containerRef}
-      class="relative my-7 flex w-full flex-nowrap items-center gap-x-2 sm:gap-x-4 overflow-x-auto rounded-xl scrollbar-hide px-10 sm:px-0"
+      class="relative my-7 flex w-full flex-nowrap items-center gap-x-1 sm:gap-x-2 overflow-x-auto rounded-xl scrollbar-hide px-10 sm:px-14"
     >
       {#each dates as { date, dayName, monthName }}
         {@const isToday = date === getLocalDateString(new Date())}
         {@const isSelected = selectedDate === date}
         <div
           data-date={date}
-          class="shrink-0 flex-grow cursor-pointer rounded-xl bg-white/5 px-8 sm:px-16 py-2 text-center text-secondary-foreground duration-200 hover:bg-white/10 {isSelected ? '!bg-orange-400 text-black' : ''} {isToday && !isSelected ? 'ring-2 ring-orange-400/50' : ''}"
+          class="shrink-0 flex-grow cursor-pointer rounded-xl bg-white/5 px-8 sm:px-16 pt-2 pb-3 text-secondary-foreground duration-200 hover:bg-white/10 {isSelected ? '!bg-orange-400 text-black' : ''} {isToday && !isSelected ? 'ring-2 ring-orange-400/50' : ''} flex flex-col justify-center items-center"
           on:click={() => selectDate(date)}
           role="button"
           tabindex="0"
-          on:keydown={(e) => e.key === 'Enter' && selectDate(date)}
+          on:keydown={(e) => e.key === 'Enter' && selectDate(e.currentTarget.dataset.date || '')}
         >
           <p class="text-sm sm:text-base font-semibold uppercase">{dayName}</p>
           <p class="text-xs sm:text-sm text-white/60 {isSelected ? 'font-semibold text-black/70' : ''}">
@@ -183,8 +184,9 @@
       {/each}
     </div>
 
+    <!-- Left navigation button -->
     <button
-      class="absolute left-0 top-1/2 -translate-y-1/2 rounded-full bg-orange-400 text-gray-900 hover:bg-orange-500 hover:text-white px-2 sm:px-4 py-2 shadow transition z-10"
+      class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-[7px] rounded-full bg-orange-400 text-gray-900 hover:bg-orange-500 hover:text-white px-2 sm:px-4 py-2 shadow transition z-10"
       on:click={() => navigateWeek('prev')}
       aria-label="Previous Week"
     >
@@ -192,8 +194,9 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
       </svg>
     </button>
+    <!-- Right navigation button -->
     <button
-      class="absolute right-0 top-1/2 -translate-y-1/2 rounded-full bg-orange-400 text-gray-900 hover:bg-orange-500 hover:text-white px-2 sm:px-4 py-2 shadow transition z-10"
+      class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-[6px] rounded-full bg-orange-400 text-gray-900 hover:bg-orange-500 hover:text-white px-2 sm:px-4 py-2 shadow transition z-10"
       on:click={() => navigateWeek('next')}
       aria-label="Next Week"
     >
@@ -212,10 +215,10 @@
       No data to display
     </div>
   {:else}
-    <div class="flex flex-col mt-5 gap-4">
+    <div class="flex flex-col mt-5 gap-3">
       {#each scheduleData as { id, name, time, episode }}
         <div
-          class="group flex w-full items-center justify-between py-2 text-sm sm:text-base duration-200 hover:!text-orange-400 cursor-pointer"
+          class="group flex w-full items-center justify-between pt-[6px] pb-[12px] text-sm sm:text-base duration-200 hover:!text-orange-400 cursor-pointer border-b border-gray-700 last:border-b-0"
           on:click={() => goto(`/info/${id}`)}
           role="button"
           tabindex="0"
@@ -223,7 +226,7 @@
         >
           <div class="flex gap-2 sm:gap-3 items-center">
             <h4 class="font-semibold text-gray-400 duration-200 group-hover:text-orange-400">{time}</h4>
-            <h4 class="line-clamp-2 group-hover:text-orange-400">{name}</h4>
+            <h4 class="line-clamp-1 group-hover:text-orange-400">{name}</h4>
           </div>
 
           <div class="flex shrink-0 gap-1 rounded px-2 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm duration-200 group-hover:bg-orange-400 group-hover:text-black">
@@ -239,7 +242,6 @@
   .anime-schedule {
     width: 100%;
     max-width: 100%;
-    overflow-x: hidden;
     box-sizing: border-box;
   }
 
