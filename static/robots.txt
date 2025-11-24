@@ -1,4 +1,14 @@
+# Allow all search engines to crawl the site
 User-agent: *
 Allow: /
 
+# Crawl delay (optional - reduces server load)
+Crawl-delay: 1
+
+# Disallow specific paths if needed (uncomment if you want to block certain areas)
+# Disallow: /api/
+# Disallow: /admin/
+# Disallow: /private/
+
+# Sitemap location
 Sitemap: https://arms-stream.netlify.app/sitemap.xml
