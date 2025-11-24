@@ -1,4 +1,4 @@
-import type { RequestHandler } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
 
 // IMPORTANT: Replace this with your actual domain
 const SITE_URL = 'https://arms-stream.netlify.app';
@@ -66,4 +66,5 @@ export const GET: RequestHandler = async () => {
       'Cache-Control': 'public, max-age=3600'
     }
   });
+
 };
