@@ -18,6 +18,16 @@
   let sidebarTab: 'today' | 'week' | 'month' = 'today';
   let imageLoadedStates: { [key: string]: boolean } = {};
 
+  $: totalPages = Math.max(totalPagesAnime, totalPagesManga);
+  const pagesPerGroup = 3;
+  $: startPage = Math.max(1, page - Math.floor(pagesPerGroup / 2));
+  $: endPage = Math.min(totalPages, startPage + pagesPerGroup - 1);
+
+  $: pageNumbers = Array.from(
+    { length: endPage - startPage + 1 }, 
+    (_, i) => startPage + i
+  );
+
   onMount(async () => {
     const urlParams = new URLSearchParams(window.location.search);
     query = urlParams.get('q') || '';
@@ -216,15 +226,57 @@
               </section>
             {/if}
             <!-- Pagination (uses max of both total pages) -->
-            <div class="flex justify-center mt-8">
-              {#if page > 1}
-                <button class="px-4 py-2 bg-gray-800 text-orange-400 rounded-lg hover:bg-orange-400 hover:text-gray-900 transition" on:click={() => goToPage(page - 1)}>Previous</button>
-              {/if}
-              <span class="px-4 py-2 text-gray-400">Page {page} of {Math.max(totalPagesAnime, totalPagesManga)}</span>
-              {#if page < Math.max(totalPagesAnime, totalPagesManga)}
-                <button class="px-4 py-2 bg-gray-800 text-orange-400 rounded-lg hover:bg-orange-400 hover:text-gray-900 transition" on:click={() => goToPage(page + 1)}>Next</button>
-              {/if}
-            </div>
+            {#if totalPages > 1}
+              <section class="flex justify-center items-center mt-6 gap-1 sm:gap-2 flex-wrap">
+                {#if page > 1}
+                  <button
+                    class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-sm bg-gray-800 text-white hover:bg-orange-400 hover:text-gray-900 transition disabled:opacity-50"
+                    on:click={() => goToPage(1)}
+                    disabled={loading}
+                    aria-label="First page"
+                  >
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/></svg>
+                  </button>
+                  <button
+                    class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-sm bg-gray-800 text-white hover:bg-orange-400 hover:text-gray-900 transition disabled:opacity-50"
+                    on:click={() => goToPage(page - 1)}
+                    disabled={loading}
+                    aria-label="Previous page"
+                  >
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                  </button>
+                {/if}
+
+                {#each pageNumbers as pageNum}
+                  <button
+                    class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-xs sm:text-sm transition disabled:opacity-50 {page === pageNum ? '!bg-orange-400 !text-gray-900' : ''}"
+                    on:click={() => goToPage(pageNum)}
+                    disabled={loading}
+                  >
+                    {pageNum}
+                  </button>
+                {/each}
+
+                {#if page < totalPages}
+                  <button
+                    class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-sm bg-gray-800 text-white hover:bg-orange-400 hover:text-gray-900 transition disabled:opacity-50"
+                    on:click={() => goToPage(page + 1)}
+                    disabled={loading}
+                    aria-label="Next page"
+                  >
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                  </button>
+                  <button
+                    class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-sm bg-gray-800 text-white hover:bg-orange-400 hover:text-gray-900 transition disabled:opacity-50"
+                    on:click={() => goToPage(totalPages)}
+                    disabled={loading}
+                    aria-label="Last page"
+                  >
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 17l5-5-5-5M6 17l5-5-5-5"/></svg>
+                  </button>
+                {/if}
+              </section>
+            {/if}
           </div>
           <!-- Sidebar Section -->
           <Sidebar

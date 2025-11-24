@@ -146,27 +146,29 @@
           </section>
 
           {#if data.totalPages > 1}
-            <section class="flex justify-center items-center mt-6 gap-2 flex-wrap">
+            <section class="flex justify-center items-center mt-6 gap-1 sm:gap-2 flex-wrap">
               {#if data.currentPage > 1}
                 <button
-                  class="px-3 py-2 rounded-lg font-bold text-sm bg-gray-800 text-white hover:bg-orange-400 hover:text-gray-900 transition disabled:opacity-50"
+                  class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-sm bg-gray-800 text-white hover:bg-orange-400 hover:text-gray-900 transition disabled:opacity-50"
                   on:click={() => loadPage(1)}
                   disabled={loading}
+                  aria-label="First page"
                 >
-                  ««
+                  <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/></svg>
                 </button>
                 <button
-                  class="px-3 py-2 rounded-lg font-bold text-sm bg-gray-800 text-white hover:bg-orange-400 hover:text-gray-900 transition disabled:opacity-50"
+                  class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-sm bg-gray-800 text-white hover:bg-orange-400 hover:text-gray-900 transition disabled:opacity-50"
                   on:click={() => loadPage(data.currentPage - 1)}
                   disabled={loading}
+                  aria-label="Previous page"
                 >
-                  «
+                  <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
                 </button>
               {/if}
 
               {#each pageNumbers as pageNum}
                 <button
-                  class="px-3 py-2 rounded-lg font-bold text-sm transition disabled:opacity-50
+                  class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-xs sm:text-sm transition disabled:opacity-50
                     {data.currentPage === pageNum
                       ? 'bg-orange-400 text-gray-900'
                       : 'bg-gray-800 text-white hover:bg-orange-400 hover:text-gray-900'}"
@@ -179,18 +181,20 @@
 
               {#if data.currentPage < data.totalPages}
                 <button
-                  class="px-3 py-2 rounded-lg font-bold text-sm bg-gray-800 text-white hover:bg-orange-400 hover:text-gray-900 transition disabled:opacity-50"
+                  class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-sm bg-gray-800 text-white hover:bg-orange-400 hover:text-gray-900 transition disabled:opacity-50"
                   on:click={() => loadPage(data.currentPage + 1)}
                   disabled={loading}
+                  aria-label="Next page"
                 >
-                  »
+                  <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
                 </button>
                 <button
-                  class="px-3 py-2 rounded-lg font-bold text-sm bg-gray-800 text-white hover:bg-orange-400 hover:text-gray-900 transition disabled:opacity-50"
+                  class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-sm bg-gray-800 text-white hover:bg-orange-400 hover:text-gray-900 transition disabled:opacity-50"
                   on:click={() => loadPage(data.totalPages)}
                   disabled={loading}
+                  aria-label="Last page"
                 >
-                  »»
+                  <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 17l5-5-5-5M6 17l5-5-5-5"/></svg>
                 </button>
               {/if}
             </section>
