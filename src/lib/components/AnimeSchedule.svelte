@@ -160,7 +160,7 @@
   </div>
 
   <!-- This is the container for the date selector and navigation buttons -->
-  <div class="relative w-full mx-auto max-w-screen-xl"> <!-- Added mx-auto and max-w for centering on wider screens -->
+  <div class="relative w-full mx-auto max-w-screen-3xl"> <!-- Added mx-auto and max-w for centering on wider screens -->
     <div
       bind:this={containerRef}
       class="relative my-7 flex w-full flex-nowrap items-center gap-x-1 sm:gap-x-2 overflow-x-auto rounded-xl scrollbar-hide px-10 sm:px-14"

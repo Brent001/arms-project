@@ -12,9 +12,9 @@
     <div class="flex flex-col gap-2 sm:gap-3">
       <!-- Top 10 Heading -->
       <div class="flex flex-row items-center justify-between mb-3 sm:mb-4 w-full gap-2">
-        <span class="flex items-center gap-2 font-bold text-orange-400 text-xl sm:text-2xl whitespace-nowrap">
+        <span class="flex items-center gap-2 font-bold text-orange-400 text-xl sm:text-2xl xl:text-xl whitespace-nowrap">
           <!-- Lightning bolt icon (same as main page) -->
-          <svg class="w-5 h-5 sm:w-6 sm:h-6 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg class="w-5 h-5 sm:w-6 sm:h-6 xl:w-5 xl:h-5 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
           </svg>
           Top 10
@@ -57,14 +57,14 @@
                   </div>
                   <div class="flex items-center gap-1 mt-1">
                     {#if anime.episodes?.sub}
-                      <span class="flex items-center bg-green-200 text-black text-[10px] sm:text-[12px] font-bold px-1.5 py-0.5 rounded">
-                        <i class="fas fa-closed-captioning text-[12px] sm:text-[14px] mr-1"></i>
+                      <span class="flex items-center bg-green-200 text-black text-[10px] sm:text-[12px] xl:text-[11px] font-bold px-1.5 py-0.5 rounded">
+                        <i class="fas fa-closed-captioning text-[12px] sm:text-[14px] xl:text-[13px] mr-1"></i>
                         {anime.episodes.sub}
                       </span>
                     {/if}
                     {#if anime.episodes?.dub}
-                      <span class="flex items-center bg-blue-200 text-black text-[10px] sm:text-[12px] font-bold px-1.5 py-0.5 rounded">
-                        <i class="fas fa-microphone text-[12px] sm:text-[14px] mr-1"></i>
+                      <span class="flex items-center bg-blue-200 text-black text-[10px] sm:text-[12px] xl:text-[11px] font-bold px-1.5 py-0.5 rounded">
+                        <i class="fas fa-microphone text-[12px] sm:text-[14px] xl:text-[13px] mr-1"></i>
                         {anime.episodes.dub}
                       </span>
                     {/if}
@@ -92,14 +92,14 @@
                   </div>
                   <div class="flex items-center gap-1 mt-1">
                     {#if anime.episodes?.sub}
-                      <span class="flex items-center bg-green-200 text-black text-[10px] sm:text-[12px] font-bold px-1.5 py-0.5 rounded">
-                        <i class="fas fa-closed-captioning text-[12px] sm:text-[14px] mr-1"></i>
+                      <span class="flex items-center bg-green-200 text-black text-[10px] sm:text-[12px] xl:text-[11px] font-bold px-1.5 py-0.5 rounded">
+                        <i class="fas fa-closed-captioning text-[12px] sm:text-[14px] xl:text-[13px] mr-1"></i>
                         {anime.episodes.sub}
                       </span>
                     {/if}
                     {#if anime.episodes?.dub}
-                      <span class="flex items-center bg-blue-200 text-black text-[10px] sm:text-[12px] font-bold px-1.5 py-0.5 rounded">
-                        <i class="fas fa-microphone text-[12px] sm:text-[14px] mr-1"></i>
+                      <span class="flex items-center bg-blue-200 text-black text-[10px] sm:text-[12px] xl:text-[11px] font-bold px-1.5 py-0.5 rounded">
+                        <i class="fas fa-microphone text-[12px] sm:text-[14px] xl:text-[13px] mr-1"></i>
                         {anime.episodes.dub}
                       </span>
                     {/if}
@@ -127,14 +127,14 @@
                   </div>
                   <div class="flex items-center gap-1 mt-1">
                     {#if anime.episodes?.sub}
-                      <span class="flex items-center bg-green-200 text-black text-[10px] sm:text-[12px] font-bold px-1.5 py-0.5 rounded">
-                        <i class="fas fa-closed-captioning text-[12px] sm:text-[14px] mr-1"></i>
+                      <span class="flex items-center bg-green-200 text-black text-[10px] sm:text-[12px] xl:text-[11px] font-bold px-1.5 py-0.5 rounded">
+                        <i class="fas fa-closed-captioning text-[12px] sm:text-[14px] xl:text-[13px] mr-1"></i>
                         {anime.episodes.sub}
                       </span>
                     {/if}
                     {#if anime.episodes?.dub}
-                      <span class="flex items-center bg-blue-200 text-black text-[10px] sm:text-[12px] font-bold px-1.5 py-0.5 rounded">
-                        <i class="fas fa-microphone text-[12px] sm:text-[14px] mr-1"></i>
+                      <span class="flex items-center bg-blue-200 text-black text-[10px] sm:text-[12px] xl:text-[11px] font-bold px-1.5 py-0.5 rounded">
+                        <i class="fas fa-microphone text-[12px] sm:text-[14px] xl:text-[13px] mr-1"></i>
                         {anime.episodes.dub}
                       </span>
                     {/if}
