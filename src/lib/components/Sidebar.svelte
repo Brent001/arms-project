@@ -5,6 +5,13 @@
   export let top10Today: any[] = [];
   export let top10Week: any[] = [];
   export let top10Month: any[] = [];
+
+  let imageLoadedStates: { [key: string]: boolean } = {};
+
+  function handleImageLoad(id: string) {
+    imageLoadedStates[id] = true;
+    imageLoadedStates = imageLoadedStates; // Trigger reactivity
+  }
 </script>
 
 <aside class="w-full xl:w-80 flex-shrink-0 flex flex-col gap-8 mt-8 xl:mt-0">
@@ -46,7 +53,18 @@
                   class="font-bold text-[1.15rem] w-7 text-center transition-colors
                     {i < 3 ? 'text-orange-400 group-hover:text-orange-400' : 'text-gray-400 group-hover:text-white'}"
                 >{String(i+1).padStart(2, '0')}</span>
-                <img src={anime.poster} alt={anime.name} class="w-10 h-14 sm:w-12 sm:h-16 object-cover rounded-md" />
+                <div class="relative w-10 h-14 sm:w-12 sm:h-16 rounded-md overflow-hidden flex-shrink-0">
+                  {#if !imageLoadedStates[anime.id]}
+                    <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                  {/if}
+                  <img
+                    src={anime.poster}
+                    alt={anime.name}
+                    class="w-full h-full object-cover {imageLoadedStates[anime.id] ? 'opacity-100' : 'opacity-0'}"
+                    loading="lazy"
+                    on:load={() => handleImageLoad(anime.id)}
+                  />
+                </div>
                 <div class="flex-1 min-w-0">
                   <div
                     class="font-semibold truncate text-xs sm:text-[13px] max-w-full group-hover:text-white transition-colors"
@@ -81,7 +99,18 @@
                   class="font-bold text-[1.15rem] w-7 text-center transition-colors
                     {i < 3 ? 'text-orange-400 group-hover:text-orange-400' : 'text-gray-400 group-hover:text-white'}"
                 >{String(i+1).padStart(2, '0')}</span>
-                <img src={anime.poster} alt={anime.name} class="w-10 h-14 sm:w-12 sm:h-16 object-cover rounded-md" />
+                <div class="relative w-10 h-14 sm:w-12 sm:h-16 rounded-md overflow-hidden flex-shrink-0">
+                  {#if !imageLoadedStates[anime.id]}
+                    <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                  {/if}
+                  <img
+                    src={anime.poster}
+                    alt={anime.name}
+                    class="w-full h-full object-cover {imageLoadedStates[anime.id] ? 'opacity-100' : 'opacity-0'}"
+                    loading="lazy"
+                    on:load={() => handleImageLoad(anime.id)}
+                  />
+                </div>
                 <div class="flex-1 min-w-0">
                   <div
                     class="font-semibold truncate text-xs sm:text-[13px] max-w-full group-hover:text-white transition-colors"
@@ -116,7 +145,18 @@
                   class="font-bold text-[1.15rem] w-7 text-center transition-colors
                     {i < 3 ? 'text-orange-400 group-hover:text-orange-400' : 'text-gray-400 group-hover:text-white'}"
                 >{String(i+1).padStart(2, '0')}</span>
-                <img src={anime.poster} alt={anime.name} class="w-10 h-14 sm:w-12 sm:h-16 object-cover rounded-md" />
+                <div class="relative w-10 h-14 sm:w-12 sm:h-16 rounded-md overflow-hidden flex-shrink-0">
+                  {#if !imageLoadedStates[anime.id]}
+                    <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                  {/if}
+                  <img
+                    src={anime.poster}
+                    alt={anime.name}
+                    class="w-full h-full object-cover {imageLoadedStates[anime.id] ? 'opacity-100' : 'opacity-0'}"
+                    loading="lazy"
+                    on:load={() => handleImageLoad(anime.id)}
+                  />
+                </div>
                 <div class="flex-1 min-w-0">
                   <div
                     class="font-semibold truncate text-xs sm:text-[13px] max-w-full group-hover:text-white transition-colors"
@@ -148,3 +188,12 @@
     </div>
   </div>
 </aside>
+
+<style>
+  .skeleton-loader {
+    background-color: #374151; /* gray-700 */
+  }
+  img {
+    transition: opacity 0.3s ease-in-out;
+  }
+</style>

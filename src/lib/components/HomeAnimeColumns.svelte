@@ -1,8 +1,14 @@
 <script lang="ts">
-  import AnimeCard from '$lib/components/QtipCard.svelte';
   import '@fortawesome/fontawesome-free/css/all.css';
-  
+
   export let data: any;
+
+  let imageLoadedStates: { [key: string]: boolean } = {};
+
+  function handleImageLoad(id: string) {
+    imageLoadedStates[id] = true;
+    imageLoadedStates = imageLoadedStates; // Trigger reactivity
+  }
 </script>
 
 <section class="max-w-[1800px] mx-auto px-2 mt-8">
@@ -15,7 +21,18 @@
       <div class="flex flex-col gap-3 sm:gap-4 bg-gray-800 rounded-xl p-3 sm:p-4">
         {#each data.topAiringAnimes?.slice(0, 5) as anime}
           <a href={`/info/${anime.id}`} class="flex items-center gap-3 border-b border-gray-700 pb-3 last:border-b-0 last:pb-0 hover:bg-gray-700 transition rounded">
-            <img src={anime.poster} alt={anime.name} class="w-10 h-14 sm:w-12 sm:h-16 rounded-md object-cover" />
+            <div class="relative w-10 h-14 sm:w-12 sm:h-16 rounded-md overflow-hidden flex-shrink-0">
+              {#if !imageLoadedStates[anime.id]}
+                <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+              {/if}
+              <img
+                src={anime.poster}
+                alt={anime.name}
+                class="w-full h-full object-cover {imageLoadedStates[anime.id] ? 'opacity-100' : 'opacity-0'}"
+                loading="lazy"
+                on:load={() => handleImageLoad(anime.id)}
+              />
+            </div>
             <div class="flex-1">
               <div class="font-semibold text-white text-sm leading-tight line-clamp-2">{anime.name}</div>
               <div class="flex items-center gap-2 mt-1">
@@ -51,7 +68,18 @@
       <div class="flex flex-col gap-3 sm:gap-4 bg-gray-800 rounded-xl p-3 sm:p-4">
         {#each data.mostPopularAnimes?.slice(0, 5) as anime}
           <a href={`/info/${anime.id}`} class="flex items-center gap-3 border-b border-gray-700 pb-3 last:border-b-0 last:pb-0 hover:bg-gray-700 transition rounded">
-            <img src={anime.poster} alt={anime.name} class="w-10 h-14 sm:w-12 sm:h-16 rounded-md object-cover" />
+            <div class="relative w-10 h-14 sm:w-12 sm:h-16 rounded-md overflow-hidden flex-shrink-0">
+              {#if !imageLoadedStates[anime.id]}
+                <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+              {/if}
+              <img
+                src={anime.poster}
+                alt={anime.name}
+                class="w-full h-full object-cover {imageLoadedStates[anime.id] ? 'opacity-100' : 'opacity-0'}"
+                loading="lazy"
+                on:load={() => handleImageLoad(anime.id)}
+              />
+            </div>
             <div class="flex-1">
               <div class="font-semibold text-white text-sm leading-tight line-clamp-2">{anime.name}</div>
               <div class="flex items-center gap-2 mt-1">
@@ -88,7 +116,18 @@
       <div class="flex flex-col gap-3 sm:gap-4 bg-gray-800 rounded-xl p-3 sm:p-4">
         {#each data.mostFavoriteAnimes?.slice(0, 5) as anime}
           <a href={`/info/${anime.id}`} class="flex items-center gap-3 border-b border-gray-700 pb-3 last:border-b-0 last:pb-0 hover:bg-gray-700 transition rounded">
-            <img src={anime.poster} alt={anime.name} class="w-10 h-14 sm:w-12 sm:h-16 rounded-md object-cover" />
+            <div class="relative w-10 h-14 sm:w-12 sm:h-16 rounded-md overflow-hidden flex-shrink-0">
+              {#if !imageLoadedStates[anime.id]}
+                <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+              {/if}
+              <img
+                src={anime.poster}
+                alt={anime.name}
+                class="w-full h-full object-cover {imageLoadedStates[anime.id] ? 'opacity-100' : 'opacity-0'}"
+                loading="lazy"
+                on:load={() => handleImageLoad(anime.id)}
+              />
+            </div>
             <div class="flex-1">
               <div class="font-semibold text-white text-sm leading-tight line-clamp-2">{anime.name}</div>
               <div class="flex items-center gap-2 mt-1">
@@ -124,7 +163,18 @@
       <div class="flex flex-col gap-3 sm:gap-4 bg-gray-800 rounded-xl p-3 sm:p-4">
         {#each data.latestCompletedAnimes?.slice(0, 5) as anime}
           <a href={`/info/${anime.id}`} class="flex items-center gap-3 border-b border-gray-700 pb-3 last:border-b-0 last:pb-0 hover:bg-gray-700 transition rounded">
-            <img src={anime.poster} alt={anime.name} class="w-10 h-14 sm:w-12 sm:h-16 rounded-md object-cover" />
+            <div class="relative w-10 h-14 sm:w-12 sm:h-16 rounded-md overflow-hidden flex-shrink-0">
+              {#if !imageLoadedStates[anime.id]}
+                <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+              {/if}
+              <img
+                src={anime.poster}
+                alt={anime.name}
+                class="w-full h-full object-cover {imageLoadedStates[anime.id] ? 'opacity-100' : 'opacity-0'}"
+                loading="lazy"
+                on:load={() => handleImageLoad(anime.id)}
+              />
+            </div>
             <div class="flex-1">
               <div class="font-semibold text-white text-sm leading-tight line-clamp-2">{anime.name}</div>
               <div class="flex items-center gap-2 mt-1">
@@ -153,3 +203,12 @@
     </div>
   </div>
 </section>
+
+<style>
+  .skeleton-loader {
+    background-color: #374151; /* gray-700 */
+  }
+  img {
+    transition: opacity 0.3s ease-in-out;
+  }
+</style>
