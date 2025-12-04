@@ -8,6 +8,19 @@
   let carouselInterval: any = null;
   let isTransitioning = false;
 
+  function resetInterval() {
+    clearInterval(carouselInterval);
+    carouselInterval = setInterval(() => {
+      if (animes?.length > 0 && !isTransitioning) {
+        isTransitioning = true;
+        carouselIndex = (carouselIndex + 1) % animes.length;
+        setTimeout(() => {
+          isTransitioning = false;
+        }, 800);
+      }
+    }, intervalMs);
+  }
+
   function prevSlide() {
     if (animes?.length > 0 && !isTransitioning) {
       isTransitioning = true;
@@ -15,6 +28,7 @@
       setTimeout(() => {
         isTransitioning = false;
       }, 800);
+      resetInterval();
     }
   }
   
@@ -25,19 +39,12 @@
       setTimeout(() => {
         isTransitioning = false;
       }, 800);
+      resetInterval();
     }
   }
 
   onMount(() => {
-    carouselInterval = setInterval(() => {
-      if (animes?.length > 0 && !isTransitioning) {
-        isTransitioning = true;
-        carouselIndex = (carouselIndex + 1) % animes.length;
-        setTimeout(() => {
-          isTransitioning = false;
-        }, 800);
-      }
-    }, intervalMs);
+    resetInterval();
     return () => clearInterval(carouselInterval);
   });
 
