@@ -11,6 +11,9 @@
   let errorGenres: string | null = null;
   let showAllGenres = false;
 
+  // Module-level cache for genres to prevent re-fetching
+  let cachedHanimeGenres: string[] | null = null;
+
   function sanitizeGenreName(genre: string): string {
     return genre
       .toLowerCase()
@@ -19,23 +22,40 @@
   }
 
   async function fetchGenres() {
+    // Use cached data if available
+    if (cachedHanimeGenres) {
+      genres = cachedHanimeGenres;
+      loadingGenres = false;
+      return;
+    }
+
+    loadingGenres = true;
+    errorGenres = null;
+    
     try {
-      // Use the hanime genre API, only hentaitv provider
       const response = await fetch('/api/hanime/genre/');
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
       const json = await response.json();
+      let fetchedGenres: string[] = [];
+
+      // Find hentaitv provider genres
       if (Array.isArray(json)) {
-        // Find hentaitv/hentai.tv provider
-        const hentaitv = json.find((g) =>
-          g.provider === 'hentai.tv' || g.provider === 'hentaitv'
-        );
-        genres = hentaitv?.genres || [];
+        const hentaitv = json.find((g) => g.provider === 'hentai.tv' || g.provider === 'hentaitv');
+        fetchedGenres = hentaitv?.genres || [];
       } else if (json.data && Array.isArray(json.data.genres)) {
-        genres = json.data.genres;
+        fetchedGenres = json.data.genres;
+      }
+
+      if (fetchedGenres.length > 0) {
+        genres = fetchedGenres;
+        cachedHanimeGenres = genres; // Cache the result for future use
       } else {
-        errorGenres = json.error || 'Failed to fetch genres';
+        errorGenres = 'Could not find genres for the provider';
       }
     } catch (err) {
-      errorGenres = 'Failed to fetch genres';
+      errorGenres = err instanceof Error ? err.message : 'Failed to fetch genres';
     } finally {
       loadingGenres = false;
     }
