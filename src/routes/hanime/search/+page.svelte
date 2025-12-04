@@ -421,28 +421,9 @@
     text-overflow: ellipsis;
   }
 
-  /* Skeleton Loader Animation - optimized */
+  /* Skeleton Loader - plain background for performance */
   .skeleton-loader {
-    background: linear-gradient(
-      90deg,
-      #3a0d16 0%,
-      #5a1526 20%,
-      #3a0d16 40%,
-      #3a0d16 100%
-    );
-    background-size: 200% 100%;
-    animation: skeleton-loading 1.5s ease-in-out infinite;
-    will-change: background-position;
-    transform: translateZ(0);
-  }
-
-  @keyframes skeleton-loading {
-    0% {
-      background-position: 200% 0;
-    }
-    100% {
-      background-position: -200% 0;
-    }
+    background-color: #3a0d16;
   }
 
   /* Image fade transition - optimized */

@@ -23,7 +23,7 @@
   let loading = false;
   let error: string | null = null;
   let showWarning = true;
-  let imageObserver: IntersectionObserver | null = null;
+  let imageLoadedStates: { [key: string]: boolean } = {};
   let mounted = false;
 
   // Cookie helpers (optimized)
@@ -63,6 +63,10 @@
     window.location.href = '/';
   }
 
+  function handleImageLoad(id: string) {
+    imageLoadedStates = { ...imageLoadedStates, [id]: true };
+  }
+
   const pagesPerGroup = 3;
   
   // Memoized calculations
@@ -70,6 +74,9 @@
   $: endPage = Math.min(data.totalPages, startPage + pagesPerGroup - 1);
   $: pageNumbers = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
   $: animeCount = data.animes?.length || 0;
+  $: if (data.animes) {
+    imageLoadedStates = {};
+  }
 
   // Debounced page loading to prevent rapid clicks
   let pageLoadTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -115,44 +122,10 @@
   // Optimized lazy loading with Intersection Observer
   onMount(() => {
     mounted = true;
-    
-    // Setup Intersection Observer for progressive image loading
-    if ('IntersectionObserver' in window) {
-      imageObserver = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              const img = entry.target as HTMLImageElement;
-              const src = img.dataset.src;
-              if (src && !img.src) {
-                img.src = src;
-                img.removeAttribute('data-src');
-                imageObserver?.unobserve(img);
-              }
-            }
-          });
-        },
-        {
-          rootMargin: '50px 0px',
-          threshold: 0.01
-        }
-      );
-
-      // Observe all lazy images
-      requestAnimationFrame(() => {
-        document.querySelectorAll('img[data-src]').forEach((img) => {
-          imageObserver?.observe(img);
-        });
-      });
-    }
   });
 
   onDestroy(() => {
     mounted = false;
-    if (imageObserver) {
-      imageObserver.disconnect();
-      imageObserver = null;
-    }
     if (pageLoadTimeout) {
       clearTimeout(pageLoadTimeout);
     }
@@ -235,14 +208,18 @@
                     class="anime-card group relative bg-[#1a0106] rounded-xl overflow-hidden shadow transition-transform duration-200 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer block"
                   >
                     <div class="relative aspect-[3/4]">
+                      {#if !imageLoadedStates[anime.id]}
+                        <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                      {/if}
                       <img
                         src={anime.image}
                         alt={anime.title}
-                        class="w-full h-full object-cover"
+                        class="w-full h-full object-cover {imageLoadedStates[anime.id] ? 'opacity-100' : 'opacity-0'}"
                         loading={getImageProps(index).loading}
                         decoding={getImageProps(index).decoding}
                         width="300"
                         height="400"
+                        on:load={() => handleImageLoad(anime.id)}
                       />
                       <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent overlay"></div>
                       <div class="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
@@ -370,8 +347,14 @@
     will-change: auto;
   }
 
+  /* Skeleton Loader - plain background for performance */
+  .skeleton-loader {
+    background-color: #3a0d16;
+  }
+
   /* Optimize image rendering */
   img {
+    transition: opacity 0.3s ease-in-out;
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
   }

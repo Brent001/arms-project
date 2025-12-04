@@ -10,6 +10,7 @@
   let error: string | null = null;
   let showWarning = true;
   let isMobile = false;
+  let imageLoadedStates: { [key: string]: boolean } = {};
 
   // Helper to get cookie value
   function getCookie(name: string) {
@@ -90,6 +91,10 @@
   
   function rejectWarning() {
     window.location.href = '/';
+  }
+
+  function handleImageLoad(id: string) {
+    imageLoadedStates = { ...imageLoadedStates, [id]: true };
   }
 </script>
 
@@ -176,12 +181,16 @@
                 class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow {isMobile ? 'border border-transparent' : 'transition-transform duration-200 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 hover:scale-[1.03]'} cursor-pointer block"
               >
                 <div class="relative aspect-[3/4]">
+                  {#if !imageLoadedStates[item.id]}
+                    <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                  {/if}
                   <img
                     src={item.image}
                     alt={item.title}
-                    class="w-full h-full object-cover"
+                    class="w-full h-full object-cover {imageLoadedStates[item.id] ? 'opacity-100' : 'opacity-0'}"
                     loading={index < (isMobile ? 6 : 12) ? 'eager' : 'lazy'}
                     decoding="async"
+                    on:load={() => handleImageLoad(item.id)}
                   />
                   <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                   <div class="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
@@ -229,12 +238,16 @@
                 class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow {isMobile ? 'border border-transparent' : 'transition-all duration-150 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40'} cursor-pointer block"
               >
                 <div class="relative aspect-[3/4]">
+                  {#if !imageLoadedStates[item.id]}
+                    <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                  {/if}
                   <img
                     src={item.image}
                     alt={item.title}
-                    class="w-full h-full object-cover"
+                    class="w-full h-full object-cover {imageLoadedStates[item.id] ? 'opacity-100' : 'opacity-0'}"
                     loading={index < (isMobile ? 6 : 12) ? 'eager' : 'lazy'}
                     decoding="async"
+                    on:load={() => handleImageLoad(item.id)}
                   />
                   <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                   <div class="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
@@ -383,6 +396,15 @@
       grid-template-columns: repeat(8, minmax(0, 1fr));
       gap: 0.5rem;
     }
+  }
+
+  /* Skeleton Loader - plain background for performance */
+  .skeleton-loader {
+    background-color: #3a0d16;
+  }
+
+  img {
+    transition: opacity 0.3s ease-in-out;
   }
 
   @keyframes fade-in {

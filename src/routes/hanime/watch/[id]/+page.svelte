@@ -36,6 +36,7 @@
   let isMobile = false;
   const DESCRIPTION_LIMIT = 450;
   let showAllGenres = false;
+  let imageLoadedStates: { [key: string]: boolean } = {};
 
   $: isLongDescription = !!description && description.length > DESCRIPTION_LIMIT;
 
@@ -72,6 +73,18 @@
   }
   function rejectWarning() {
     window.location.href = '/';
+  }
+
+  function handleImageLoad(id: string) {
+    imageLoadedStates = { ...imageLoadedStates, [id]: true };
+  }
+
+  function handleImageError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    if (img && !img.dataset.errorHandled) {
+      img.dataset.errorHandled = 'true';
+      img.onerror = null; // Prevent infinite loop
+    }
   }
 
   let searchResults: any[] = [];
@@ -174,11 +187,16 @@
             <!-- Info Card -->
             <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-lg shadow-2xl p-6 md:p-10 border border-[#ff003c]/20">
               <!-- Poster -->
-              <div class="flex flex-col items-center md:items-start flex-shrink-0 mx-auto md:mx-0">
+              <div class="relative w-64 h-96 flex-shrink-0 mx-auto md:mx-0">
+                {#if !imageLoadedStates[info.id]}
+                  <div class="skeleton-loader rounded-lg shadow-2xl w-full h-full absolute inset-0 border-4 border-[#3a0d16]"></div>
+                {/if}
                 <img
                   src={poster}
                   alt={title}
-                  class="rounded-lg shadow-2xl w-64 h-auto object-cover border-4 border-[#3a0d16]"
+                  class="rounded-lg shadow-2xl w-full h-full object-cover border-4 border-[#3a0d16] {imageLoadedStates[info.id] ? 'opacity-100' : 'opacity-0'}"
+                  on:load={() => handleImageLoad(info.id)}
+                  on:error={handleImageError}
                 />
               </div>
               <!-- Details -->
@@ -338,11 +356,16 @@
                   aria-label={`Go to episode ${ep.title}`}
                 >
                   <div class="relative aspect-[3/4]">
+                    {#if !imageLoadedStates[ep.id]}
+                      <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                    {/if}
                     <img
                       src={ep.image}
                       alt={ep.title}
-                      class="w-full h-full object-cover"
+                      class="w-full h-full object-cover {imageLoadedStates[ep.id] ? 'opacity-100' : 'opacity-0'}"
                       loading={idx < 12 ? 'eager' : 'lazy'}
+                      on:load={() => handleImageLoad(ep.id)}
+                      on:error={handleImageError}
                     />
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                     <div class="absolute top-2 left-2">
@@ -408,5 +431,14 @@
     .max-w-\[1920px\] {
       max-width: 90vw;
     }
+  }
+
+  /* Skeleton Loader - plain background for performance */
+  .skeleton-loader {
+    background-color: #3a0d16;
+  }
+
+  img {
+    transition: opacity 0.3s ease-in-out;
   }
 </style>

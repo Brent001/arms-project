@@ -17,6 +17,7 @@
   let isMobile = false;
   const DESCRIPTION_LIMIT = 450;
   let showAllGenres = false;
+  let imageLoadedStates: { [key: string]: boolean } = {};
 
   // Cookie helpers
   function getCookie(name: string) {
@@ -47,6 +48,10 @@
   }
   function rejectWarning() {
     window.location.href = '/';
+  }
+
+  function handleImageLoad(id: string) {
+    imageLoadedStates = { ...imageLoadedStates, [id]: true };
   }
 
   async function handleRelatedClick(id: string) {
@@ -124,12 +129,16 @@
               <!-- Modern Info Card -->
               <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-[#2a0008] via-[#3a0d16] to-[#1a0106] rounded-lg shadow-2xl p-6 md:p-10 border border-[#ff003c]/20">
                 <!-- Poster -->
-                <div class="flex flex-col items-center md:items-start flex-shrink-0 mx-auto md:mx-0">
+                <div class="relative flex flex-col items-center md:items-start flex-shrink-0 mx-auto md:mx-0">
+                  {#if !imageLoadedStates[info.id]}
+                    <div class="skeleton-loader rounded-lg shadow-2xl w-64 h-96 border-4 border-[#3a0d16]"></div>
+                  {/if}
                   <img
                     src={info.poster}
                     alt={info.name}
-                    class="rounded-lg shadow-2xl w-64 h-auto object-cover border-4 border-[#3a0d16]"
+                    class="rounded-lg shadow-2xl w-64 h-auto object-cover border-4 border-[#3a0d16] {imageLoadedStates[info.id] ? 'opacity-100' : 'opacity-0'}"
                     on:error={handleImageError}
+                    on:load={() => handleImageLoad(info.id)}
                   />
                 </div>
                 
@@ -296,13 +305,17 @@
                         style="min-height: 120px;"
                       >
                         <div class="relative aspect-[16/7] w-full">
+                          {#if !imageLoadedStates[rel.id]}
+                            <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                          {/if}
                           <img 
                             src={rel.image} 
                             alt={safeTruncate(rel.title, 50)} 
-                            class="w-full h-full object-cover rounded-none"
+                            class="w-full h-full object-cover rounded-none {imageLoadedStates[rel.id] ? 'opacity-100' : 'opacity-0'}"
                             style="aspect-ratio: 16/7;"
                             loading="lazy"
                             on:error={handleImageError}
+                            on:load={() => handleImageLoad(rel.id)}
                           />
                           <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                         </div>
@@ -339,6 +352,15 @@
 </div>
 
 <style>
+  /* Skeleton Loader - plain background for performance */
+  .skeleton-loader {
+    background-color: #3a0d16;
+  }
+
+  img {
+    transition: opacity 0.3s ease-in-out;
+  }
+  
   .loader-adult {
     border: 6px solid #ff003c33;
     border-top: 6px solid #ff003c;
