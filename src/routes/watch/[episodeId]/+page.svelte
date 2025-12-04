@@ -6,12 +6,20 @@
   import PlayerSelector from '$lib/components/watch/PlayerSelector.svelte';
   import PlayerController from '$lib/components/watch/PlayerController.svelte'; // <-- Add this import
   import EpisodeSelector from '$lib/components/watch/EpisodeSelector.svelte';
+  import SeasonCard from '$lib/components/SeasonCard.svelte';
   import type { PageData } from './$types.js';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
 
   export let data;
+
+  // --- Type Definitions ---
+  type Season = {
+    id: string;
+    title: string;
+    [key: string]: any; // Allow other properties
+  };
 
   // --- Type Guards & Helpers ---
   const isError = (d: PageData): d is Extract<PageData, { error: string }> =>
@@ -38,6 +46,7 @@
   let autoPlay = false;
   let autoSkipIntro = false;
   let autoNext = false;
+  let imageLoadedStates: { [key: string]: boolean } = {};
 
   // --- Pagination ---
   let episodesPerPage = 50;
@@ -214,6 +223,18 @@
     }
   }
 
+  function handleImageLoad(id: string) {
+    imageLoadedStates[id] = true;
+  }
+
+  function handleImageError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    if (img && !img.dataset.errorHandled) {
+      img.dataset.errorHandled = 'true';
+      img.onerror = null; // Prevent infinite loop
+    }
+  }
+
   async function handleRefreshSource(videoUrl: string) {
     updatingSources = true;
     await fetch(`/api/anime?action=delete-source-cache&animeEpisodeId=${currentEpisodeId}&category=${category}`);
@@ -313,9 +334,9 @@
     }
   }
 
-  if (browser) {
-    // Add/remove event listener for click outside
-    $: {
+  // Add/remove event listener for click outside
+  $: {
+    if (browser) {
       if (showPageDropdown) {
         window.addEventListener('mousedown', handleClickOutside);
       } else {
@@ -466,11 +487,18 @@
             <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-6 md:p-10">
               <!-- Poster -->
               <div class="flex flex-col items-center md:items-start flex-shrink-0 mx-auto md:mx-0">
-                <img
-                  src={data.anime.info.poster || '/assets/placeholder-anime.jpg'}
-                  alt={data.anime.info.name}
-                  class="rounded-lg shadow-2xl w-64 h-auto object-cover border-4 border-gray-800"
-                />
+                <div class="relative w-64 aspect-[3/4] rounded-lg border-4 border-gray-800 overflow-hidden bg-gray-800">
+                  {#if !imageLoadedStates[`main-${data.anime.info.id}`]}
+                    <div class="skeleton-loader absolute inset-0"></div>
+                  {/if}
+                  <img
+                    src={data.anime.info.poster}
+                    alt={data.anime.info.name}
+                    class="shadow-2xl w-full h-full object-cover {imageLoadedStates[`main-${data.anime.info.id}`] ? 'opacity-100' : 'opacity-0'}"
+                    on:error={handleImageError}
+                    on:load={() => handleImageLoad(`main-${data.anime.info.id}`)}
+                  />
+                </div>
               </div>
               <!-- Details -->
               <div class="flex-1 space-y-3">
@@ -657,6 +685,18 @@
               </div>
             </div>
           {/if}
+
+          <!-- More Seasons -->
+          {#if data.seasons && data.seasons.length > 1}
+            <section class="mt-6">
+              <h2 class="text-lg sm:text-xl font-bold text-orange-400 mb-4">More Seasons</h2>
+              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                {#each data.seasons.filter((s: Season) => s && s.id && s.title) as season}
+                  <SeasonCard {season} {imageLoadedStates} onImageLoad={handleImageLoad} />
+                {/each}
+              </div>
+            </section>
+          {/if}
         </section>
       </div>
 
@@ -664,7 +704,7 @@
       {#if data.recommendedAnimes && data.recommendedAnimes.length}
         <section class="max-w-[1920px] w-full mx-auto mt-6"> <!-- Updated from max-w-7xl -->
           <h2 class="text-xl font-bold text-orange-400 mb-4">Recommended Anime</h2>
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2">
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-7 gap-2">
             {#each data.recommendedAnimes as rec}
               <a 
                 href={`/info/${rec.id}`}
@@ -672,11 +712,16 @@
                 style="min-height: 120px;"
               >
                 <div class="relative aspect-[3/4]">
+                  {#if !imageLoadedStates[`rec-${rec.id}`]}
+                    <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                  {/if}
                   <img
                     src={rec.poster}
                     alt={rec.name}
-                    class="w-full h-full object-cover"
+                    class="w-full h-full object-cover {imageLoadedStates[`rec-${rec.id}`] ? 'opacity-100' : 'opacity-0'}"
                     loading="lazy"
+                    on:error={handleImageError}
+                    on:load={() => handleImageLoad(`rec-${rec.id}`)}
                   />
                   <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                 </div>
@@ -698,7 +743,7 @@
       {#if data.relatedAnimes && data.relatedAnimes.length}
         <section class="max-w-[1920px] w-full mx-auto mt-5"> <!-- Updated from max-w-7xl -->
           <h2 class="text-xl font-bold text-orange-400 mb-4">Related Anime</h2>
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2">
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-7 gap-2">
             {#each data.relatedAnimes as rel}
               <a 
                 href={`/info/${rel.id}`}
@@ -706,11 +751,16 @@
                 style="min-height: 120px;"
               >
                 <div class="relative aspect-[3/4]">
+                  {#if !imageLoadedStates[`rel-${rel.id}`]}
+                    <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                  {/if}
                   <img
                     src={rel.poster}
                     alt={rel.name}
-                    class="w-full h-full object-cover"
+                    class="w-full h-full object-cover {imageLoadedStates[`rel-${rel.id}`] ? 'opacity-100' : 'opacity-0'}"
                     loading="lazy"
+                    on:error={handleImageError}
+                    on:load={() => handleImageLoad(`rel-${rel.id}`)}
                   />
                   <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                 </div>
@@ -740,28 +790,16 @@
       margin-left: auto;
       margin-right: auto;
     }
-
-    .player-full-width {
-      width: 100%; /* Make player full width on mobile */
-      margin-left: 0; /* Remove any left margin */
-      margin-right: 0; /* Remove any right margin */
-    }
   }
 
-  /* Add to your <style> block if not using Tailwind line-clamp */
-.line-clamp-3 {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-@media (min-width: 640px) {
-  .line-clamp-3 {
-    -webkit-line-clamp: 5;
-    line-clamp: 5;
+  /* Skeleton Loader - plain background for performance */
+  .skeleton-loader {
+    background-color: #374151; /* gray-700 */
   }
-}
+
+  img {
+    transition: opacity 0.3s ease-in-out;
+  }
 
   /* Mobile scroll for EpisodeSelector */
   .episode-selector-scroll {
@@ -786,15 +824,6 @@
   @media (min-width: 1920px) {
     .max-w-\[1920px\] {
       max-width: 90vw;
-    }
-  }
-
-  /* Adjust player aspect ratio for wider screens */
-  @media (min-width: 1440px) {
-    .aspect-video {
-      max-height: 80vh;
-      width: auto;
-      margin: 0 auto;
     }
   }
 

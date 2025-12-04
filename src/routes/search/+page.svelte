@@ -327,26 +327,9 @@
     border-color: #fbbf24; /* orange-400 */
   }
 
-  /* Skeleton Loader Animation */
+  /* Skeleton Loader - plain background for performance */
   .skeleton-loader {
-    background: linear-gradient(
-      90deg,
-      #374151 0%,
-      #4b5563 20%,
-      #374151 40%,
-      #374151 100%
-    );
-    background-size: 200% 100%;
-    animation: skeleton-loading 1.5s ease-in-out infinite;
-  }
-
-  @keyframes skeleton-loading {
-    0% {
-      background-position: 200% 0;
-    }
-    100% {
-      background-position: -200% 0;
-    }
+    background-color: #374151; /* gray-700 */
   }
 
   img {

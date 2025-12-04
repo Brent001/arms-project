@@ -103,6 +103,7 @@ export const load: PageLoad = async ({ params, fetch }) => {
       episodeId,
       anime: animeInfoJson.data.anime,
       episodes: episodesJson.data.episodes || [],
+      seasons: animeInfoJson.data.seasons || [],
       relatedAnimes: animeInfoJson.data.relatedAnimes || [],
       recommendedAnimes: animeInfoJson.data.recommendedAnimes || [],
       videoSources: [], // This will be populated when sources are fetched
@@ -118,6 +119,7 @@ export const load: PageLoad = async ({ params, fetch }) => {
       episodes: [],
       episodeId,
       anime: null,
+      seasons: [],
       relatedAnimes: [],
       recommendedAnimes: [],
       fetchSources: null

@@ -4,10 +4,13 @@
   import Footer from '$lib/components/Footer.svelte';
   import CharacterVoiceActorRow from '$lib/components/CharacterVoiceActorRow.svelte';
   import CharacterModal from '$lib/components/CharacterModal.svelte';
+  import SeasonCard from '$lib/components/SeasonCard.svelte';
   import type { PageData } from './$types.js'; // This type needs to reflect pageLoadError
   import { goto } from '$app/navigation';
   import { onDestroy, onMount } from 'svelte';
   import { browser } from '$app/environment';
+
+  let imageLoadedStates: { [key: string]: boolean } = {};
 
   // Extend PageData to include the optional pageLoadError
   export let data: PageData & { pageLoadError?: string };
@@ -115,6 +118,7 @@
     if (id && typeof id === 'string' && id !== initializedAnimeId && mounted) {
       initializedAnimeId = id;
       (async () => {
+        imageLoadedStates = {}; // Reset image loaded states
         loading = true;
         error = null; // Clear previous errors
         if (data.pageLoadError) { // If pageLoad function already reported a critical error
@@ -158,6 +162,10 @@
     } finally {
       loading = false;
     }
+  }
+
+  function handleImageLoad(id: string) {
+    imageLoadedStates[id] = true;
   }
 
   async function initializeData(signal?: AbortSignal) {
@@ -301,7 +309,6 @@
     const img = event.target as HTMLImageElement;
     if (img && !img.dataset.errorHandled) {
       img.dataset.errorHandled = 'true';
-      img.src = '/assets/placeholder-anime.jpg'; // Fallback image
       img.onerror = null; // Prevent infinite loop
     }
   }
@@ -436,12 +443,18 @@
               <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-6 md:p-10">
                 <!-- Poster -->
                 <div class="flex flex-col items-center md:items-start flex-shrink-0 mx-auto md:mx-0">
-                  <img
-                    src={anime.poster || '/assets/placeholder-anime.jpg'}
-                    alt={safeTruncate(anime.name, 50)}
-                    class="rounded-lg shadow-2xl w-64 h-auto object-cover border-4 border-gray-800"
-                    on:error={handleImageError}
-                  />
+                  <div class="relative w-64 aspect-[3/4] rounded-lg border-4 border-gray-800 overflow-hidden bg-gray-800">
+                    {#if !imageLoadedStates[`main-${anime.id}`]}
+                      <div class="skeleton-loader absolute inset-0"></div>
+                    {/if}
+                    <img
+                      src={anime.poster}
+                      alt={safeTruncate(anime.name, 50)}
+                      class="shadow-2xl w-full h-full object-cover {imageLoadedStates[`main-${anime.id}`] ? 'opacity-100' : 'opacity-0'}"
+                      on:error={handleImageError}
+                      on:load={() => handleImageLoad(`main-${anime.id}`)}
+                    />
+                  </div>
                 </div>
                 <!-- Details -->
                 <div class="flex-1 space-y-3">
@@ -697,35 +710,9 @@
               {#if seasons.length > 1}
                 <section class="mb-6">
                   <h2 class="text-lg sm:text-xl font-bold text-orange-400 mb-4">More Seasons</h2>
-                  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                     {#each seasons.filter(s => s && s.id && s.title) as season}
-                      <a
-                        href={`/info/${encodeURIComponent(season.id)}`}
-                        class="group relative bg-gray-800 rounded-lg overflow-hidden border-2
-                          {season.isCurrent ? 'border-orange-400 shadow-lg shadow-orange-400/20' : 'border-gray-700'}
-                          flex items-end min-h-[72px] sm:min-h-[96px] transition-all duration-200"
-                      >
-                        <div class="absolute inset-0">
-                          <img 
-                            src={season.poster || '/assets/placeholder-anime.jpg'} 
-                            alt={safeTruncate(season.title, 30)} 
-                            class="w-full h-full object-cover" 
-                            loading="lazy"
-                            on:error={handleImageError}
-                          />
-                          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                        </div>
-                        {#if season.isCurrent}
-                          <div class="absolute top-2 right-2 bg-orange-400 text-gray-900 px-2 py-1 rounded-full text-xs font-bold z-10">
-                            Current
-                          </div>
-                        {/if}
-                        <div class="relative w-full p-2 flex items-center justify-center">
-                          <span class="text-white font-semibold text-sm drop-shadow-lg text-center w-full break-words leading-tight">
-                            {safeTruncate(season.title, 40)}
-                          </span>
-                        </div>
-                      </a>
+                      <SeasonCard {season} {imageLoadedStates} onImageLoad={handleImageLoad} />
                     {/each}
                   </div>
                 </section>
@@ -771,12 +758,16 @@
                         style="min-height: 120px;"
                       >
                         <div class="relative aspect-[3/4]">
+                          {#if !imageLoadedStates[`rec-${rec.id}`]}
+                            <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                          {/if}
                           <img 
-                            src={rec.poster || '/assets/placeholder-anime.jpg'} 
+                            src={rec.poster} 
                             alt={safeTruncate(rec.name, 50)} 
-                            class="w-full h-full object-cover" 
+                            class="w-full h-full object-cover {imageLoadedStates[`rec-${rec.id}`] ? 'opacity-100' : 'opacity-0'}" 
                             loading="lazy"
                             on:error={handleImageError}
+                            on:load={() => handleImageLoad(`rec-${rec.id}`)}
                           />
                           <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                         </div>
@@ -808,12 +799,16 @@
                         class="group relative bg-gray-800 rounded-xl overflow-hidden shadow transition-transform duration-200 border border-transparent hover:border-orange-400 hover:shadow-orange-400/40 cursor-pointer block hover:scale-[1.03]"
                       >
                         <div class="relative aspect-[3/4]">
+                          {#if !imageLoadedStates[`rel-${rel.id}`]}
+                            <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                          {/if}
                           <img 
-                            src={rel.poster || '/assets/placeholder-anime.jpg'} 
+                            src={rel.poster} 
                             alt={safeTruncate(rel.name, 50)} 
-                            class="w-full h-full object-cover" 
+                            class="w-full h-full object-cover {imageLoadedStates[`rel-${rel.id}`] ? 'opacity-100' : 'opacity-0'}" 
                             loading="lazy"
                             on:error={handleImageError}
+                            on:load={() => handleImageLoad(`rel-${rel.id}`)}
                           />
                           <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                         </div>
@@ -866,5 +861,14 @@
       margin-left: auto;
       margin-right: auto;
     }
+  }
+
+  /* Skeleton Loader - plain background for performance */
+  .skeleton-loader {
+    background-color: #374151; /* gray-700 */
+  }
+
+  img {
+    transition: opacity 0.3s ease-in-out;
   }
 </style>

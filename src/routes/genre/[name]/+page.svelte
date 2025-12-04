@@ -24,6 +24,12 @@
 
   let loading = false;
   let error: string | null = null;
+  let imageLoadedStates: { [key: string]: boolean } = {};
+
+  // Reset image loaded states when the anime list changes
+  $: if (data.animes) {
+    imageLoadedStates = {};
+  }
 
   const pagesPerGroup = 3;
   $: startPage = Math.max(1, data.currentPage - Math.floor(pagesPerGroup / 2));
@@ -51,6 +57,18 @@
       error = e instanceof Error ? e.message : 'Failed to load page';
     } finally {
       loading = false;
+    }
+  }
+
+  function handleImageLoad(id: string) {
+    imageLoadedStates[id] = true;
+  }
+
+  function handleImageError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    if (img && !img.dataset.errorHandled) {
+      img.dataset.errorHandled = 'true';
+      img.onerror = null; // Prevent infinite loop
     }
   }
 
@@ -113,11 +131,16 @@
                     style="min-height: 120px;"
                   >
                     <div class="relative aspect-[3/4]">
+                      {#if !imageLoadedStates[anime.id]}
+                        <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                      {/if}
                       <img
                         src={anime.poster}
                         alt={anime.name}
-                        class="w-full h-full object-cover"
+                        class="w-full h-full object-cover {imageLoadedStates[anime.id] ? 'opacity-100' : 'opacity-0'}"
                         loading="lazy"
+                        on:load={() => handleImageLoad(anime.id)}
+                        on:error={handleImageError}
                       />
                       <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                     </div>
@@ -206,3 +229,14 @@
 
   <Footer />
 </div>
+
+<style>
+  /* Skeleton Loader - plain background for performance */
+  .skeleton-loader {
+    background-color: #374151; /* gray-700 */
+  }
+
+  img {
+    transition: opacity 0.3s ease-in-out;
+  }
+</style>
