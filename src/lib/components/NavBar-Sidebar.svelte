@@ -11,6 +11,9 @@
   let errorGenres: string | null = null; // Error state for genres
   let showAllGenres = false; // Toggle to show all genres
 
+  // Module-level cache for genres to prevent re-fetching
+  let cachedGenres: string[] | null = null;
+
   // Function to sanitize genre names
   function sanitizeGenreName(genre: string): string {
     return genre
@@ -20,16 +23,30 @@
   }
 
   async function fetchGenres() {
+    // Use cached data if available
+    if (cachedGenres) {
+      genres = cachedGenres;
+      loadingGenres = false;
+      return;
+    }
+
+    loadingGenres = true;
+    errorGenres = null;
+
     try {
       const response = await fetch('/api/genre/action?page=1'); // Example genre API call
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
       const json = await response.json();
-      if (json.success) {
-        genres = json.data.genres || [];
+      if (json.success && Array.isArray(json.data.genres)) {
+        genres = json.data.genres;
+        cachedGenres = genres; // Cache the result for future use
       } else {
         errorGenres = json.error || 'Failed to fetch genres';
       }
     } catch (err) {
-      errorGenres = 'Failed to fetch genres';
+      errorGenres = err instanceof Error ? err.message : 'Failed to fetch genres';
     } finally {
       loadingGenres = false;
     }
