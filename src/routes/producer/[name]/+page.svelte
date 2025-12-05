@@ -90,12 +90,10 @@
 <div class="flex flex-col min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white pt-16">
   {#if loading}
     <div class="flex items-center justify-center flex-1">
-      <img
-        src="/assets/loader.gif"
-        alt="Loading..."
-        class="object-contain"
-        style="max-width: 120px; max-height: 110px; aspect-ratio: 1 / 1;"
-      />
+      <!-- Replaced animated GIF with a simple placeholder -->
+      <div class="skeleton-loader w-32 h-32 rounded-full flex items-center justify-center">
+        <span class="text-gray-400 text-lg">Loading...</span>
+      </div>
     </div>
   {:else}
     <div class="flex-1 w-full">
@@ -233,26 +231,9 @@
 </div>
 
 <style>
-  /* Skeleton Loader Animation */
+  /* Skeleton Loader - plain background for performance */
   .skeleton-loader {
-    background: linear-gradient(
-      90deg,
-      #374151 0%, /* gray-700 */
-      #4b5563 20%, /* gray-600 */
-      #374151 40%, /* gray-700 */
-      #374151 100%
-    );
-    background-size: 200% 100%;
-    animation: skeleton-loading 1.5s ease-in-out infinite;
-  }
-
-  @keyframes skeleton-loading {
-    0% {
-      background-position: 200% 0;
-    }
-    100% {
-      background-position: -200% 0;
-    }
+    background-color: #374151; /* gray-700 */
   }
 
   img {
