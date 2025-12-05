@@ -6,6 +6,15 @@
   let searchQuery = '';
   let isOpen = false;
 
+  // Determine the logo based on the current month
+  let currentLogoSrc: string;
+  const currentMonth = new Date().getMonth(); // 0-indexed (0 for Jan, 11 for Dec)
+  if (currentMonth === 11) { // December
+    currentLogoSrc = '/assets/logo_christmas.png';
+  } else {
+    currentLogoSrc = '/assets/logo.png';
+  }
+
   function toggleMobileMenu() {
     mobileMenuOpen = !mobileMenuOpen;
     if (mobileMenuOpen) mobileSearchOpen = false;
@@ -47,7 +56,7 @@
       </button>
       <!-- Logo -->
       <a href="/home" class="flex items-center gap-2" on:click={closeAll}>
-        <img src="/assets/logo.png" alt="ARMS Logo" class="h-9 w-9 object-contain rounded z-50" />
+        <img src={currentLogoSrc} alt="ARMS Logo" class="h-9 w-9 object-contain rounded z-50" />
         <span class="text-xl font-black text-orange-400 tracking-wide">ARMS</span>
       </a>
     </div>
