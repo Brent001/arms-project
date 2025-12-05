@@ -75,7 +75,12 @@
   let showChapterDropdown = false;
   // New variable for custom provider dropdown
   let showProviderDropdown = false;
+  let imageLoadedStates: { [key: string]: boolean } = {};
 
+  // Reset image loaded states when the manga data changes
+  $: if (manga) {
+    imageLoadedStates = {};
+  }
 
   function updateIsMobile() {
     if (browser) {
@@ -88,9 +93,12 @@
     const img = event.target as HTMLImageElement;
     if (img && !img.dataset.errorHandled) {
       img.dataset.errorHandled = 'true';
-      img.src = '/assets/placeholder-manga-cover.jpg'; // Fallback image
       img.onerror = null; // Prevent infinite loop
     }
+  }
+
+  function handleImageLoad(id: string) {
+    imageLoadedStates[id] = true;
   }
 
   // Safe string truncation
@@ -247,12 +255,18 @@
                 <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-6 md:p-10">
                   <!-- Poster -->
                   <div class="flex flex-col items-center md:items-start flex-shrink-0 mx-auto md:mx-0">
-                    <img
-                      src={manga.image || '/assets/placeholder-manga-cover.jpg'}
-                      alt={safeTruncate(manga.title?.english || manga.title?.romaji || manga.title?.native, 50)}
-                      class="rounded-lg shadow-2xl w-64 h-auto object-cover border-4 border-gray-800"
-                      on:error={handleImageError}
-                    />
+                    <div class="relative w-64 aspect-[3/4] rounded-lg border-4 border-gray-800 overflow-hidden bg-gray-800">
+                      {#if !imageLoadedStates[`main-${manga.id}`]}
+                        <div class="skeleton-loader absolute inset-0"></div>
+                      {/if}
+                      <img
+                        src={manga.image}
+                        alt={safeTruncate(manga.title?.english || manga.title?.romaji || manga.title?.native, 50)}
+                        class="shadow-2xl w-full h-full object-cover {imageLoadedStates[`main-${manga.id}`] ? 'opacity-100' : 'opacity-0'}"
+                        on:error={handleImageError}
+                        on:load={() => handleImageLoad(`main-${manga.id}`)}
+                      />
+                    </div>
                   </div>
                   <!-- Details -->
                   <div class="flex-1 space-y-3">
@@ -286,31 +300,58 @@
                       {/if}
 
                       <!-- Description -->
-                      <div class="text-gray-200 text-base mb-2">
-                        {#if isLongDescription && !showFullDescription}
-                          {@html safeTruncate(manga.description, DESCRIPTION_LIMIT)}
+                      <span class="text-orange-300 font-semibold block mb-1 md:ml-0 ml-[-8px]">Overview:</span>
+                      {#if isMobile}
+                        <div
+                          class="text-gray-200 text-sm leading-tight md:ml-0 ml-[-8px]"
+                          style="max-height: 220px; overflow-y: auto; line-height: 1.4;"
+                        >
+                          {@html manga.description || 'No description available.'}
+                        </div>
+                      {:else if isLongDescription && !showFullDescription}
+                        <div
+                          class="text-gray-200 text-sm leading-tight md:ml-0 ml-[-8px]"
+                          style="line-height: 1.4; position: relative;"
+                        >
+                          <span>
+                            {@html safeTruncate(manga.description, DESCRIPTION_LIMIT)}
+                          </span>
                           <button
                             class="text-orange-400 cursor-pointer text-sm font-semibold ml-1"
                             on:click={() => (showFullDescription = true)}
                             aria-expanded={showFullDescription}
                             aria-controls="manga-description"
+                            style="background: none; border: none; cursor: pointer; padding: 0; margin: 0;"
                           >
                             ...more
                           </button>
-                        {:else}
-                          {@html manga.description}
-                          {#if isLongDescription}
-                            <button
-                              class="text-orange-400 cursor-pointer text-sm font-semibold ml-1"
-                              on:click={() => (showFullDescription = false)}
-                              aria-expanded={showFullDescription}
-                              aria-controls="manga-description"
-                            >
-                              ...less
-                            </button>
-                          {/if}
-                        {/if}
-                      </div>
+                        </div>
+                      {:else if isLongDescription && showFullDescription}
+                        <div
+                          class="text-gray-200 text-sm leading-tight md:ml-0 ml-[-8px]"
+                          style="line-height: 1.4;"
+                        >
+                          <span>
+                            {@html manga.description}
+                          </span>
+                          <button
+                            class="text-orange-400 cursor-pointer text-sm font-semibold ml-1"
+                            on:click={() => (showFullDescription = false)}
+                            aria-expanded={showFullDescription}
+                            aria-controls="manga-description"
+                            style="background: none; border: none; cursor: pointer; padding: 0; margin: 0;"
+                          >
+                            ...less
+                          </button>
+                        </div>
+                      {:else}
+                        <div
+                          class="text-gray-200 text-sm leading-tight md:ml-0 ml-[-8px]"
+                          style="line-height: 1.4;"
+                        >
+                          {@html manga.description || 'No description available.'}
+                        </div>
+                      {/if}
 
                       <div class="flex flex-wrap gap-2 mb-2">
                         <span class="bg-orange-400 text-gray-900 px-2 py-0.5 rounded-full text-xs font-bold">{manga.status}</span>
@@ -494,7 +535,17 @@
                             Manga
                           </span>
                           <div class="relative aspect-[3/4]">
-                            <img src={rec.image} alt={rec.title?.english || rec.title?.romaji || rec.title?.native} class="w-full h-full object-cover" loading="lazy" />
+                            {#if !imageLoadedStates[`rec-${rec.id}`]}
+                              <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                            {/if}
+                            <img 
+                              src={rec.image} 
+                              alt={rec.title?.english || rec.title?.romaji || rec.title?.native} 
+                              class="w-full h-full object-cover {imageLoadedStates[`rec-${rec.id}`] ? 'opacity-100' : 'opacity-0'}" 
+                              loading="lazy" 
+                              on:load={() => handleImageLoad(`rec-${rec.id}`)}
+                              on:error={handleImageError}
+                            />
                             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                           </div>
                           <div class="absolute bottom-0 left-0 right-0 p-1">
@@ -529,7 +580,17 @@
                             Manga
                           </span>
                           <div class="relative aspect-[3/4]">
-                            <img src={rel.image} alt={rel.title?.english || rel.title?.romaji || rel.title?.native} class="w-full h-full object-cover" loading="lazy" />
+                            {#if !imageLoadedStates[`rel-${rel.id}`]}
+                              <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                            {/if}
+                            <img 
+                              src={rel.image} 
+                              alt={rel.title?.english || rel.title?.romaji || rel.title?.native} 
+                              class="w-full h-full object-cover {imageLoadedStates[`rel-${rel.id}`] ? 'opacity-100' : 'opacity-0'}" 
+                              loading="lazy" 
+                              on:load={() => handleImageLoad(`rel-${rel.id}`)}
+                              on:error={handleImageError}
+                            />
                             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                           </div>
                           <div class="absolute bottom-0 left-0 right-0 p-1">
@@ -554,13 +615,20 @@
                   <section>
                     <h2 class="text-2xl font-bold text-orange-400 mb-4">Characters</h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                      {#each characters as char}
+                      {#each characters as char, i}
                         <div class="flex gap-4 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-xl shadow-lg p-4 border border-gray-800 hover:border-orange-400 transition">
-                          <img
-                            src={char.image}
-                            alt={char.name?.full || char.name?.native}
-                            class="w-20 h-28 rounded-lg object-cover border-2 border-gray-700 shadow"
-                          />
+                          <div class="relative w-20 h-28 rounded-lg border-2 border-gray-700 shadow overflow-hidden bg-gray-800">
+                            {#if !imageLoadedStates[`char-${i}`]}
+                              <div class="skeleton-loader absolute inset-0"></div>
+                            {/if}
+                            <img
+                              src={char.image}
+                              alt={char.name?.full || char.name?.native}
+                              class="w-full h-full object-cover {imageLoadedStates[`char-${i}`] ? 'opacity-100' : 'opacity-0'}"
+                              on:load={() => handleImageLoad(`char-${i}`)}
+                              on:error={handleImageError}
+                            />
+                          </div>
                           <div class="flex-1 min-w-0 flex flex-col justify-center">
                             <div class="flex items-center gap-2 mb-1">
                               <span class="font-bold text-base text-orange-300 truncate">{char.name?.full || char.name?.native}</span>
@@ -599,6 +667,15 @@
       margin-left: auto;
       margin-right: auto;
     }
+  }
+
+  /* Skeleton Loader - plain background for performance */
+  .skeleton-loader {
+    background-color: #374151; /* gray-700 */
+  }
+
+  img {
+    transition: opacity 0.3s ease-in-out;
   }
 
   /* Custom scrollbar styling for desktop */
