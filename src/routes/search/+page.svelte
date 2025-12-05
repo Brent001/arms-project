@@ -124,7 +124,7 @@
   {:else}
     <div class="flex-1 w-full">
       <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-1 sm:px-6">
-        <div class="flex flex-col xl:flex-row gap-6 sm:gap-10 w-full">
+        <div class="flex flex-col xl:flex-row gap-6 sm:gap-10 xl:gap-4 w-full">
           <!-- Main content -->
           <div class="flex-1 flex flex-col gap-6 sm:gap-10">
             <!-- Anime Results -->
