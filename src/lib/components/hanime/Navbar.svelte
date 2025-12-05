@@ -7,6 +7,15 @@
   let isOpen = false;
   let searchInput: HTMLInputElement;
 
+  // Determine the logo based on the current month
+  let currentLogoSrc: string;
+  const currentMonth = new Date().getMonth(); // 0-indexed (0 for Jan, 11 for Dec)
+  if (currentMonth === 11) { // December
+    currentLogoSrc = '/assets/logo_christmas.png';
+  } else {
+    currentLogoSrc = '/assets/logo.png';
+  }
+
   function toggleMobileMenu() {
     mobileMenuOpen = !mobileMenuOpen;
     if (mobileMenuOpen) mobileSearchOpen = false;
@@ -52,7 +61,7 @@
       </button>
       <!-- Logo -->
       <a href="/hanime" class="flex items-center gap-2" on:click={closeAll}>
-        <img src="/assets/logo.png" alt="Anifire logo" class="h-9 w-9 object-contain rounded z-50" />
+        <img src={currentLogoSrc} alt="Anifire logo" class="h-9 w-9 object-contain rounded z-50" />
         <span class="text-xl font-black text-[#ff003c] tracking-wide drop-shadow">ARMS</span>
         <span class="ml-1 text-xs bg-[#ff003c] text-black px-2 py-0.5 rounded font-bold shadow">18+</span>
       </a>
