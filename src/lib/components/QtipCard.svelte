@@ -13,7 +13,8 @@
   export const type: string = '';
 
   let showTooltip = false;
-  let tooltipTimeout: any;
+  let tooltipShowDelayTimeout: ReturnType<typeof setTimeout> | undefined; // For delaying tooltip appearance
+  let tooltipHideDelayTimeout: ReturnType<typeof setTimeout> | undefined; // For delaying tooltip disappearance
   let isMobile = false;
 
   // Tooltip data stores
@@ -25,6 +26,12 @@
   onMount(() => {
     const checkMobile = () => {
       isMobile = window.innerWidth < 768; // Tailwind's md breakpoint
+      if (isMobile) {
+        // If it becomes mobile, ensure tooltip is hidden and timers cleared
+        showTooltip = false;
+        clearTimeout(tooltipShowDelayTimeout);
+        clearTimeout(tooltipHideDelayTimeout);
+      }
     };
     
     checkMobile();
@@ -32,6 +39,8 @@
     
     return () => {
       window.removeEventListener('resize', checkMobile);
+      clearTimeout(tooltipShowDelayTimeout);
+      clearTimeout(tooltipHideDelayTimeout);
     };
   });
 
@@ -56,28 +65,47 @@
     }
   }
 
-  function handleMouseEnter() {
-    // Only show tooltip on desktop
-    if (showDescription && anime.id && !isMobile) {
-      tooltipTimeout = setTimeout(() => {
+  const TOOLTIP_SHOW_DELAY = 300; // ms to wait before showing tooltip
+  const TOOLTIP_HIDE_DELAY = 100; // ms to wait before hiding tooltip
+
+  function handleMouseEnterCard() {
+    if (!showDescription || !anime.id || isMobile) return;
+    clearTimeout(tooltipHideDelayTimeout); // Cancel any pending hide of the tooltip
+    if (!showTooltip) { // Only show if not already showing
+      tooltipShowDelayTimeout = setTimeout(() => {
         showTooltip = true;
         fetchQtip(anime.id);
-      }, 300);
+      }, TOOLTIP_SHOW_DELAY);
     }
   }
 
-  function handleMouseLeave() {
-    clearTimeout(tooltipTimeout);
-    showTooltip = false;
+  function handleMouseLeaveCard() {
+    if (!showDescription || !anime.id || isMobile) return;
+    clearTimeout(tooltipShowDelayTimeout); // Cancel any pending show
+    tooltipHideDelayTimeout = setTimeout(() => {
+      showTooltip = false;
+    }, TOOLTIP_HIDE_DELAY);
+  }
+
+  function handleMouseEnterTooltip() {
+    if (!showDescription || !anime.id || isMobile) return;
+    clearTimeout(tooltipHideDelayTimeout); // If mouse enters the tooltip, cancel any pending hide
+  }
+
+  function handleMouseLeaveTooltip() {
+    if (!showDescription || !anime.id || isMobile) return;
+    tooltipHideDelayTimeout = setTimeout(() => {
+      showTooltip = false;
+    }, TOOLTIP_HIDE_DELAY);
   }
 </script>
 
 <div class="relative">
   <a
     href={`/info/${anime.id}`}
-    class="group relative bg-gray-800 rounded-xl overflow-hidden shadow transition-all duration-150 border border-transparent hover:border-orange-400 hover:shadow-orange-400/40 cursor-pointer block hover:scale-[1.03]"
-    on:mouseenter={handleMouseEnter}
-    on:mouseleave={handleMouseLeave}
+    class="group relative bg-gray-800 rounded-xl overflow-hidden shadow transition-all duration-150 border border-transparent hover:border-orange-400/40 cursor-pointer block hover:scale-[1.03]"
+    on:mouseenter={handleMouseEnterCard}
+    on:mouseleave={handleMouseLeaveCard}
   >
     <div class="relative aspect-[3/4]">
       <img
@@ -114,7 +142,11 @@
   
   <!-- Tooltip for description - Hidden on mobile -->
   {#if showDescription && showTooltip && anime.id && !isMobile}
-    <div class="absolute z-50 bg-gray-800/90 backdrop-blur-[10px] border border-gray-700 rounded-xl p-4 shadow-2xl max-w-xs top-0 left-full ml-2 pointer-events-auto w-[320px] flex flex-col gap-y-2">
+    <div 
+      class="absolute z-50 bg-gray-800/90 backdrop-blur-[10px] border border-gray-700 rounded-xl p-4 shadow-2xl max-w-xs top-0 left-full ml-2 pointer-events-auto w-[320px] flex flex-col gap-y-2"
+      on:mouseenter={handleMouseEnterTooltip}
+      on:mouseleave={handleMouseLeaveTooltip}
+    >
       {#if $qtipLoading}
         <div class="flex justify-center items-center h-20">
           <div class="loading-dots">
