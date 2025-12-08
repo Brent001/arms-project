@@ -7,9 +7,11 @@
   let loading = true;
   let error: string | null = null;
   let hanimeResults: any[] = [];
+  let mangaResults: any[] = [];
   let query = '';
   let page = 1;
   let totalPages = 1;
+  let totalPagesManga = 1;
   let showWarning = true;
   let imageLoadedStates: { [key: string]: boolean } = {};
   let mounted = false;
@@ -64,23 +66,46 @@
     imageLoadedStates = {}; // Reset image loaded states
 
     try {
-      const resp = await fetch(
+      // Fetch hanime results
+      const hanimResp = await fetch(
         `/api/hanime/search?query=${encodeURIComponent(query)}&page=${page}`,
         { signal: fetchController.signal }
       );
 
-      if (!resp.ok) {
-        throw new Error('Failed to fetch search results');
+      if (!hanimResp.ok) {
+        throw new Error('Failed to fetch hanime results');
       }
 
-      const json = await resp.json();
+      const hanimeJson = await hanimResp.json();
 
-      if (json.status === 'success') {
-        hanimeResults = json.data.results || [];
-        totalPages = json.data.totalPages || 1;
+      if (hanimeJson.status === 'success') {
+        hanimeResults = hanimeJson.data.results || [];
+        totalPages = hanimeJson.data.totalPages || 1;
       } else {
         hanimeResults = [];
-        error = json.error || 'Failed to fetch search results';
+        error = hanimeJson.error || 'Failed to fetch hanime results';
+      }
+
+      // Fetch manga results (on page 1 only)
+      if (page === 1) {
+        const mangaResp = await fetch(
+          `/api/hanime/manga/search?q=${encodeURIComponent(query)}`,
+          { signal: fetchController.signal }
+        );
+
+        if (mangaResp.ok) {
+          const mangaJson = await mangaResp.json();
+          if (mangaJson.status === 'success') {
+            mangaResults = mangaJson.data.items || [];
+            totalPagesManga = mangaJson.data.totalPages || 1;
+          } else {
+            mangaResults = [];
+          }
+        } else {
+          mangaResults = [];
+        }
+      } else {
+        mangaResults = [];
       }
     } catch (e) {
       if (e instanceof Error && e.name !== 'AbortError') {
@@ -126,8 +151,15 @@
   // Memoized calculations
   $: resultsCount = hanimeResults?.length || 0;
   $: hasResults = resultsCount > 0;
+  $: hasMangaResults = mangaResults?.length > 0;
   $: showPrevButton = page > 1;
   $: showNextButton = page < totalPages;
+
+  // Pagination group config (used by the page buttons)
+  const PAGES_PER_GROUP = 3;
+  $: startPage = Math.max(1, page - Math.floor(PAGES_PER_GROUP / 2));
+  $: endPage = Math.min(totalPages, Math.max(startPage + PAGES_PER_GROUP - 1, PAGES_PER_GROUP));
+  $: pageNumbers = Array.from({ length: Math.max(0, endPage - startPage + 1) }, (_, i) => startPage + i);
 
   // Optimized image loading strategy
   function getImageProps(index: number): {
@@ -260,6 +292,7 @@
   {:else}
     <div class="flex-1">
       <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-1 sm:px-2 lg:px-4">
+        <!-- Hanime Results Section -->
         <section class="max-w-7xl mx-auto w-full">
           <h1 class="text-xl sm:text-2xl font-bold text-[#ff003c] mb-4 sm:mb-6 flex items-center gap-3">
             <svg class="w-6 h-6 sm:w-7 sm:h-7 text-[#ff003c]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
@@ -273,7 +306,7 @@
               <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <p class="text-lg">No results found for "{query}"</p>
+              <p class="text-lg">No hanime results found for "{query}"</p>
               <p class="text-sm mt-2 opacity-75">Try a different search term</p>
             </div>
           {:else}
@@ -324,35 +357,124 @@
               {/each}
             </div>
           {/if}
-          
-          <!-- Pagination -->
-          {#if totalPages > 1}
-            <div class="flex justify-center items-center gap-4 mt-8 pagination">
-              {#if showPrevButton}
-                <button 
-                  class="px-4 py-2 bg-[#1a0106] text-[#ff003c] rounded-lg hover:bg-[#ff003c] hover:text-black transition-colors pagination-btn" 
-                  on:click={() => goToPage(page - 1)}
-                  aria-label="Previous page"
-                >
-                  Previous
-                </button>
-              {/if}
-              <span class="px-4 py-2 text-gray-400">Page {page} of {totalPages}</span>
-              {#if showNextButton}
-                <button 
-                  class="px-4 py-2 bg-[#1a0106] text-[#ff003c] rounded-lg hover:bg-[#ff003c] hover:text-black transition-colors pagination-btn" 
-                  on:click={() => goToPage(page + 1)}
-                  aria-label="Next page"
-                >
-                  Next
-                </button>
-              {/if}
-            </div>
-          {/if}
-          
-          <!-- Add spacing before footer -->
-          <div class="h-8"></div>
         </section>
+
+        <!-- Manga Results Section (show only on page 1) -->
+        {#if page === 1 && hasMangaResults}
+          <section class="max-w-7xl mx-auto w-full mt-4">
+            <h2 class="text-xl sm:text-2xl font-bold text-[#ff003c] mb-4 sm:mb-6 flex items-center gap-3">
+              <!-- use same simple manga icon as other search page -->
+              <svg class="w-6 h-6 sm:w-7 sm:h-7 text-[#ff003c]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 2v20m10-10H2" />
+              </svg>
+              Manga Results for "{query}"
+            </h2>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-6 gap-2 lg:gap-2 anime-grid">
+              {#each mangaResults as manga, index (manga.slug)}
+                <a
+                  href={`/hanime/manga/info/${manga.slug}`}
+                  class="anime-card group relative bg-[#1a0106] rounded-xl overflow-hidden shadow transition-transform duration-200 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer block"
+                >
+                  <div class="relative aspect-[3/4]">
+                    <!-- Skeleton loader -->
+                    {#if !imageLoadedStates[`manga-${manga.slug}`]}
+                      <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                    {/if}
+                    <img
+                      src={manga.featuredImageUrl}
+                      alt={manga.title}
+                      class="w-full h-full object-cover image-fade {imageLoadedStates[`manga-${manga.slug}`] ? 'opacity-100' : 'opacity-0'}"
+                      loading={getImageProps(index).loading}
+                      decoding={getImageProps(index).decoding}
+                      width="300"
+                      height="400"
+                      on:load={() => handleImageLoad(`manga-${manga.slug}`)}
+                    />
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent overlay"></div>
+                    <div class="absolute top-2 left-2">
+                      <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow badge">
+                        Manga
+                      </span>
+                    </div>
+                    <div class="absolute bottom-0 left-0 right-0 p-2 card-info">
+                      <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 group-hover:text-[#ffb3c6] transition-colors" title={manga.title}>
+                        {manga.title}
+                      </h3>
+                      <div class="flex items-center justify-between">
+                        <span class="bg-[#ff003c] text-white px-1.5 py-0.5 rounded text-[10px] font-bold badge">18+</span>
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              {/each}
+            </div>
+          </section>
+        {/if}
+        
+        <!-- Pagination: show after manga results (or after hanime section if no manga) -->
+        {#if totalPages > 1}
+          <section class="flex justify-center items-center mt-6 gap-1 sm:gap-2 flex-wrap">
+            {#if page > 1}
+              <button
+                class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-sm bg-[#1a0106] text-white hover:bg-[#ff003c] hover:text-white transition disabled:opacity-50"
+                on:click={() => goToPage(1)}
+                disabled={loading}
+                aria-label="First page"
+              >
+                <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-none stroke-current" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5 5-5M18 17l-5-5 5-5" />
+                </svg>
+              </button>
+              <button
+                class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-sm bg-[#1a0106] text-white hover:bg-[#ff003c] hover:text-white transition disabled:opacity-50"
+                on:click={() => goToPage(page - 1)}
+                disabled={loading}
+                aria-label="Previous page"
+              >
+                <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-none stroke-current" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
+            {/if}
+            
+            {#each pageNumbers as pNum}
+              <button
+                class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-xs sm:text-sm transition {page === pNum ? 'bg-[#ff003c] text-white' : 'bg-[#1a0106] text-white hover:bg-[#ff003c]/50'}"
+                on:click={() => goToPage(pNum)}
+                disabled={loading}
+              >
+                {pNum}
+              </button>
+            {/each}
+            
+            {#if page < totalPages}
+              <button
+                class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-sm bg-[#1a0106] text-white hover:bg-[#ff003c] hover:text-white transition disabled:opacity-50"
+                on:click={() => goToPage(page + 1)}
+                disabled={loading}
+                aria-label="Next page"
+              >
+                <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-none stroke-current" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6" />
+                </svg>
+              </button>
+              <button
+                class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-sm bg-[#1a0106] text-white hover:bg-[#ff003c] hover:text-white transition disabled:opacity-50"
+                on:click={() => goToPage(totalPages)}
+                disabled={loading}
+                aria-label="Last page"
+              >
+                <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-none stroke-current" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 17l5-5-5-5M6 17l5-5-5-5" />
+                </svg>
+              </button>
+            {/if}
+          </section>
+        {/if}
+        
+        <!-- Add spacing before footer -->
+        <div class="h-8"></div>
       </div>
     </div>
   {/if}
@@ -433,25 +555,19 @@
   }
 
   /* Pagination button optimization */
-  .pagination-btn {
+  button {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
     user-select: none;
     -webkit-user-select: none;
-    transform: translateZ(0);
   }
 
-  .pagination-btn:active {
+  button:active {
     transform: scale(0.95) translateZ(0);
   }
 
   /* Error container optimization */
   .error-container {
-    contain: layout style;
-  }
-
-  /* Pagination container optimization */
-  .pagination {
     contain: layout style;
   }
 
