@@ -5,11 +5,46 @@
   import AdultWarning from '$lib/components/hanime/AdultWarning.svelte';
   import type { PageData } from './$types.js';
 
-  export let data: PageData;
+  // Extend PageData to include relatedSeries
+  type ExtendedPageData = PageData & {
+    manga: {
+      id: string;
+      title: string;
+      description?: string;
+      excerpt?: string;
+      status: string;
+      type: string;
+      author?: string;
+      artist?: string;
+      datePublished?: string;
+      modifiedDate?: string;
+      featuredImageUrl: string;
+      genres: Array<{ name: string; slug: string } | string>;
+      chapters: Array<{ number: string; title: string; date: string; slug: string }>;
+      totalChapters?: number;
+      relatedSeries?: Array<{
+        title: string;
+        slug: string;
+        featuredImageUrl: string;
+        latestChapter?: number;
+      }>;
+    };
+    chapters: Array<{ number: string; title: string; date: string; slug: string }>;
+    totalChapters: number;
+    relatedSeries: Array<{
+        title: string;
+        slug: string;
+        featuredImageUrl: string;
+        latestChapter?: number;
+      }>;
+  };
+
+  export let data: ExtendedPageData;
 
   $: manga = data.manga;
   $: chapters = data.chapters;
   $: totalChapters = data.totalChapters;
+  $: relatedSeries = data.relatedSeries; // New: Reactive assignment for related series
 
   let showWarning = true;
   let isMobile = false;
@@ -159,7 +194,7 @@
     </div>
   {:else}
     <div class="flex-1 w-full">
-      <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-2 sm:px-6">
+      <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-1 sm:px-6">
         <!-- Main Info Card -->
         <section class="flex-1 flex flex-col gap-8 mb-5">
           <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-[#2a0008] via-[#3a0d16] to-[#1a0106] rounded-lg shadow-2xl p-6 md:p-10 border border-[#ff003c]/20">
@@ -196,9 +231,12 @@
                 {#if manga.genres && manga.genres.length > 0}
                   <div class="flex flex-wrap items-center gap-1.5 md:ml-0 ml-[-8px]">
                     {#each (isMobile && !showAllGenres ? manga.genres.slice(0, 3) : manga.genres) as genre}
-                      <span class="bg-[#ff003c]/20 text-[#ffb3c6] px-2 py-1 rounded text-xs font-medium">
-                        {genre.name || genre}
-                      </span>
+                      <a 
+                        href={`/hanime/manga/genre/${encodeURIComponent(typeof genre === 'object' ? genre.slug : genre.toLowerCase().replace(/\s+/g, '-'))}`}
+                        class="bg-[#ff003c]/20 text-[#ffb3c6] px-2 py-1 rounded text-xs font-medium hover:bg-[#ff003c] hover:text-white transition-colors"
+                      >
+                        {typeof genre === 'object' ? genre.name : genre}
+                      </a>
                     {/each}
                     {#if isMobile && manga.genres.length > 3}
                       <button
@@ -317,7 +355,7 @@
                     >
                       Page {chapterPage * CHAPTERS_PER_PAGE + 1}-{Math.min((chapterPage + 1) * CHAPTERS_PER_PAGE, chapters.length)}
                       <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1  0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                       </svg>
                     </button>
                   </div>
@@ -380,9 +418,51 @@
             {/if}
           </section>
 
-          {#if (manga.recommendations && manga.recommendations.length) || (manga.relations && manga.relations.length)}
-            <div class="h-8"></div>
+          <!-- Related Series Section (new addition) -->
+          {#if relatedSeries && relatedSeries.length > 0}
+            <section class="mb-5">
+              <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-3">
+                <div class="w-1 h-8 bg-[#ff003c] rounded-full"></div>
+                Related Series
+              </h2>
+              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 lg:gap-2">
+                {#each relatedSeries as series}
+                  <a
+                    href={`/hanime/manga/info/${encodeURIComponent(series.slug)}`}
+                    class="group relative bg-gray-800 rounded-xl overflow-hidden shadow-lg transition-transform duration-200 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer block hover:scale-[1.05]"
+                  >
+                    <div class="relative aspect-[3/4]">
+                      {#if !imageLoadedStates[`rel-manga-${series.slug}`]}
+                        <div class="skeleton-loader absolute inset-0"></div>
+                      {/if}
+                      <img
+                        src={series.featuredImageUrl}
+                        alt={series.title}
+                        class="w-full h-full object-cover {imageLoadedStates[`rel-manga-${series.slug}`] ? 'opacity-100' : 'opacity-0'}"
+                        loading="lazy"
+                        on:error={handleImageError}
+                        on:load={() => handleImageLoad(`rel-manga-${series.slug}`)}
+                      />
+                      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                    </div>
+                    <div class="absolute bottom-0 left-0 right-0 p-3">
+                      <h4 class="font-semibold text-white text-xs mb-2 line-clamp-2 group-hover:text-[#ff003c] transition-colors" title={series.title}>
+                        {series.title}
+                      </h4>
+                      {#if series.latestChapter}
+                        <div class="flex items-center gap-1">
+                          <span class="bg-[#ff003c] text-white px-2 py-1 rounded text-[10px] font-bold">
+                            Ch. {series.latestChapter}
+                          </span>
+                        </div>
+                      {/if}
+                    </div>
+                  </a>
+                {/each}
+              </div>
+            </section>
           {/if}
+
         </section>
       </div>
     </div>

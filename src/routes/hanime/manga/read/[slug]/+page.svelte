@@ -22,10 +22,9 @@
     chapterNumber: string,
     mangaId: string,
     chapterId: string,
-    anilistId: string,
-    provider: string // Add provider to the data prop
+    anilistId: string
   };
-
+  
   let pages = data.pages;
   let chapterList: Chapter[] = data.chapterList;
   let currentIndex = data.currentIndex;
@@ -34,8 +33,7 @@
   let mangaId = data.mangaId;
   let chapterId = data.chapterId;
   let anilistId = data.anilistId;
-  let provider = data.provider; // Initialize provider from data
-  let previousChapterId = chapterId;
+   let previousChapterId = chapterId;
 
   let searchTerm = ''; // New: State for the chapter search input
 
@@ -83,8 +81,6 @@
     if (referer) {
       proxyUrl += `&referer=${encodeURIComponent(referer)}`;
     }
-    // Always include the provider that was used to fetch this chapter.
-    proxyUrl += `&provider=${encodeURIComponent(provider)}`;
 
     return proxyUrl;
   }
@@ -308,7 +304,7 @@
     mangaId = data.mangaId;
     chapterId = data.chapterId;
     anilistId = data.anilistId;
-    provider = data.provider; // Update provider when chapter data changes
+    // provider removed — no provider field expected from server
     previousChapterId = chapterId;
     error = '';
     loading = false;
@@ -383,6 +379,19 @@
         document.body.style.overflow = '';
       }
     }
+  }
+
+  function safeTruncate(str: string | undefined | null, maxLength: number = 100): string {
+    if (!str || typeof str !== 'string') return '';
+    return str.length > maxLength ? str.substring(0, maxLength) + '...' : str;
+  }
+
+  // Format a release date for the sidebar (e.g. "2023-12-01" -> "Dec 1, 2023")
+  function formatDate(dateStr: string | undefined | null) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   }
 </script>
 
@@ -636,7 +645,7 @@
                   class="text-xs {chapterId === chapter.shortId ? 'text-orange-100' : 'text-gray-400'} mt-1 text-[0.80rem] truncate"
                   title={chapter.releasedDate}
                 >
-                  {chapter.releasedDate}
+                  {formatDate(chapter.releasedDate)}
                 </div>
               {/if}
             </button>
@@ -651,7 +660,7 @@
 
   <!-- Reader Area -->
   <main
-    class="flex-1 px-2 py-3 md:px-6 md:py-8 bg-gradient-to-br from-[#2a0008] via-[#3a0d16] to-[#1a0106]"
+    class="flex-1 px-1 py-3 md:px-6 md:py-8 bg-gradient-to-br from-[#2a0008] via-[#3a0d16] to-[#1a0106]"
   >
     {#if loading}
       <div class="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">

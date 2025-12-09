@@ -64,7 +64,6 @@ export const load: PageLoad = async ({ params, fetch }) => {
       mangaId: mangaSlug,
       chapterId: slug,
       anilistId: slug,
-      provider: 'hanime',
       totalPages: pages.length
     };
   } catch (err) {

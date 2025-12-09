@@ -24,7 +24,8 @@ export const load: PageLoad = async ({ params, fetch }) => {
     return {
       manga: data.data,
       chapters: data.data.chapters || [],
-      totalChapters: data.data.totalChapters || 0
+      totalChapters: data.data.totalChapters || 0,
+      relatedSeries: data.data.relatedSeries || [] // Add relatedSeries here
     };
   } catch (err) {
     console.error('Error loading manga info:', err);
