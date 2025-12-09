@@ -281,32 +281,36 @@
           </section>
 
           {#if data.totalPages > 1}
-            <section class="flex justify-center items-center mt-6 gap-2 flex-wrap mb-8 pagination">
+            <section class="flex justify-center items-center mt-6 gap-1 sm:gap-2 flex-wrap mb-8 pagination">
               {#if data.currentPage > 1}
                 <button
-                  class="px-3 py-2 rounded-lg font-bold text-sm bg-[#2a0008] text-white hover:bg-[#ff003c] hover:text-black transition-colors disabled:opacity-50 pagination-btn"
+                  class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-sm bg-[#1a0106] text-white hover:bg-[#ff003c] hover:text-white transition disabled:opacity-50 pagination-btn"
                   on:click={() => loadPage(1)}
                   disabled={$navigating}
                   aria-label="First page"
                 >
-                  ««
+                  <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-none stroke-current" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5 5-5M18 17l-5-5 5-5" />
+                  </svg>
                 </button>
                 <button
-                  class="px-3 py-2 rounded-lg font-bold text-sm bg-[#2a0008] text-white hover:bg-[#ff003c] hover:text-black transition-colors disabled:opacity-50 pagination-btn"
+                  class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-sm bg-[#1a0106] text-white hover:bg-[#ff003c] hover:text-white transition disabled:opacity-50 pagination-btn"
                   on:click={() => loadPage(data.currentPage - 1)}
                   disabled={$navigating}
                   aria-label="Previous page"
                 >
-                  «
+                  <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-none stroke-current" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6" />
+                  </svg>
                 </button>
               {/if}
 
               {#each pageNumbers as pageNum}
                 <button
-                  class="px-3 py-2 rounded-lg font-bold text-sm transition-colors disabled:opacity-50 pagination-btn
+                  class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-xs sm:text-sm transition disabled:opacity-50 pagination-btn
                     {data.currentPage === pageNum
-                      ? 'bg-[#ff003c] text-black'
-                      : 'bg-[#2a0008] text-white hover:bg-[#ff003c] hover:text-black'}"
+                      ? 'bg-[#ff003c] text-white'
+                      : 'bg-[#1a0106] text-white hover:bg-[#ff003c]/50'}"
                   on:click={() => loadPage(pageNum)}
                   disabled={$navigating}
                   aria-label={`Page ${pageNum}`}
@@ -318,23 +322,30 @@
 
               {#if data.currentPage < data.totalPages}
                 <button
-                  class="px-3 py-2 rounded-lg font-bold text-sm bg-[#2a0008] text-white hover:bg-[#ff003c] hover:text-black transition-colors disabled:opacity-50 pagination-btn"
+                  class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-sm bg-[#1a0106] text-white hover:bg-[#ff003c] hover:text-white transition disabled:opacity-50 pagination-btn"
                   on:click={() => loadPage(data.currentPage + 1)}
                   disabled={$navigating}
                   aria-label="Next page"
                 >
-                  »
+                  <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-none stroke-current" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6" />
+                  </svg>
                 </button>
                 <button
-                  class="px-3 py-2 rounded-lg font-bold text-sm bg-[#2a0008] text-white hover:bg-[#ff003c] hover:text-black transition-colors disabled:opacity-50 pagination-btn"
+                  class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-sm bg-[#1a0106] text-white hover:bg-[#ff003c] hover:text-white transition disabled:opacity-50 pagination-btn"
                   on:click={() => loadPage(data.totalPages)}
                   disabled={$navigating}
                   aria-label="Last page"
                 >
-                  »»
+                  <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-none stroke-current" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 17l5-5-5-5M6 17l5-5-5-5" />
+                  </svg>
                 </button>
               {/if}
             </section>
+          {:else}
+            <!-- Add spacing when pagination is hidden -->
+            <div class="h-8 mb-8"></div>
           {/if}
         {/if}
       </div>
@@ -374,6 +385,11 @@
     }
   }
 
+  /* Active state for mobile touch feedback */
+  .anime-card:active {
+    transform: scale(0.98) translateZ(0);
+  }
+
   /* Reduce paint areas */
   .overlay, .card-info, .badge {
     will-change: auto;
@@ -397,12 +413,26 @@
     contain: layout style paint;
   }
 
+  /* Line clamp optimization */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   /* Pagination button optimization */
   .pagination-btn {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
     user-select: none;
     -webkit-user-select: none;
+  }
+
+  .pagination-btn:active {
+    transform: scale(0.95) translateZ(0);
   }
 
   /* Reduce repaints on scroll */
@@ -423,7 +453,6 @@
   .transition-transform,
   .transition-colors {
     transform: translateZ(0);
-    will-change: transform;
   }
 
   /* Remove will-change after animation */
@@ -442,5 +471,26 @@
   /* Contain layout for better performance */
   section {
     contain: layout style;
+  }
+
+  /* Optimize SVG rendering */
+  svg {
+    shape-rendering: geometricPrecision;
+  }
+
+  /* Reduce animation on mobile for better battery life */
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-loader {
+      animation: none;
+      background: #3a0d16;
+    }
+
+    img {
+      transition: none;
+    }
+
+    .anime-card {
+      transition: none;
+    }
   }
 </style>

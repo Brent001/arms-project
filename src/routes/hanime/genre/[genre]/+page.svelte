@@ -3,7 +3,7 @@
   import Footer from '$lib/components/hanime/Footer.svelte';
   import AdultWarning from '$lib/components/hanime/AdultWarning.svelte';
   import { goto } from '$app/navigation';
-  import { page } from '$app/stores';
+  import { page, navigating } from '$app/stores';
   import { get } from 'svelte/store';
   import { onMount, onDestroy } from 'svelte';
 
@@ -20,11 +20,11 @@
     totalPages: number;
   };
 
-  let loading = false;
   let error: string | null = null;
   let showWarning = true;
-  let imageLoadedStates: { [key: string]: boolean } = {};
+  let imageObserver: IntersectionObserver | null = null;
   let mounted = false;
+  let imageLoadedStates: { [key: string]: boolean } = {};
 
   // Cookie helpers (optimized)
   const getCookie = (name: string) => {
@@ -80,9 +80,9 @@
 
   // Debounced page loading to prevent rapid clicks
   let pageLoadTimeout: ReturnType<typeof setTimeout> | null = null;
-  
+
   async function loadPage(newPage: number) {
-    if (newPage === data.currentPage || newPage < 1 || newPage > data.totalPages || loading) {
+    if ($navigating || newPage === data.currentPage || newPage < 1 || newPage > data.totalPages) {
       return;
     }
 
@@ -91,7 +91,6 @@
       clearTimeout(pageLoadTimeout);
     }
 
-    loading = true;
     error = null;
 
     // Scroll to top smoothly (non-blocking)
@@ -114,34 +113,62 @@
     } catch (e) {
       console.error('Error loading page:', e);
       error = e instanceof Error ? e.message : 'Failed to load page';
-    } finally {
-      loading = false;
     }
   }
 
   // Optimized lazy loading with Intersection Observer
   onMount(() => {
     mounted = true;
+    
+    // Setup Intersection Observer for progressive image loading
+    if ('IntersectionObserver' in window) {
+      imageObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              const img = entry.target as HTMLImageElement;
+              const src = img.dataset.src;
+              if (src && !img.src) {
+                img.src = src;
+                img.removeAttribute('data-src');
+                imageObserver?.unobserve(img);
+              }
+            }
+          });
+        },
+        {
+          rootMargin: '50px 0px',
+          threshold: 0.01
+        }
+      );
+
+      // Observe all lazy images
+      requestAnimationFrame(() => {
+        document.querySelectorAll('img[data-src]').forEach((img) => {
+          imageObserver?.observe(img);
+        });
+      });
+    }
   });
 
   onDestroy(() => {
     mounted = false;
+    if (imageObserver) {
+      imageObserver.disconnect();
+      imageObserver = null;
+    }
     if (pageLoadTimeout) {
       clearTimeout(pageLoadTimeout);
     }
   });
 
   // Optimized image loading strategy
-  function getImageProps(index: number): {
-    loading: 'eager' | 'lazy';
-    decoding: 'async' | 'sync' | 'auto';
-    fetchpriority: 'high' | 'auto';
-  } {
+  function getImageProps(index: number) {
     // First 6 images load immediately for better LCP
     const shouldEagerLoad = index < 6;
     return {
       loading: shouldEagerLoad ? 'eager' : 'lazy',
-      decoding: 'async', // Or 'sync' or 'auto' based on need
+      decoding: 'async',
       fetchpriority: shouldEagerLoad ? 'high' : 'auto'
     };
   }
@@ -163,7 +190,7 @@
 {/if}
 
 <div class="flex flex-col min-h-screen bg-gradient-to-br from-[#2a0008] via-[#3a0d16] to-[#1a0106] text-white pt-16">
-  {#if loading}
+  {#if $navigating}
     <div class="flex items-center justify-center flex-1">
       <img
         src="/assets/loader.gif"
@@ -175,7 +202,7 @@
     </div>
   {:else}
     <div class="flex-1 w-full">
-      <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-1 sm:px-4">
+      <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-1 sm:px-2 lg:px-4">
         {#if error}
           <div class="bg-[#ff003c]/10 border-l-4 border-[#ff003c] text-[#ff003c] p-4 rounded-xl my-4">
             <p class="font-bold">ERROR: {error}</p>
@@ -215,8 +242,8 @@
                         src={anime.image}
                         alt={anime.title}
                         class="w-full h-full object-cover {imageLoadedStates[anime.id] ? 'opacity-100' : 'opacity-0'}"
-                        loading={getImageProps(index).loading}
-                        decoding={getImageProps(index).decoding}
+                        loading={getImageProps(index).loading as 'eager' | 'lazy'}
+                        decoding={getImageProps(index).decoding as 'async' | 'sync' | 'auto'}
                         width="300"
                         height="400"
                         on:load={() => handleImageLoad(anime.id)}
@@ -254,34 +281,38 @@
           </section>
 
           {#if data.totalPages > 1}
-            <section class="flex justify-center items-center mt-6 gap-2 flex-wrap mb-8 pagination">
+            <section class="flex justify-center items-center mt-6 gap-1 sm:gap-2 flex-wrap mb-8 pagination">
               {#if data.currentPage > 1}
                 <button
-                  class="px-3 py-2 rounded-lg font-bold text-sm bg-[#2a0008] text-white hover:bg-[#ff003c] hover:text-black transition-colors disabled:opacity-50 pagination-btn"
+                  class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-sm bg-[#1a0106] text-white hover:bg-[#ff003c] hover:text-white transition disabled:opacity-50 pagination-btn"
                   on:click={() => loadPage(1)}
-                  disabled={loading}
+                  disabled={$navigating}
                   aria-label="First page"
                 >
-                  ««
+                  <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-none stroke-current" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5 5-5M18 17l-5-5 5-5" />
+                  </svg>
                 </button>
                 <button
-                  class="px-3 py-2 rounded-lg font-bold text-sm bg-[#2a0008] text-white hover:bg-[#ff003c] hover:text-black transition-colors disabled:opacity-50 pagination-btn"
+                  class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-sm bg-[#1a0106] text-white hover:bg-[#ff003c] hover:text-white transition disabled:opacity-50 pagination-btn"
                   on:click={() => loadPage(data.currentPage - 1)}
-                  disabled={loading}
+                  disabled={$navigating}
                   aria-label="Previous page"
                 >
-                  «
+                  <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-none stroke-current" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6" />
+                  </svg>
                 </button>
               {/if}
 
               {#each pageNumbers as pageNum}
                 <button
-                  class="px-3 py-2 rounded-lg font-bold text-sm transition-colors disabled:opacity-50 pagination-btn
+                  class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-xs sm:text-sm transition disabled:opacity-50 pagination-btn
                     {data.currentPage === pageNum
-                      ? 'bg-[#ff003c] text-black'
-                      : 'bg-[#2a0008] text-white hover:bg-[#ff003c] hover:text-black'}"
+                      ? 'bg-[#ff003c] text-white'
+                      : 'bg-[#1a0106] text-white hover:bg-[#ff003c]/50'}"
                   on:click={() => loadPage(pageNum)}
-                  disabled={loading}
+                  disabled={$navigating}
                   aria-label={`Page ${pageNum}`}
                   aria-current={data.currentPage === pageNum ? 'page' : undefined}
                 >
@@ -291,23 +322,30 @@
 
               {#if data.currentPage < data.totalPages}
                 <button
-                  class="px-3 py-2 rounded-lg font-bold text-sm bg-[#2a0008] text-white hover:bg-[#ff003c] hover:text-black transition-colors disabled:opacity-50 pagination-btn"
+                  class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-sm bg-[#1a0106] text-white hover:bg-[#ff003c] hover:text-white transition disabled:opacity-50 pagination-btn"
                   on:click={() => loadPage(data.currentPage + 1)}
-                  disabled={loading}
+                  disabled={$navigating}
                   aria-label="Next page"
                 >
-                  »
+                  <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-none stroke-current" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6" />
+                  </svg>
                 </button>
                 <button
-                  class="px-3 py-2 rounded-lg font-bold text-sm bg-[#2a0008] text-white hover:bg-[#ff003c] hover:text-black transition-colors disabled:opacity-50 pagination-btn"
+                  class="w-10 h-9 sm:w-12 sm:h-10 flex items-center justify-center rounded-lg font-bold text-sm bg-[#1a0106] text-white hover:bg-[#ff003c] hover:text-white transition disabled:opacity-50 pagination-btn"
                   on:click={() => loadPage(data.totalPages)}
-                  disabled={loading}
+                  disabled={$navigating}
                   aria-label="Last page"
                 >
-                  »»
+                  <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-none stroke-current" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 17l5-5-5-5M6 17l5-5-5-5" />
+                  </svg>
                 </button>
               {/if}
             </section>
+          {:else}
+            <!-- Add spacing when pagination is hidden -->
+            <div class="h-8 mb-8"></div>
           {/if}
         {/if}
       </div>
@@ -318,6 +356,11 @@
 </div>
 
 <style>
+  /* Skeleton Loader - plain background for performance */
+  .skeleton-loader {
+    background-color: #3a0d16;
+  }
+  
   /* Performance optimizations for mobile */
   
   /* Hardware acceleration for smooth animations */
@@ -342,14 +385,14 @@
     }
   }
 
+  /* Active state for mobile touch feedback */
+  .anime-card:active {
+    transform: scale(0.98) translateZ(0);
+  }
+
   /* Reduce paint areas */
   .overlay, .card-info, .badge {
     will-change: auto;
-  }
-
-  /* Skeleton Loader - plain background for performance */
-  .skeleton-loader {
-    background-color: #3a0d16;
   }
 
   /* Optimize image rendering */
@@ -370,12 +413,26 @@
     contain: layout style paint;
   }
 
+  /* Line clamp optimization */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   /* Pagination button optimization */
   .pagination-btn {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
     user-select: none;
     -webkit-user-select: none;
+  }
+
+  .pagination-btn:active {
+    transform: scale(0.95) translateZ(0);
   }
 
   /* Reduce repaints on scroll */
@@ -396,7 +453,6 @@
   .transition-transform,
   .transition-colors {
     transform: translateZ(0);
-    will-change: transform;
   }
 
   /* Remove will-change after animation */
@@ -415,5 +471,26 @@
   /* Contain layout for better performance */
   section {
     contain: layout style;
+  }
+
+  /* Optimize SVG rendering */
+  svg {
+    shape-rendering: geometricPrecision;
+  }
+
+  /* Reduce animation on mobile for better battery life */
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-loader {
+      animation: none;
+      background: #3a0d16;
+    }
+
+    img {
+      transition: none;
+    }
+
+    .anime-card {
+      transition: none;
+    }
   }
 </style>
