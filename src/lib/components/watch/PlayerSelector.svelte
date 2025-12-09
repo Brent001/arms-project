@@ -46,7 +46,7 @@
   }
 </script>
 
-<div class="flex items-center gap-2 mb-4 flex-nowrap overflow-x-auto whitespace-nowrap">
+<div class="flex items-center gap-2 mb-3 flex-nowrap overflow-x-auto whitespace-nowrap">
   <span class="font-semibold text-orange-400 text-sm flex items-center gap-1">
     <svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
       <path d="M5 3v18l15-9L5 3z"></path>
