@@ -332,7 +332,7 @@
             {#if searchLoading}
               <div class="text-[#ffb3c6]">Loading related...</div>
             {:else if searchResults.length}
-              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2">
+              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-7 gap-2">
                 {#each searchResults as ep, idx}
                   <button
                     type="button"
