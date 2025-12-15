@@ -704,7 +704,7 @@
       {#if data.recommendedAnimes && data.recommendedAnimes.length}
         <section class="max-w-[1920px] w-full mx-auto mt-6"> <!-- Updated from max-w-7xl -->
           <h2 class="text-xl font-bold text-orange-400 mb-4">Recommended Anime</h2>
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-7 gap-2">
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 2xl:grid-cols-7 gap-2">
             {#each data.recommendedAnimes as rec}
               <a 
                 href={`/info/${rec.id}`}
@@ -743,7 +743,7 @@
       {#if data.relatedAnimes && data.relatedAnimes.length}
         <section class="max-w-[1920px] w-full mx-auto mt-5"> <!-- Updated from max-w-7xl -->
           <h2 class="text-xl font-bold text-orange-400 mb-4">Related Anime</h2>
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-7 gap-2">
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 2xl:grid-cols-7 gap-2">
             {#each data.relatedAnimes as rel}
               <a 
                 href={`/info/${rel.id}`}
