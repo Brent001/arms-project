@@ -83,7 +83,7 @@
     const img = event.target as HTMLImageElement;
     if (img && !img.dataset.errorHandled) {
       img.dataset.errorHandled = 'true';
-      img.onerror = null; // Prevent infinite loop
+      img.onerror = null;
     }
   }
 
@@ -135,7 +135,7 @@
     <div class="absolute inset-0 bg-[radial-gradient(circle_at_60%_40%,rgba(255,0,60,0.08),transparent_70%)]"></div>
   </div>
 
-  <main class="relative z-10 flex-1 w-full pt-20 pb-2">
+  <main class="relative z-10 flex-1 w-full pt-16 pb-2">
     <div class="max-w-[1920px] mx-auto flex flex-col gap-6 px-2.5 sm:px-4">
       {#if loading}
         <div class="flex items-center justify-center min-h-[300px]">
@@ -150,7 +150,7 @@
         {#if info && watch}
           <section class="flex-1 flex flex-col gap-3 mb-6">
             <!-- Player Card -->
-            <div class="flex flex-col gap-3 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-sm shadow-2xl border border-[#ff003c]/20 p-3 sm:p-8">
+            <div class="flex flex-col gap-3 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-sm shadow-2xl border border-[#ff003c]/20 p-2 sm:p-6">
               <PlayerCard
                 videoSrc={videoSrc}
                 poster={poster}
@@ -323,6 +323,63 @@
                 </div>
               </div>
             </div>
+
+          </section>
+
+          <!-- Related List -->
+          <section class="flex flex-col gap-4 mt-2">
+            <h2 class="text-xl font-bold text-[#ff003c] mb-2">Related Hentai</h2>
+            {#if searchLoading}
+              <div class="text-[#ffb3c6]">Loading related...</div>
+            {:else if searchResults.length}
+              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2">
+                {#each searchResults as ep, idx}
+                  <button
+                    type="button"
+                    on:click={() => goToEpisode(ep.id)}
+                    class="group relative bg-[#1a0106] rounded-sm overflow-hidden shadow transition-all duration-150 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer"
+                    style="display: block;"
+                    aria-label={`Go to episode ${ep.title}`}
+                  >
+                    <div class="relative aspect-[3/4]">
+                      {#if !imageLoadedStates[ep.id]}
+                        <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                      {/if}
+                      <img
+                        src={ep.image}
+                        alt={ep.title}
+                        class="w-full h-full object-cover {imageLoadedStates[ep.id] ? 'opacity-100' : 'opacity-0'}"
+                        loading={idx < 12 ? 'eager' : 'lazy'}
+                        on:load={() => handleImageLoad(ep.id)}
+                        on:error={handleImageError}
+                      />
+                      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                      <div class="absolute top-2 left-2">
+                        <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded-sm text-[10px] font-semibold shadow">
+                          Related
+                        </span>
+                      </div>
+                      <div class="absolute bottom-0 left-0 right-0 p-2">
+                        <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 group-hover:text-[#ffb3c6] transition-colors" title={ep.title}>
+                          {ep.title}
+                        </h3>
+                        <div class="flex items-center justify-between">
+                          <span class="bg-[#ff003c] text-white px-1.5 py-0.5 rounded-sm text-[10px] font-bold">18+</span>
+                          <span class="text-[#ffb3c6] text-[10px] flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 18.657l-6.828-6.829a4 4 0 010-5.656z"/>
+                            </svg>
+                            {ep.views?.toLocaleString() || '0'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                {/each}
+              </div>
+            {:else}
+              <div class="text-[#ffb3c6]">No related found.</div>
+            {/if}
           </section>
         {:else}
           <!-- Error State -->
@@ -339,62 +396,6 @@
             <p class="text-[#ffb3c6]/80">The requested video could not be loaded or does not exist.</p>
           </section>
         {/if}
-
-        <!-- Related List -->
-        <section class="flex flex-col gap-4 mt-2">
-          <h2 class="text-xl font-bold text-[#ff003c] mb-2">Related Hentai</h2>
-          {#if searchLoading}
-            <div class="text-[#ffb3c6]">Loading related...</div>
-          {:else if searchResults.length}
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2">
-              {#each searchResults as ep, idx}
-                <button
-                  type="button"
-                  on:click={() => goToEpisode(ep.id)}
-                  class="group relative bg-[#1a0106] rounded-sm overflow-hidden shadow transition-all duration-150 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer"
-                  style="display: block;"
-                  aria-label={`Go to episode ${ep.title}`}
-                >
-                  <div class="relative aspect-[3/4]">
-                    {#if !imageLoadedStates[ep.id]}
-                      <div class="skeleton-loader w-full h-full absolute inset-0"></div>
-                    {/if}
-                    <img
-                      src={ep.image}
-                      alt={ep.title}
-                      class="w-full h-full object-cover {imageLoadedStates[ep.id] ? 'opacity-100' : 'opacity-0'}"
-                      loading={idx < 12 ? 'eager' : 'lazy'}
-                      on:load={() => handleImageLoad(ep.id)}
-                      on:error={handleImageError}
-                    />
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                    <div class="absolute top-2 left-2">
-                      <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded-sm text-[10px] font-semibold shadow">
-                        Related
-                      </span>
-                    </div>
-                    <div class="absolute bottom-0 left-0 right-0 p-2">
-                      <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 group-hover:text-[#ffb3c6] transition-colors" title={ep.title}>
-                        {ep.title}
-                      </h3>
-                      <div class="flex items-center justify-between">
-                        <span class="bg-[#ff003c] text-white px-1.5 py-0.5 rounded-sm text-[10px] font-bold">18+</span>
-                        <span class="text-[#ffb3c6] text-[10px] flex items-center gap-1">
-                          <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 18.657l-6.828-6.829a4 4 0 010-5.656z"/>
-                          </svg>
-                          {ep.views?.toLocaleString() || '0'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              {/each}
-            </div>
-          {:else}
-            <div class="text-[#ffb3c6]">No related found.</div>
-          {/if}
-        </section>
       {/if}
     </div>
   </main>
