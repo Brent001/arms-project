@@ -356,7 +356,7 @@
 <Navbar/>
 
 <div class="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white flex flex-col">
-  <div class="flex-1 px-2.5 sm:px-4 py-4 pt-16 flex flex-col">
+  <div class="flex-1 px-2 sm:px-4 py-4 pt-16 flex flex-col">
     {#if loading && !updatingSources}
       <div class="flex-1 flex items-center justify-center">
         <img src="/assets/loader.gif" alt="Loading..." style="max-width: 120px; max-height: 110px;" />
@@ -369,7 +369,7 @@
       <div class="max-w-[1920px] w-full mx-auto flex flex-col gap-10">
         <section class="flex-1 flex flex-col gap-3 mb-6"> <!-- changed from gap-8 to gap-3 -->
           <!-- Player Card -->
-          <div class="flex flex-col gap-2 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-3 sm:p-8">
+          <div class="flex flex-col gap-2 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-2 sm:p-6">
             <PlayerCard
               {videoSrc}
               {poster}
