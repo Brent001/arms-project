@@ -291,7 +291,7 @@
     </div>
   {:else}
     <div class="flex-1">
-      <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-1 sm:px-2 lg:px-4">
+      <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-2">
         <!-- Hanime Results Section -->
         <section class="max-w-7xl mx-auto w-full">
           <h1 class="text-xl sm:text-2xl font-bold text-[#ff003c] mb-4 sm:mb-6 flex items-center gap-3">

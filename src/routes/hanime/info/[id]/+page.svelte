@@ -127,7 +127,7 @@
           <div class="flex-1 flex flex-col gap-8 mb-12">
             <section class="flex-1 flex flex-col gap-8">
               <!-- Modern Info Card -->
-              <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-[#2a0008] via-[#3a0d16] to-[#1a0106] rounded-lg shadow-2xl p-6 md:p-10 border border-[#ff003c]/20">
+              <div class="flex flex-col md:flex-row gap-4 md:gap-8 bg-gradient-to-br from-[#2a0008] via-[#3a0d16] to-[#1a0106] rounded-lg shadow-2xl p-6 md:p-10 border border-[#ff003c]/20">
                 <!-- Poster -->
                 <div class="relative flex flex-col items-center md:items-start flex-shrink-0 mx-auto md:mx-0">
                   {#if !imageLoadedStates[info.id]}
