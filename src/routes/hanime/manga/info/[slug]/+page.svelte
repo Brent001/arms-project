@@ -197,7 +197,7 @@
       <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-1 sm:px-6">
         <!-- Main Info Card -->
         <section class="flex-1 flex flex-col gap-8 mb-5">
-          <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-[#2a0008] via-[#3a0d16] to-[#1a0106] rounded-lg shadow-2xl p-6 md:p-10 border border-[#ff003c]/20">
+          <div class="flex flex-col md:flex-row gap-4 md:gap-8 bg-gradient-to-br from-[#2a0008] via-[#3a0d16] to-[#1a0106] rounded-lg shadow-2xl p-6 md:p-10 border border-[#ff003c]/20">
             <!-- Poster -->
             <div class="flex flex-col items-center md:items-start flex-shrink-0 mx-auto md:mx-0">
               <div class="relative w-64 aspect-[3/4] rounded-lg border-4 border-[#ff003c]/20 overflow-hidden bg-[#1a0106]">
@@ -221,7 +221,7 @@
             <!-- Details -->
             <div class="flex-1 space-y-3">
               <div class="flex items-center gap-2 sm:gap-3 md:ml-0 ml-[-8px]">
-                <h1 class="text-xl sm:text-3xl font-bold text-white {isMobile ? 'w-full text-center' : ''}">
+                <h1 class="text-xl sm:text-3xl font-bold text-[#ff003c] {isMobile ? 'w-full text-center' : ''}">
                   {manga.title}
                 </h1>
               </div>
