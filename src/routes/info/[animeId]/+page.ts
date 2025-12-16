@@ -38,6 +38,7 @@ export const load: PageLoad = async ({ params, fetch }) => {
   let relatedAnimes: any[] = [];
   let seasons: any[] = [];
   let top10Animes: any = { today: [], week: [], month: [] };
+  let genres: any[] = []; // Add genres array
   let pageLoadError: string | null = null; // To capture specific errors for the page component
 
   // Fetch main anime info
@@ -106,8 +107,8 @@ export const load: PageLoad = async ({ params, fetch }) => {
     // Keep animeData/moreInfoData null so the Svelte component can show the error state
   }
 
-  // Fetch home data (for sidebar) if not already populated or if it failed
-  if (!top10Animes?.month?.length || !top10Animes?.week?.length || !top10Animes?.today?.length) {
+  // Fetch home data (for sidebar and genres) if not already populated or if it failed
+  if (!top10Animes?.month?.length || !top10Animes?.week?.length || !top10Animes?.today?.length || genres.length === 0) {
     try {
       const homeResp = await fetchWithTimeout(fetch, '/api/home');
       if (homeResp.ok) {
@@ -117,12 +118,13 @@ export const load: PageLoad = async ({ params, fetch }) => {
           week: homeJson?.data?.top10Animes?.week ?? [],
           month: homeJson?.data?.top10Animes?.month ?? []
         };
+        genres = homeJson?.data?.genres ?? []; // Add genres from home API
       } else {
-        console.warn('Failed to fetch home data for sidebar:', homeResp.statusText);
+        console.warn('Failed to fetch home data for sidebar and genres:', homeResp.statusText);
       }
     } catch (err) {
-      console.warn('Error fetching home data for sidebar:', err);
-      // top10Animes already defaults to empty arrays, so no further action needed here.
+      console.warn('Error fetching home data for sidebar and genres:', err);
+      // top10Animes already defaults to empty arrays, genres defaults to empty array, so no further action needed here.
     }
   }
 
@@ -133,6 +135,7 @@ export const load: PageLoad = async ({ params, fetch }) => {
     relatedAnimes: relatedAnimes,
     seasons: seasons,
     top10Animes: top10Animes,
+    genres: genres, // Add genres to return
     pageLoadError: pageLoadError // Pass the error message to the Svelte component
   };
 };

@@ -5,27 +5,26 @@
   import CharacterVoiceActorRow from '$lib/components/CharacterVoiceActorRow.svelte';
   import CharacterModal from '$lib/components/CharacterModal.svelte';
   import SeasonCard from '$lib/components/SeasonCard.svelte';
-  import type { PageData } from './$types.js'; // This type needs to reflect pageLoadError
+  import Genre from '$lib/components/genre.svelte';
+  import type { PageData } from './$types.js';
   import { goto } from '$app/navigation';
   import { onDestroy, onMount } from 'svelte';
   import { browser } from '$app/environment';
 
   let imageLoadedStates: { [key: string]: boolean } = {};
 
-  // Extend PageData to include the optional pageLoadError
   export let data: PageData & { pageLoadError?: string };
 
-  // Error handling state
   let error: string | null = null;
   let retryAttempts = 0;
   const MAX_RETRY_ATTEMPTS = 3;
 
-  // Defensive reactive assignments with fallbacks - UPDATED for new structure
   $: anime = data?.anime || null;
   $: moreInfo = data?.moreInfo || null;
   $: recommended = Array.isArray(data?.recommendedAnimes) ? data.recommendedAnimes : [];
   $: related = Array.isArray(data?.relatedAnimes) ? data.relatedAnimes : [];
   $: seasons = Array.isArray(data?.seasons) ? data.seasons : [];
+  $: genres = Array.isArray((data as any)?.genres) ? (data as any).genres : [];
 
   let firstEpisodeId: string | null = null;
   let sidebarTab: 'today' | 'week' | 'month' = 'today';
@@ -38,7 +37,6 @@
   let loadingAbortController: AbortController | null = null;
   let mounted = false;
 
-  // Safe DOM manipulation check
   function safeSetBodyOverflow(value: string) {
     if (browser && typeof document !== 'undefined' && document.body) {
       try {
@@ -49,7 +47,6 @@
     }
   }
 
-  // Enhanced error logging
   function logError(context: string, error: any) {
     console.error(`[${context}] Error:`, {
       message: error?.message || 'Unknown error',
@@ -59,7 +56,6 @@
     });
   }
 
-  // Robust API fetch with retry logic
   async function safeFetch(url: string, options: RequestInit = {}, context: string = 'API'): Promise<Response | null> {
     const maxRetries = 2;
     let lastError: Error | null = null;
@@ -78,18 +74,16 @@
       } catch (err) {
         lastError = err as Error;
         
-        // Don't retry on AbortError or certain HTTP errors
         if (err instanceof DOMException && err.name === 'AbortError') {
           throw err;
         }
         
         if (err instanceof Error && err.message.includes('HTTP 4')) {
-          // Don't retry client errors (4xx)
           throw err;
         }
 
         if (attempt < maxRetries) {
-          const delay = Math.min(1000 * Math.pow(2, attempt), 5000); // Exponential backoff, max 5s
+          const delay = Math.min(1000 * Math.pow(2, attempt), 5000);
           await new Promise(resolve => setTimeout(resolve, delay));
           logError(`${context} (Retry ${attempt + 1})`, err);
         }
@@ -104,7 +98,6 @@
     return null;
   }
 
-  // Safe JSON parsing
   function safeJsonParse(response: Response, context: string = 'JSON'): Promise<any> {
     return response.json().catch(err => {
       logError(`${context} Parse`, err);
@@ -112,19 +105,18 @@
     });
   }
 
-  // Handle anime data initialization with comprehensive error handling - UPDATED
   $: {
     const id = data?.anime?.id;
     if (id && typeof id === 'string' && id !== initializedAnimeId && mounted) {
       initializedAnimeId = id;
       (async () => {
-        imageLoadedStates = {}; // Reset image loaded states
+        imageLoadedStates = {};
         loading = true;
-        error = null; // Clear previous errors
-        if (data.pageLoadError) { // If pageLoad function already reported a critical error
+        error = null;
+        if (data.pageLoadError) {
           error = data.pageLoadError;
           loading = false;
-          return; // Don't proceed with client-side initialization if server-side already failed critically
+          return;
         }
 
         loadingAbortController?.abort();
@@ -144,7 +136,7 @@
       })();
     } else if (!id && mounted) {
       loading = false;
-      error = data.pageLoadError || 'No anime ID provided or failed to load initial data.'; // Use pageLoadError if available
+      error = data.pageLoadError || 'No anime ID provided or failed to load initial data.';
     }
   }
 
@@ -174,7 +166,6 @@
       throw new Error('Invalid anime ID');
     }
 
-    // Run both operations concurrently but handle errors independently
     const [episodesResult, homeResult] = await Promise.allSettled([
       fetchEpisodes(animeId, signal),
       fetchHomeData(signal)
@@ -217,7 +208,6 @@
     } catch (err) {
       if (!(err instanceof DOMException && err.name === 'AbortError')) {
         logError('Episodes fetch', err);
-        // Don't throw - episodes are not critical for page display
       }
     }
   }
@@ -242,7 +232,6 @@
         logError('Home data fetch', err);
         topAiringAnimes = [];
         topUpcomingAnimes = [];
-        // Don't throw - sidebar data is not critical
       }
     }
   }
@@ -264,22 +253,20 @@
       }
     } catch (err) {
       logError('Modal backdrop click', err);
-      closeCharacterModal(); // Fallback
+      closeCharacterModal();
     }
   }
 
   function handleRetry() {
     if (retryAttempts < MAX_RETRY_ATTEMPTS) {
       error = null;
-      initializedAnimeId = null; // Force re-initialization
-      // Trigger reactive statement
+      initializedAnimeId = null;
       if (data?.anime?.id) {
         initializedAnimeId = data.anime.id;
       }
     }
   }
 
-  // Safe body overflow management
   $: {
     if (mounted) {
       safeSetBodyOverflow(showCharacterModal ? 'hidden' : '');
@@ -304,22 +291,19 @@
     }
   });
 
-  // Safe image error handling
   function handleImageError(event: Event) {
     const img = event.target as HTMLImageElement;
     if (img && !img.dataset.errorHandled) {
       img.dataset.errorHandled = 'true';
-      img.onerror = null; // Prevent infinite loop
+      img.onerror = null;
     }
   }
 
-  // Safe string truncation
   function safeTruncate(str: string | undefined | null, maxLength: number = 100): string {
     if (!str || typeof str !== 'string') return '';
     return str.length > maxLength ? str.substring(0, maxLength) + '...' : str;
   }
 
-  // Safe array access
   function safeSlice<T>(arr: T[] | undefined | null, start: number = 0, end?: number): T[] {
     if (!Array.isArray(arr)) return [];
     try {
@@ -334,19 +318,16 @@
     voiceActor: { poster: string; name: string; cast?: string };
   };
 
-  // Add these new variables for description expand/collapse
   let showFullDescription = false;
   let isLongDescription = false;
   let descriptionRef: HTMLDivElement | null = null;
-  const DESCRIPTION_LIMIT = 450; // character limit for desktop
+  const DESCRIPTION_LIMIT = 450;
   let isMobile = false;
 
-  // Add these new variables for genre/studio/producer expand/collapse
   let showAllGenres = false;
   let showAllStudios = false;
   let showAllProducers = false;
 
-  // Derived variables for studios and producers for cleaner logic
   $: allStudios =
     moreInfo?.studios
       ? (Array.isArray(moreInfo.studios)
@@ -397,7 +378,6 @@
 <div class="flex flex-col min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white pt-16">
   {#if !mounted || loading}
     <div class="flex items-center justify-center flex-1">
-      <!-- Use this for both loading screens -->
       <img
         src="/assets/loader.gif"
         alt="Loading..."
@@ -440,7 +420,7 @@
           <div class="flex-1 flex flex-col gap-6 sm:gap-10">
             <!-- Main Info Card -->
             <section class="flex-1 flex flex-col gap-8 mb-5">
-              <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-6 md:p-10">
+              <div class="flex flex-col md:flex-row gap-4 md:gap-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-6 md:p-10">
                 <!-- Poster -->
                 <div class="flex flex-col items-center md:items-start flex-shrink-0 mx-auto md:mx-0">
                   <div class="relative w-64 aspect-[3/4] rounded-lg border-4 border-gray-800 overflow-hidden bg-gray-800">
@@ -458,8 +438,6 @@
                 </div>
                 <!-- Details -->
                 <div class="flex-1 space-y-3">
-                  <!-- Move type and rating to the top, then title below -->
-
                   <div class="flex items-center gap-2 sm:gap-3 md:ml-0 ml-[-8px]">
                     <h1 class="text-xl sm:text-3xl font-bold text-orange-400 
                       {isMobile ? 'w-full text-center' : ''}">
@@ -470,7 +448,6 @@
                   <!-- Anime Stats -->
                   {#if anime.stats}
                     <div class="flex flex-wrap items-center gap-3 text-sm text-gray-300 md:ml-0 ml-[-8px] {isMobile ? 'justify-center' : ''}">
-                      <!-- Badges Group -->
                       <div class="flex items-center gap-1">
                         {#if anime.stats.rating}
                           <span class="bg-white text-gray-900 px-2 py-0.5 rounded text-xs font-bold">{anime.stats.rating}</span>
@@ -480,7 +457,6 @@
                         {/if}
                       </div>
 
-                      <!-- Type & Duration Group -->
                       <div class="flex items-center gap-1.5 text-xs font-semibold">
                         {#if anime.stats.type}
                           <span>•</span>
@@ -488,7 +464,6 @@
                         {/if}
                         
                         {#if anime.stats.duration}
-                          <!-- The dot will only appear if type also exists. -->
                           {#if anime.stats.type}
                             <span>•</span>
                           {/if}
@@ -507,7 +482,6 @@
                             href={`/watch/${encodeURIComponent(firstEpisodeId)}`}
                             class="inline-flex items-center justify-center gap-2 bg-orange-400 hover:bg-orange-500 text-gray-900 font-bold px-12 py-2 rounded-lg shadow transition text-sm"
                           >
-                            <!-- Watch Icon SVG -->
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                               <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
                               <polygon points="10,8 16,12 10,16" fill="currentColor"/>
@@ -530,7 +504,7 @@
                       </div>
                     {/if}
 
-                    <!-- Genres at the top -->
+                    <!-- Genres -->
                     {#if moreInfo.genres && moreInfo.genres.length > 0}
                       <div class="flex flex-wrap items-center gap-1.5 md:ml-0 ml-[-8px]">
                         {#each (isMobile && !showAllGenres ? moreInfo.genres.slice(0, 3) : moreInfo.genres) as genre}
@@ -553,7 +527,7 @@
                       </div>
                     {/if}
 
-                    <!-- Studios below genres (simplified, no box/background) -->
+                    <!-- Studios -->
                     {#if allStudios.length > 0}
                       <div class="text-sm flex flex-wrap items-center gap-2 md:ml-0 ml-[-8px]">
                         <span class="text-orange-300 font-medium">Studio{allStudios.length > 1 ? 's' : ''}:</span>
@@ -580,7 +554,7 @@
                       </div>
                     {/if}
 
-                    <!-- Producers below studios (simplified, no box/background) -->
+                    <!-- Producers -->
                     {#if allProducers.length > 0}
                       <div class="text-sm flex flex-wrap items-center gap-2 md:ml-0 ml-[-8px]">
                         <span class="text-orange-300 font-medium">Producer{allProducers.length > 1 ? 's' : ''}:</span>
@@ -607,8 +581,7 @@
                       </div>
                     {/if}
 
-                    <!-- Description (font size and spacing matches your reference) -->
-                    <!-- Description label outside the scrollable/overflow area -->
+                    <!-- Description -->
                     <span class="text-orange-300 font-semibold block mb-1 md:ml-0 ml-[-8px]">Overview:</span>
                     {#if isMobile}
                       <div
@@ -658,7 +631,7 @@
                       </div>
                     {/if}
 
-                    <!-- Watch Button below description -->
+                    <!-- Watch Button -->
                     {#if !isMobile}
                       {#if firstEpisodeId !== null}
                         <a
@@ -666,7 +639,6 @@
                           class="inline-flex items-center gap-2 bg-orange-400 hover:bg-orange-500 text-gray-900 font-bold px-5 py-2 rounded-lg shadow transition text-sm md:ml-0 ml-[-8px]"
                           style="margin-bottom: 0.5rem;"
                         >
-                          <!-- Watch Icon SVG -->
                           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
                             <polygon points="10,8 16,12 10,16" fill="currentColor"/>
@@ -720,7 +692,7 @@
 
               <!-- Characters & Voice Actors -->
               {#if Array.isArray(anime?.charactersVoiceActors) && anime.charactersVoiceActors.length > 0}
-                <section class="mb-4"> <!-- Changed from mb-8 to mb-4 -->
+                <section class="mb-4">
                   <div class="flex items-center justify-between mb-4">
                     <h2 class="text-xl font-bold text-orange-400">Characters & Voice Actors</h2>
                     {#if anime.charactersVoiceActors.length > 2}
@@ -747,7 +719,7 @@
 
               <!-- Recommended Anime -->
               {#if recommended.length > 0}
-                <section class="mb-6"> <!-- Changed from mb-12 to mb-6 -->
+                <section class="mb-6">
                   <h2 class="text-2xl font-bold text-orange-400 mb-4">Recommended Anime</h2>
                   <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
                     {#each recommended.filter(rec => rec && rec.id && rec.name) as rec}
@@ -830,14 +802,20 @@
             </section>
           </div>
 
-          <!-- Sidebar -->
-          <Sidebar
-            sidebarTab={sidebarTab}
-            setSidebarTab={(tab) => sidebarTab = tab}
-            top10Today={data?.top10Animes?.today ?? []}
-            top10Week={data?.top10Animes?.week ?? []}
-            top10Month={data?.top10Animes?.month ?? []}
-          />
+          <!-- Sidebar with Genre Component -->
+          <div class="flex flex-col gap-2">
+            <Sidebar
+              sidebarTab={sidebarTab}
+              setSidebarTab={(tab) => sidebarTab = tab}
+              top10Today={data?.top10Animes?.today ?? []}
+              top10Week={data?.top10Animes?.week ?? []}
+              top10Month={data?.top10Animes?.month ?? []}
+            />
+            <!-- Genre Component - Desktop Only -->
+            <div class="hidden xl:block">
+              <Genre data={genres} />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -863,9 +841,8 @@
     }
   }
 
-  /* Skeleton Loader - plain background for performance */
   .skeleton-loader {
-    background-color: #374151; /* gray-700 */
+    background-color: #374151;
   }
 
   img {
