@@ -283,6 +283,11 @@
           Specials
         </button>
       </li>
+      <li in:fly={{ x: -100, duration: 300, delay: 575 }}>
+        <button class="menu-item" on:click={() => navigateTo('/continue')} aria-label="Continue Watching and Reading">
+          Continue
+        </button>
+      </li>
       <li in:fly={{ x: -100, duration: 300, delay: 600 }}>
         <button class="menu-item" on:click={() => navigateTo('/hanime')} aria-label="Go to Specials">
           Hanime
