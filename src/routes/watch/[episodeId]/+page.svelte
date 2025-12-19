@@ -154,6 +154,44 @@
     }
   }
 
+  // --- Save to Recent Anime (Enhanced) ---
+  function saveToRecentAnime() {
+    if (browser && data.anime?.info) {
+      const recentAnime = JSON.parse(localStorage.getItem('recentAnime') || '[]');
+      const existingIndex = recentAnime.findIndex((a: any) => a.id === data.anime.info.id);
+      const ep = episodes.find(e => e.episodeId === currentEpisodeId);
+      
+      let lastEpisodeNumber = currentEpisodeId;
+      if (ep && ep.number) {
+        lastEpisodeNumber = ep.number;
+      } else {
+        const parts = currentEpisodeId.split('?')[0].split('-');
+        const num = parts.find(p => /^\d+$/.test(p));
+        if (num) {
+          lastEpisodeNumber = num;
+        }
+      }
+      
+      const item = {
+        id: data.anime.info.id,
+        name: data.anime.info.name,
+        poster: data.anime.info.poster,
+        type: data.anime.info.stats?.type || data.anime.info.type || 'TV', // Save the anime type
+        lastEpisodeId: currentEpisodeId,
+        lastEpisodeNumber,
+        lastWatchedAt: new Date().toISOString()
+      };
+      
+      if (existingIndex >= 0) {
+        recentAnime[existingIndex] = item;
+      } else {
+        recentAnime.unshift(item);
+        if (recentAnime.length > 20) recentAnime.pop();
+      }
+      localStorage.setItem('recentAnime', JSON.stringify(recentAnime));
+    }
+  }
+
   // --- Navigation & Selection ---
   function goToPage(page: number) {
     if (page >= 1 && page <= totalPages) currentPage = page;
@@ -164,6 +202,9 @@
       currentEpisodeId = episodeId;
       const animeKey = data.anime?.info?.id ? `lastEpisodeId:${data.anime.info.id}` : null;
       if (animeKey) localStorage.setItem(animeKey, episodeId);
+
+      // Save to recent anime whenever episode changes
+      saveToRecentAnime();
 
       await fetchServers(episodeId);
       await fetchWatchData(episodeId, currentServer, category, false);
@@ -213,6 +254,39 @@
     await fetchWatchData(currentEpisodeId, currentServer, category);
 
     loading = false;
+
+    // Save to recent anime
+    if (browser && data.anime?.info) {
+      const recentAnime = JSON.parse(localStorage.getItem('recentAnime') || '[]');
+      const existingIndex = recentAnime.findIndex((a: any) => a.id === data.anime.info.id);
+      const ep = episodes.find(e => e.episodeId === currentEpisodeId);
+      let lastEpisodeNumber = currentEpisodeId;
+      if (ep && ep.number) {
+        lastEpisodeNumber = ep.number;
+      } else {
+        const parts = currentEpisodeId.split('?')[0].split('-');
+        const num = parts.find(p => /^\d+$/.test(p));
+        if (num) {
+          lastEpisodeNumber = num;
+        }
+      }
+      const item = {
+        id: data.anime.info.id,
+        name: data.anime.info.name,
+        poster: data.anime.info.poster,
+        type: data.anime.info.type,
+        lastEpisodeId: currentEpisodeId,
+        lastEpisodeNumber,
+        lastWatchedAt: new Date().toISOString()
+      };
+      if (existingIndex >= 0) {
+        recentAnime[existingIndex] = item;
+      } else {
+        recentAnime.unshift(item);
+        if (recentAnime.length > 20) recentAnime.pop();
+      }
+      localStorage.setItem('recentAnime', JSON.stringify(recentAnime));
+    }
   });
 
   function handlePageChange(event: Event) {
