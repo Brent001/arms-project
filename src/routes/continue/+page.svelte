@@ -53,6 +53,8 @@
     
     switch (animeType) {
       case 'MOVIE':
+      case 'Movie':
+      case 'movie':
         return 'Full Movie';
       case 'OVA':
         return `OVA ${episodeNumber}`;
@@ -99,6 +101,14 @@
 
   function handleImageLoad(id: string) {
     imageLoadedStates[id] = true;
+  }
+
+  function removeItem(itemToRemove: any) {
+    items = items.filter(item => item !== itemToRemove);
+    if (browser) {
+      const storageKey = currentList === 'anime' ? 'recentAnime' : 'recentManga';
+      localStorage.setItem(storageKey, JSON.stringify(items));
+    }
   }
 
   function handleImageError(event: Event) {
@@ -171,6 +181,14 @@
                     on:error={handleImageError}
                   />
                   <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                  <!-- Remove button -->
+                  <button
+                    class="absolute top-2 right-2 w-8 h-8 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center text-base font-black transition-colors"
+                    on:click|stopPropagation={() => removeItem(item)}
+                    aria-label="Remove from continue list"
+                  >
+                    ×
+                  </button>
                 </div>
                 <div class="absolute bottom-0 left-0 right-0 p-2">
                   <h3
