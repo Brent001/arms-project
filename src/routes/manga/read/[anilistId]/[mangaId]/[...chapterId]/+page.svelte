@@ -13,7 +13,9 @@
     mangaId: string,
     chapterId: string,
     anilistId: string,
-    provider: string // Add provider to the data prop
+    provider: string, // Add provider to the data prop
+    mangaImage: string,
+    mangaTitle: string
   };
 
   let pages = data.pages;
@@ -207,6 +209,30 @@
     
     // Add scroll listener for mobile auto-hide
     window.addEventListener('scroll', handleScroll, { passive: true });
+
+    // Save to recent manga
+    if (browser) {
+      const recentManga = JSON.parse(localStorage.getItem('recentManga') || '[]');
+      const existingIndex = recentManga.findIndex((m: any) => m.anilistId === anilistId);
+      const item = {
+        anilistId,
+        mangaId,
+        name: title,
+        mangaTitle: data.mangaTitle,
+        poster: data.mangaImage || '',
+        lastChapterId: chapterId,
+        chapterNumber: data.chapterNumber,
+        provider: data.provider,
+        lastReadAt: new Date().toISOString()
+      };
+      if (existingIndex >= 0) {
+        recentManga[existingIndex] = item;
+      } else {
+        recentManga.unshift(item);
+        if (recentManga.length > 20) recentManga.pop();
+      }
+      localStorage.setItem('recentManga', JSON.stringify(recentManga));
+    }
 
     return () => {
       if (!browser) return; // Ensure cleanup runs only in browser
@@ -540,6 +566,7 @@
           <button
             class="bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600 text-orange-400 px-3 py-2 rounded-xl transition-all duration-200 shadow-lg"
             on:click={() => showSidebar = !showSidebar}
+            aria-label="Toggle chapter list"
           >
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -555,6 +582,10 @@
     <div
       class="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm transition-all duration-300"
       on:click={() => showSidebar = false}
+      on:keydown={(e) => { if (e.key === 'Escape') showSidebar = false; }}
+      role="button"
+      tabindex="0"
+      aria-label="Close chapter list"
     ></div>
     <aside
       class={`fixed top-0 h-full bg-gradient-to-b from-gray-900 to-gray-800 border-gray-700 z-50 overflow-visible shadow-2xl ${
@@ -570,6 +601,7 @@
             class="text-gray-400 hover:text-orange-400 p-2 rounded-lg hover:bg-gray-700/50 transition-all duration-200"
             on:click={() => showSidebar = false}
             tabindex="0"
+            aria-label="Close chapter list"
           >
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -626,9 +658,6 @@
   <!-- Reader Area -->
   <main
     class="flex-1 px-2 py-3 md:px-6 md:py-8"
-    on:touchstart={handleTouchStart}
-    on:touchend={handleTouchEnd}
-    on:click={handleMainClick}
   >
     {#if loading}
       <div class="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
@@ -664,8 +693,21 @@
         </div>
       </div>
     {:else}
-      <div class="max-w-4xl mx-auto">
-        <div class="flex flex-col gap-2 md:gap-4">
+      <div
+        class="w-full h-full"
+        on:touchstart={handleTouchStart}
+        on:touchend={handleTouchEnd}
+        on:click={handleMainClick}
+        on:keydown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            handleMainClick();
+          }
+        }}
+        role="button"
+        tabindex="0"
+        aria-label="Toggle reader controls"
+      >
+        <div class="max-w-4xl mx-auto">
           {#each pages as page, idx}
             <div id="page-{idx}" class="flex flex-col items-center">
               <div
@@ -747,13 +789,21 @@
       tabindex="0"
       role="dialog"
       aria-modal="true"
+      aria-label="Zoomed image view"
     >
-      <img
-        src={getProxiedImageUrl(pages[currentPage])}
-        alt={`Page ${pages[currentPage].page ?? (currentPage + 1)}`}
-        class="max-w-full max-h-full object-contain cursor-zoom-out shadow-2xl"
+      <!-- Wrap image in a button for accessibility if it's clickable -->
+      <button
+        class="max-w-full max-h-full object-contain cursor-zoom-out shadow-2xl p-0 border-none bg-transparent"
         on:click|stopPropagation={zoomed && isMobile ? handleZoomedImageClick : undefined}
-      />
+        aria-label="Navigate image"
+        tabindex="-1"
+      >
+        <img
+          src={getProxiedImageUrl(pages[currentPage])}
+          alt={`Page ${pages[currentPage].page ?? (currentPage + 1)}`}
+          class="max-w-full max-h-full object-contain select-none"
+        />
+      </button>
 
       <!-- Navigation arrows for zoomed view -->
       <div class="absolute inset-y-0 left-4 flex items-center">
@@ -761,6 +811,7 @@
           class="bg-black/70 backdrop-blur-sm text-white p-3 rounded-full hover:bg-black/80 transition-all duration-200 {currentPage === 0 ? 'opacity-50 cursor-not-allowed' : ''}"
           on:click|stopPropagation={() => currentPage > 0 && currentPage--}
           disabled={currentPage === 0}
+          aria-label="Previous page"
         >
           <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -773,6 +824,7 @@
           class="bg-black/70 backdrop-blur-sm text-white p-3 rounded-full hover:bg-black/80 transition-all duration-200 {currentPage === pages.length - 1 ? 'opacity-50 cursor-not-allowed' : ''}"
           on:click|stopPropagation={() => currentPage < pages.length - 1 && currentPage++}
           disabled={currentPage === pages.length - 1}
+          aria-label="Next page"
         >
           <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -863,13 +915,6 @@
   }
   .no-scrollbar::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
-  }
-
-  select.touch-manipulation {
-    /* Makes dropdown easier to use on touch devices */
-    font-size: 1.05rem;
-    min-height: 2.5rem;
-    /* Optional: increase tap target */
   }
 
   /* Loading/error page backgrounds */
