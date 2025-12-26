@@ -443,7 +443,7 @@
       <div class="max-w-[1920px] w-full mx-auto flex flex-col gap-10">
         <section class="flex-1 flex flex-col gap-3 mb-6"> <!-- changed from gap-8 to gap-3 -->
           <!-- Player Card -->
-          <div class="flex flex-col gap-2 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-2 sm:p-6">
+          <div class="flex flex-col gap-2 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-1.5 sm:p-6">
             <PlayerCard
               {videoSrc}
               {poster}
