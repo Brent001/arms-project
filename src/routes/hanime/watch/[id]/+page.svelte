@@ -150,7 +150,7 @@
         {#if info && watch}
           <section class="flex-1 flex flex-col gap-3 mb-6">
             <!-- Player Card -->
-            <div class="flex flex-col gap-3 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-sm shadow-2xl border border-[#ff003c]/20 p-2 sm:p-6">
+            <div class="flex flex-col gap-3 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-sm shadow-2xl border border-[#ff003c]/20 p-1.5 sm:p-6">
               <PlayerCard
                 videoSrc={videoSrc}
                 poster={poster}
