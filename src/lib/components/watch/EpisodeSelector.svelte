@@ -34,10 +34,10 @@
           <button
             data-episode-id={ep.episodeId}
             title={ep.title || `Episode ${ep.number}`}
-            class="flex items-center justify-center rounded-sm h-8 text-xs sm:text-sm font-bold cursor-pointer transition
+            class="flex items-center justify-center rounded-sm h-8 text-xs sm:text-sm font-semibold cursor-pointer transition-all duration-200 border
               {isActive 
-                ? 'bg-orange-400 text-black' 
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'}
+                ? 'bg-orange-500 text-white border-orange-400 shadow-md shadow-orange-500/20' 
+                : 'bg-gray-800/70 text-gray-300 border-gray-700/40 hover:bg-gray-700/80 hover:text-white hover:border-gray-600/60'}
               {isSearched && !isActive ? 'ring-2 ring-orange-400 animate-pulse' : ''}"
             on:click={() => { goToEpisode(ep.episodeId); }}
             disabled={isActive}
