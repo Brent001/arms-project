@@ -1,7 +1,7 @@
 import type { PageLoad } from './$types.js';
 import { error } from '@sveltejs/kit';
 
-export const load: PageLoad = async ({ params, fetch, url }) => { // Add 'url' to destructuring
+export const load: PageLoad = async ({ params, fetch, url }) => {
   const anilistId = params.anilistId;
   const mangaId = params.mangaId;
   const chapterIdParam = params.chapterId;
@@ -21,23 +21,11 @@ export const load: PageLoad = async ({ params, fetch, url }) => { // Add 'url' t
     const infoRes = await fetch(infoUrl);
     const infoData = await infoRes.json();
 
-    // Read API still uses provider mangaId/chapterId
-    // Pass the provider to the read API call
-    const readUrl = `/api/manga?type=read&chapterId=${encodeURIComponent(`${mangaId}/${chapterId}`)}&provider=${encodeURIComponent(provider)}`;
-    const readRes = await fetch(readUrl);
-    const readData = await readRes.json();
-
     if (!infoRes.ok) {
       throw error(infoRes.status, `Failed to fetch manga info: ${infoRes.statusText}`);
     }
-    if (!readRes.ok) {
-      throw error(readRes.status, `Failed to fetch chapter pages: ${readRes.statusText}`);
-    }
     if (!infoData.success) {
       throw error(500, `Manga info error: ${infoData.error || 'Unknown error'}`);
-    }
-    if (!readData.success) {
-      throw error(500, `Chapter read error: ${readData.error || 'Unknown error'}`);
     }
 
     // --- FILTER CHAPTERS BY ANILIST ID OR MANGA ID ---
@@ -55,6 +43,19 @@ export const load: PageLoad = async ({ params, fetch, url }) => { // Add 'url' t
     const currentIndex = chapterList.findIndex((c: any) => c.shortId === chapterId);
     const chapterMeta = chapterList[currentIndex] ?? {};
 
+    // Read API uses the full chapter id
+    const apiChapterId = chapterMeta.id || `${mangaId}/${chapterId}`;
+    const readUrl = `/api/manga?type=read&chapterId=${encodeURIComponent(apiChapterId)}&provider=${encodeURIComponent(provider)}`;
+    const readRes = await fetch(readUrl);
+    const readData = await readRes.json();
+
+    if (!readRes.ok) {
+      throw error(readRes.status, `Failed to fetch chapter pages: ${readRes.statusText}`);
+    }
+    if (!readData.success) {
+      throw error(500, `Chapter read error: ${readData.error || 'Unknown error'}`);
+    }
+
     // Handle different possible response formats for pages
     let pages: { page: number, img: string, headerForImage?: Record<string, string> }[] = [];
     if (readData.data) {
@@ -69,13 +70,10 @@ export const load: PageLoad = async ({ params, fetch, url }) => { // Add 'url' t
 
     pages = pages
       .map((page: any, index: number) => {
-        // The 'img' here should be the ORIGINAL image URL from the upstream API.
-        // The proxy prefix is added in the Svelte component's getProxiedImageUrl function.
-        // We also need to explicitly ensure page.img is a string to avoid potential errors.
         const originalImgUrl = typeof page.img === 'string' ? page.img : '';
         return {
           page: page.page ?? index,
-          img: originalImgUrl, // Keep the original image URL
+          img: originalImgUrl,
           headerForImage: page.headerForImage || undefined
         };
       })
@@ -136,7 +134,7 @@ export const load: PageLoad = async ({ params, fetch, url }) => { // Add 'url' t
             chapterNumber: nextChapter.chapterNumber || nextChapter.chapter || nextChapter.number || ''
           }
         : null,
-      provider, // Pass the provider used to fetch this chapter data
+      provider,
       loadedAt: new Date().toISOString()
     };
 
@@ -155,7 +153,6 @@ export const load: PageLoad = async ({ params, fetch, url }) => { // Add 'url' t
   }
 };
 
-// Helper function to extract chapter number from chapter ID
 function extractChapterNumber(chapterId: string): string | null {
   const patterns = [
     /c(\d+(?:\.\d+)?)/i,
