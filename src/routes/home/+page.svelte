@@ -402,6 +402,12 @@
 </div>
 
 <style>
+  /* Simple, performant skeleton loader for posters */
+  :global(.trending-anime-grid img, .responsive-anime-grid img) {
+    background-color: #374151; /* gray-700 */
+    min-height: 220px; /* Adjust based on typical card height to reduce layout shift */
+  }
+
   /* Responsive Grid System for Anime Cards */
   .responsive-anime-grid {
     display: grid;
