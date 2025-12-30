@@ -17,10 +17,30 @@
   let tooltipHideDelayTimeout: ReturnType<typeof setTimeout> | undefined; // For delaying tooltip disappearance
   let isMobile = false;
 
+  // Skeleton loading for poster
+  let imageLoadedStates: { [key: string]: boolean } = {};
+
   // Tooltip data stores
   const qtip = writable<any>(null);
   const qtipLoading = writable(false);
   const qtipError = writable<string | null>(null);
+
+  // Reset image loaded states when anime changes
+  $: if (anime) {
+    imageLoadedStates = {};
+  }
+
+  function handleImageLoad(id: string) {
+    imageLoadedStates[id] = true;
+  }
+
+  function handleImageError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    if (img && !img.dataset.errorHandled) {
+      img.dataset.errorHandled = 'true';
+      img.onerror = null; // Prevent infinite loop
+    }
+  }
 
   // Mobile detection
   onMount(() => {
@@ -108,11 +128,16 @@
     on:mouseleave={handleMouseLeaveCard}
   >
     <div class="relative aspect-[3/4]">
+      {#if !imageLoadedStates[anime.id]}
+        <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+      {/if}
       <img
         src={anime.poster}
         alt={anime.name}
-        class="w-full h-full object-cover"
+        class="w-full h-full object-cover {imageLoadedStates[anime.id] ? 'opacity-100' : 'opacity-0'}"
         loading="lazy"
+        on:load={() => handleImageLoad(anime.id)}
+        on:error={handleImageError}
       />
       <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
       
@@ -262,5 +287,14 @@
       transform: scale(1);
       opacity: 1;
     }
+  }
+
+  /* Skeleton Loader - plain background for performance */
+  .skeleton-loader {
+    background-color: #374151; /* gray-700 */
+  }
+
+  img {
+    transition: opacity 0.3s ease-in-out;
   }
 </style>
