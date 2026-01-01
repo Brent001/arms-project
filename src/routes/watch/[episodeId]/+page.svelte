@@ -52,6 +52,14 @@
   let episodesPerPage = 50;
   let currentPage = 1;
   $: totalPages = Math.ceil(episodes.length / episodesPerPage);
+  $: {
+    const currentEpisodeIndex = episodes.findIndex(
+      (ep) => ep.episodeId === currentEpisodeId
+    );
+    if (currentEpisodeIndex !== -1) {
+      currentPage = Math.floor(currentEpisodeIndex / episodesPerPage) + 1;
+    }
+  }
   $: pagedEpisodes = episodes.slice(
     (currentPage - 1) * episodesPerPage,
     currentPage * episodesPerPage
