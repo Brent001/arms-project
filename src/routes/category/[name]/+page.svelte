@@ -12,7 +12,7 @@
     type: string;
     rating: string | null;
     episodes: {
-      sub: number;
+      sub: number | null;
       dub: number | null;
     };
   };

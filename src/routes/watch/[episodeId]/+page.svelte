@@ -101,11 +101,25 @@
       videoSrc = proxiedM3u8(source);
 
       subtitles = (json.data.tracks ?? [])
-        .filter((track: any) => track.lang !== 'thumbnails')
+        .filter((track: any) => track.label !== 'thumbnails')
         .map((track: any) => ({
-          src: track.url,
-          label: track.lang,
-          srclang: track.srclang || track.lang || 'en'
+          src: `/api/proxy/vtt?url=${encodeURIComponent(track.file)}&referer=${encodeURIComponent(json.data.headers?.Referer || 'https://rapid-cloud.co/')}`,
+          label: track.label,
+          srclang:
+            track.label.toLowerCase().startsWith('english')
+              ? 'en'
+              : track.label.toLowerCase().startsWith('portuguese')
+              ? 'pt'
+              : track.label.toLowerCase().startsWith('spanish')
+              ? 'es'
+              : track.label.toLowerCase().startsWith('french')
+              ? 'fr'
+              : track.label.toLowerCase().startsWith('german')
+              ? 'de'
+              : track.label.toLowerCase().startsWith('japanese')
+              ? 'ja'
+              : 'en',
+          default: track.default || false
         }));
 
       intro = json.data.intro || null;

@@ -90,6 +90,16 @@ export const load: PageLoad = async ({ params, fetch }) => {
       console.warn('Invalid or incomplete API response for anime info:', json);
     }
 
+    // Transform charactersVoiceActors to have singular voiceActor
+    if (animeData?.charactersVoiceActors) {
+      animeData.charactersVoiceActors = animeData.charactersVoiceActors.flatMap((cva: any) =>
+        cva.voiceActors.map((va: any) => ({
+          character: cva.character,
+          voiceActor: va
+        }))
+      );
+    }
+
     // Defensive: ensure rating is always present if animeData exists
     if (animeData?.stats) {
       if (!animeData.stats.rating || typeof animeData.stats.rating !== 'string') {

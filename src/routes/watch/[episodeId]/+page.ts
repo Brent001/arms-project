@@ -27,10 +27,13 @@ export const load: PageLoad = async ({ params, fetch }) => {
     const resp = await fetch(`/api/anime?action=sources&animeEpisodeId=${episodeId}&server=${server}&category=${category}`);
     sourcesJson = await resp.json();
     if (sourcesJson.success) {
+      const referer = sourcesJson.data.headers?.Referer || 'https://rapid-cloud.co/';
       // Format subtitles properly for the video component
       interface SubtitleTrack {
-        url: string;
-        lang: string;
+        file: string;
+        label: string;
+        kind: string;
+        default: boolean;
       }
 
       interface Subtitle {
@@ -41,24 +44,25 @@ export const load: PageLoad = async ({ params, fetch }) => {
       }
 
       subtitles = (sourcesJson.data.tracks ?? [])
-        .filter((track: SubtitleTrack) => track.lang !== 'thumbnails')
+        .filter((track: SubtitleTrack) => track.label !== 'thumbnails')
         .map((track: SubtitleTrack) => ({
-          src: track.url, // Use 'src' instead of 'url'
-          label: track.lang,
+          src: `/api/proxy/vtt?url=${encodeURIComponent(track.file)}&referer=${encodeURIComponent(referer)}`,
+          label: track.label,
           srclang:
-            track.lang.toLowerCase().startsWith('english')
+            track.label.toLowerCase().startsWith('english')
               ? 'en'
-              : track.lang.toLowerCase().startsWith('portuguese')
+              : track.label.toLowerCase().startsWith('portuguese')
               ? 'pt'
-              : track.lang.toLowerCase().startsWith('spanish')
+              : track.label.toLowerCase().startsWith('spanish')
               ? 'es'
-              : track.lang.toLowerCase().startsWith('french')
+              : track.label.toLowerCase().startsWith('french')
               ? 'fr'
-              : track.lang.toLowerCase().startsWith('german')
+              : track.label.toLowerCase().startsWith('german')
               ? 'de'
-              : track.lang.toLowerCase().startsWith('japanese')
+              : track.label.toLowerCase().startsWith('japanese')
               ? 'ja'
-              : 'en'
+              : 'en',
+          default: track.default || false
         }));
       
       intro = sourcesJson.data.intro?.start && sourcesJson.data.intro?.end

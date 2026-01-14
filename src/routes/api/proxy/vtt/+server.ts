@@ -1,9 +1,10 @@
 import type { RequestHandler } from '@sveltejs/kit';
 
-const REFERER = 'https://vidwish.live/';
+const REFERER = 'https://rapid-cloud.co/';
 
 export const GET: RequestHandler = async ({ url }) => {
   const vttUrl = url.searchParams.get('url');
+  const referer = url.searchParams.get('referer') || REFERER;
   if (!vttUrl) {
     return new Response('Missing url parameter', { status: 400 });
   }
@@ -11,7 +12,7 @@ export const GET: RequestHandler = async ({ url }) => {
   try {
     const res = await fetch(vttUrl, {
       headers: {
-        'Referer': REFERER
+        'Referer': referer
         // 'Origin' header removed
       }
     });

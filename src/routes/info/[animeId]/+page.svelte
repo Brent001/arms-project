@@ -2,8 +2,8 @@
   import Navbar from '$lib/components/Navbar.svelte';
   import Sidebar from '$lib/components/Sidebar.svelte';
   import Footer from '$lib/components/Footer.svelte';
-  import CharacterVoiceActorRow from '$lib/components/CharacterVoiceActorRow.svelte';
   import CharacterModal from '$lib/components/CharacterModal.svelte';
+  import CharacterVoiceActorRow from '$lib/components/CharacterVoiceActorRow.svelte';
   import SeasonCard from '$lib/components/SeasonCard.svelte';
   import Genre from '$lib/components/genre.svelte';
   import type { PageData } from './$types.js';
@@ -237,9 +237,7 @@
   }
 
   function openCharacterModal() {
-    if (anime?.charactersVoiceActors && Array.isArray(anime.charactersVoiceActors)) {
-      showCharacterModal = true;
-    }
+    showCharacterModal = true;
   }
 
   function closeCharacterModal() {
@@ -315,7 +313,7 @@
 
   type CharacterVoiceActor = {
     character: { poster: string; name: string; cast?: string };
-    voiceActor: { poster: string; name: string; cast?: string };
+    voiceActors: Array<{ poster: string; name: string; cast?: string }>;
   };
 
   let showFullDescription = false;
@@ -345,6 +343,20 @@
         ).filter((s: string) => s)
       : [];
   $: displayedProducers = isMobile && !showAllProducers ? allProducers.slice(0, 3) : allProducers;
+
+  $: groupedCharacters = (() => {
+    const map = new Map<string, { character: any; voiceActors: any[] }>();
+    if (anime?.charactersVoiceActors) {
+      anime.charactersVoiceActors.forEach((cva: any) => {
+        const key = cva.character.id;
+        if (!map.has(key)) {
+          map.set(key, { character: cva.character, voiceActors: [] });
+        }
+        map.get(key)!.voiceActors.push(cva.voiceActor);
+      });
+    }
+    return Array.from(map.values());
+  })();
 
   function updateIsMobile() {
     if (browser) {
@@ -691,29 +703,23 @@
               {/if}
 
               <!-- Characters & Voice Actors -->
-              {#if Array.isArray(anime?.charactersVoiceActors) && anime.charactersVoiceActors.length > 0}
+              {#if groupedCharacters.length > 0}
                 <section class="mb-4">
-                  <div class="flex items-center justify-between mb-4">
+                  <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-bold text-orange-400">Characters & Voice Actors</h2>
-                    {#if anime.charactersVoiceActors.length > 2}
+                    {#if groupedCharacters.length > 6}
                       <button
                         on:click={openCharacterModal}
                         class="text-orange-300 hover:text-orange-400 text-sm font-semibold transition-colors flex items-center gap-1"
                       >
-                        View all ({anime.charactersVoiceActors.length})
+                        View more
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                         </svg>
                       </button>
                     {/if}
                   </div>
-                  <div class="flex flex-col gap-3">
-                    {#each safeSlice(anime.charactersVoiceActors, 0, 2) as cva}
-                      {#if cva && typeof cva === 'object' && 'character' in cva && 'voiceActor' in cva}
-                        <CharacterVoiceActorRow cva={cva as CharacterVoiceActor} />
-                      {/if}
-                    {/each}
-                  </div>
+                  <CharacterVoiceActorRow {groupedCharacters} />
                 </section>
               {/if}
 
@@ -825,11 +831,12 @@
 </div>
 
 <!-- Character Modal -->
-{#if showCharacterModal && anime?.charactersVoiceActors && Array.isArray(anime.charactersVoiceActors)}
+{#if showCharacterModal}
   <CharacterModal
     handleBackdrop={handleModalBackdropClick}
-    charactersVoiceActors={anime.charactersVoiceActors}
+    charactersVoiceActors={anime?.charactersVoiceActors || []}
     onClose={closeCharacterModal}
+    animeId={anime?.id || ''}
   />
 {/if}
 
