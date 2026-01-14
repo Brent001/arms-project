@@ -39,29 +39,26 @@
   });
 
   /**
-   * Generates pagination: [1, 2, 3, 4, ..., Last]
+   * Generates pagination: shows 3 pages centered around current page
+   * Example: if currentPage is 3, shows [2, 3, 4]
    */
   $: pageNumbers = (() => {
-    let pages: (number | string)[] = [];
-    const sidePages = 2; // Pages to show around current page
+    let pages: number[] = [];
     
-    if (totalPages <= 6) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      // Always show first few
-      pages.push(1, 2, 3, 4);
-      
-      if (currentPage > 4 && currentPage < totalPages) {
-         // If user navigates deep, ensure current page is visible
-         if (!pages.includes(currentPage)) pages.push(currentPage);
-      }
-
-      if (totalPages > 5) {
-        // pages.push('...');
-      }
+    // Calculate the range to show 3 pages centered around current page
+    let start = Math.max(1, currentPage - 1);
+    let end = Math.min(totalPages, start + 2);
+    
+    // If we're near the end, adjust to always show 3 pages
+    if (end - start < 2) {
+      start = Math.max(1, end - 2);
     }
-    // Remove duplicates and sort
-    return [...new Set(pages)].sort((a, b) => (typeof a === 'number' && typeof b === 'number' ? a - b : 0));
+    
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    
+    return pages;
   })();
 
   function goToPage(page: any) {
@@ -91,8 +88,23 @@
 
       <div class="flex-1 overflow-y-auto p-3 sm:p-4 custom-scrollbar">
         {#if loading}
-          <div class="flex justify-center items-center h-64">
-            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-500"></div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {#each Array(10) as _}
+              <div class="flex items-center justify-between p-3 bg-gray-800/20 rounded-lg border border-gray-700/30 animate-pulse">
+                <div class="flex gap-3 items-center min-w-0 flex-1">
+                  <div class="w-14 h-14 rounded-lg bg-gray-700 flex-shrink-0"></div>
+                  <div class="flex flex-col min-w-0 gap-2 flex-1">
+                    <div class="h-4 bg-gray-700 rounded w-32"></div>
+                    <div class="h-3 bg-gray-700 rounded w-20"></div>
+                  </div>
+                </div>
+                <div class="flex -space-x-2.5 items-center pr-1">
+                  {#each Array(3) as _}
+                    <div class="w-10 h-10 rounded-full bg-gray-700 border-2 border-[#0b1120]"></div>
+                  {/each}
+                </div>
+              </div>
+            {/each}
           </div>
         {:else if characters.length === 0}
           <p class="text-gray-400 text-center py-10">No characters found.</p>
@@ -135,41 +147,57 @@
       </div>
 
       {#if totalPages > 1 && !loading}
-        <div class="p-4 sm:p-6 border-t border-gray-800 flex justify-center items-center gap-1.5 sm:gap-2 bg-[#0b1120]">
-          
-          {#each pageNumbers as page}
+        <div class="p-2 sm:p-4 border-t border-gray-800 flex justify-center items-center gap-1 sm:gap-1.5 flex-wrap bg-[#0b1120]">
+          {#if currentPage > 1}
             <button
-              on:click={() => goToPage(page)}
-              class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg font-bold text-sm transition-all
-              {currentPage === page 
-                ? 'bg-orange-500 text-gray-900 shadow-lg shadow-orange-500/20' 
-                : 'bg-slate-800/40 text-gray-300 hover:bg-slate-700 hover:text-white border border-gray-700/50'}"
+              class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg font-bold text-xs bg-gray-800 text-white hover:bg-orange-400 hover:text-gray-900 transition disabled:opacity-50"
+              on:click={() => goToPage(1)}
+              disabled={false}
+              aria-label="First page"
             >
-              {page}
+              <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/></svg>
+            </button>
+            <button
+              class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg font-bold text-xs bg-gray-800 text-white hover:bg-orange-400 hover:text-gray-900 transition disabled:opacity-50"
+              on:click={() => goToPage(currentPage - 1)}
+              disabled={false}
+              aria-label="Previous page"
+            >
+              <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+          {/if}
+
+          {#each pageNumbers as pageNum}
+            <button
+              class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg font-bold text-xs transition disabled:opacity-50
+                {currentPage === pageNum
+                  ? 'bg-orange-400 text-gray-900'
+                  : 'bg-gray-800 text-white hover:bg-orange-400 hover:text-gray-900'}"
+              on:click={() => goToPage(pageNum)}
+              disabled={false}
+            >
+              {pageNum}
             </button>
           {/each}
 
-          <button
-            on:click={() => goToPage(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg bg-slate-800/40 text-gray-300 hover:bg-slate-700 hover:text-white disabled:opacity-20 border border-gray-700/50 transition-all"
-            aria-label="Next page"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
-            </svg>
-          </button>
-
-          <button
-            on:click={() => goToPage(totalPages)}
-            disabled={currentPage === totalPages}
-            class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg bg-slate-800/40 text-gray-300 hover:bg-slate-700 hover:text-white disabled:opacity-20 border border-gray-700/50 transition-all"
-            aria-label="Last page"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
-            </svg>
-          </button>
+          {#if currentPage < totalPages}
+            <button
+              class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg font-bold text-xs bg-gray-800 text-white hover:bg-orange-400 hover:text-gray-900 transition disabled:opacity-50"
+              on:click={() => goToPage(currentPage + 1)}
+              disabled={false}
+              aria-label="Next page"
+            >
+              <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+            <button
+              class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg font-bold text-xs bg-gray-800 text-white hover:bg-orange-400 hover:text-gray-900 transition disabled:opacity-50"
+              on:click={() => goToPage(totalPages)}
+              disabled={false}
+              aria-label="Last page"
+            >
+              <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 17l5-5-5-5M6 17l5-5-5-5"/></svg>
+            </button>
+          {/if}
         </div>
       {/if}
     </div>
