@@ -2,11 +2,12 @@
   export let season: {
     id: string;
     poster: string;
-    title: string;
-    isCurrent: boolean;
+    title?: string;
+    name?: string;
+    isCurrent?: boolean;
   };
   export let imageLoadedStates: { [key: string]: boolean } = {};
-  export let onImageLoad: (id: string) => void;
+  export let onImageLoad: (id: string) => void = () => {};
 
   function safeTruncate(str: string | undefined | null, maxLength: number = 100): string {
     if (!str || typeof str !== 'string') return '';
@@ -34,10 +35,8 @@
     {/if}
     <img
       src={season.poster}
-      alt={safeTruncate(season.title, 30)}
-      class="w-full h-full object-cover {imageLoadedStates[`season-${season.id}`]
-        ? 'opacity-100'
-        : 'opacity-0'}"
+      alt={safeTruncate(season.title ?? season.name, 30)}
+      class="w-full h-full object-cover {imageLoadedStates[`season-${season.id}`] ? 'opacity-100' : 'opacity-0'}"
       loading="lazy"
       on:error={handleImageError}
       on:load={() => onImageLoad(`season-${season.id}`)}
@@ -55,7 +54,7 @@
     <span
       class="text-white font-semibold text-sm drop-shadow-lg text-center w-full break-words leading-tight"
     >
-      {safeTruncate(season.title, 40)}
+      {safeTruncate(season.title ?? season.name, 40)}
     </span>
   </div>
 </a>
