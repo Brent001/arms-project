@@ -24,6 +24,11 @@
   $: recommended = Array.isArray(data?.recommendedAnimes) ? data.recommendedAnimes : [];
   $: related = Array.isArray(data?.relatedAnimes) ? data.relatedAnimes : [];
   $: seasons = Array.isArray(data?.seasons) ? data.seasons : [];
+  // Derive processedSeasons with client-side `isCurrent` flag based on current anime id
+  $: processedSeasons = (Array.isArray(seasons) ? seasons : []).map((s: any) => ({
+    ...s,
+    isCurrent: !!(s && s.id && anime && anime.id && String(s.id) === String(anime.id))
+  }));
   $: genres = Array.isArray((data as any)?.genres) ? (data as any).genres : [];
 
   let firstEpisodeId: string | null = null;
@@ -691,11 +696,11 @@
               </div>
 
               <!-- More Seasons -->
-              {#if seasons.length > 1}
+              {#if processedSeasons.length > 1}
                 <section class="mb-6">
                   <h2 class="text-lg sm:text-xl font-bold text-orange-400 mb-4">More Seasons</h2>
                   <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                    {#each seasons.filter(s => s && s.id && s.title) as season}
+                    {#each processedSeasons.filter(s => s && s.id && (s.title || s.name)) as season}
                       <SeasonCard {season} {imageLoadedStates} onImageLoad={handleImageLoad} />
                     {/each}
                   </div>
