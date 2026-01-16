@@ -34,8 +34,9 @@
     }
     // For HD-1 and HD-3, use API iframe URL
     if ((serverLower === 'hd-1' || serverLower === 'hd-3') && apiIframeUrl) {
-      console.log('Using API iframe URL for', currentServer, ':', apiIframeUrl);
-      return apiIframeUrl;
+      const urlWithDebug = `${apiIframeUrl}&_debug=true`;
+      console.log('Using API iframe URL for', currentServer, ':', urlWithDebug);
+      return urlWithDebug;
     }
     console.log('No iframe URL found - currentServer:', currentServer, 'apiIframeUrl:', apiIframeUrl, 'baseURL:', baseURL);
     return '';
