@@ -9,6 +9,8 @@
   export let episodes: any[] = [];
   export let playNext: (nextId: string) => void = () => {};
   export let autoNext: boolean = false;
+  export let apiIframeUrl: string | null = null;
+  export let currentServer: string = 'hd-2';
 
   // Extract code after ep= if present, else use episodeId
   function getIframeEpisodeCode(id: string) {
@@ -22,7 +24,22 @@
   const iframeLoaded = writable(false);
 
   $: code = getIframeEpisodeCode(episodeId);
-  $: iframeSrc = baseURL ? `${baseURL}/${code}/${category}` : '';
+  $: iframeSrc = (() => {
+    const serverLower = currentServer.toLowerCase();
+    
+    // For HD-2, use megaplay.buzz
+    if (serverLower === 'hd-2' && baseURL) {
+      console.log('Using HD-2 megaplay URL:', `${baseURL}/${code}/${category}`);
+      return `${baseURL}/${code}/${category}`;
+    }
+    // For HD-1 and HD-3, use API iframe URL
+    if ((serverLower === 'hd-1' || serverLower === 'hd-3') && apiIframeUrl) {
+      console.log('Using API iframe URL for', currentServer, ':', apiIframeUrl);
+      return apiIframeUrl;
+    }
+    console.log('No iframe URL found - currentServer:', currentServer, 'apiIframeUrl:', apiIframeUrl, 'baseURL:', baseURL);
+    return '';
+  })();
 
   let currentEpisodeIndex = episodes?.findIndex(
     (episode) => episode.episodeId === episodeId
