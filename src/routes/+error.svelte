@@ -84,7 +84,7 @@
       <!-- Compact Action Buttons -->
       <div class="flex items-center justify-center gap-2.5">
         <a
-          href="/"
+          href={isHanime ? '/hanime' : '/'}
           class="group flex-1 sm:flex-initial sm:w-auto px-4 py-2 sm:px-6 sm:py-2.5 {colors.button} {isHanime ? 'text-white' : 'text-gray-900'} font-semibold text-sm rounded-lg shadow-lg transition-all duration-300 sm:hover:scale-105 flex items-center justify-center gap-2"
         >
           <svg class="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -94,7 +94,7 @@
         </a>
         
         <a
-          href={isHanime ? '/hanime' : '/home'}
+          href={isHanime ? '/hanime/random' : '/recently-added'}
           class="group flex-1 sm:flex-initial sm:w-auto px-4 py-2 sm:px-6 sm:py-2.5 bg-transparent border-2 {colors.buttonBorder} {isHanime ? 'text-[#ff003c] hover:bg-[#ff003c]/10' : 'text-orange-400 hover:bg-orange-400/10'} font-semibold text-sm rounded-lg transition-all duration-300 sm:hover:scale-105 flex items-center justify-center gap-2"
         >
           <span>Explore Content</span>
