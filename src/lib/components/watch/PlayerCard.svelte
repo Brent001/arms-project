@@ -17,6 +17,8 @@
   export let episodeNum: number;
   export let episodes: any[] = [];
   export let autoNext: boolean = false;
+  export let apiIframeUrl: string | null = null;
+  export let currentServer: string = 'hd-2';
 
   function setUseIframePlayer(v: boolean) { useIframePlayer = v; }
 
@@ -37,6 +39,8 @@
       {episodes}
       playNext={goToEpisode}
       autoNext={autoNext}
+      {apiIframeUrl}
+      {currentServer}
     />
   {:else}
     {#key videoSrc}
