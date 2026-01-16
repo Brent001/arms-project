@@ -33,6 +33,7 @@
   let currentServer = '';
   let category: 'sub' | 'dub' | 'raw' = 'sub';
   let videoSrc = '';
+  let apiIframeUrl: string | null = !isError(data) ? safe(data.apiIframeUrl, null) : null;
   let subtitles: Array<{ url: string; label: string; lang: string; kind: 'subtitles' | 'metadata' | 'captions' | 'chapters' | 'descriptions'; default?: boolean }> = [];
   let poster = !isError(data) ? safe(data.anime?.info?.poster, 'https://example.com/default-poster.jpg') : 'https://example.com/default-poster.jpg';
   let title = !isError(data) ? safe(data.anime?.info?.name, 'Episode') : 'Episode';
@@ -95,6 +96,10 @@
       const json = await resp.json();
 
       if (!json.success) throw new Error('No sources');
+
+      // Capture iframe URL from API response for HD-1 and HD-3
+      apiIframeUrl = json.data.iframe || null;
+      console.log('fetchWatchData - iframe URL captured:', apiIframeUrl, 'for server:', server);
 
       // Use proxy for m3u8 sources
       const source = json.data.sources?.[0]?.url || '';
@@ -260,6 +265,18 @@
   // --- On Mount: Restore Last Watched ---
   onMount(async () => {
     loading = true;
+    
+    // Initialize currentServer with default value
+    if (!currentServer) {
+      const animeId = data.anime?.info?.id;
+      if (animeId) {
+        const saved = localStorage.getItem(`lastServer:${animeId}`);
+        currentServer = saved || 'hd-2'; // Default to HD-2
+      } else {
+        currentServer = 'hd-2';
+      }
+    }
+    
     const animeKey = data.anime?.info?.id ? `lastEpisodeId:${data.anime.info.id}` : null;
     let saved = animeKey ? localStorage.getItem(animeKey) : null;
 
@@ -488,6 +505,8 @@
                 })()
               }
               {category}
+              {apiIframeUrl}
+              {currentServer}
             />
 
             <!-- Use PlayerController component here -->

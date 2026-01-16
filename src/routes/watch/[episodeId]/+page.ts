@@ -22,12 +22,17 @@ export const load: PageLoad = async ({ params, fetch }) => {
   let subtitles: any[] = [];
   let intro: { start: number; end: number } | null = null;
   let outro: { start: number; end: number } | null = null;
+  let apiIframeUrl: string | null = null;
 
   async function fetchSources(episodeId: string, server: string, category: string) {
     const resp = await fetch(`/api/anime?action=sources&animeEpisodeId=${episodeId}&server=${server}&category=${category}`);
     sourcesJson = await resp.json();
     if (sourcesJson.success) {
       const referer = sourcesJson.data.headers?.Referer || 'https://rapid-cloud.co/';
+      
+      // Capture iframe URL from API response
+      apiIframeUrl = sourcesJson.data.iframe || null;
+      
       // Format subtitles properly for the video component
       interface SubtitleTrack {
         file: string;
@@ -103,6 +108,9 @@ export const load: PageLoad = async ({ params, fetch }) => {
       throw new Error(episodesJson.error || 'Episodes data not found');
     }
 
+    // Fetch sources for the CURRENT episode (not first episode) to get iframe URL
+    await fetchSources(episodeId, 'hd-2', 'sub');
+
     return {
       episodeId,
       anime: animeInfoJson.data.anime,
@@ -112,6 +120,7 @@ export const load: PageLoad = async ({ params, fetch }) => {
       recommendedAnimes: animeInfoJson.data.recommendedAnimes || [],
       videoSources: [], // This will be populated when sources are fetched
       subtitles: initialSubtitles,
+      apiIframeUrl,
       fetchSources // Export the fetchSources function for use in the page component
     };
   } catch (error) {
@@ -126,6 +135,7 @@ export const load: PageLoad = async ({ params, fetch }) => {
       seasons: [],
       relatedAnimes: [],
       recommendedAnimes: [],
+      apiIframeUrl: null,
       fetchSources: null
     };
   }
