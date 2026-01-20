@@ -35,7 +35,6 @@
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^6.0.1",
-		"@sveltejs/adapter-netlify": "^5.4.2",
 		"@sveltejs/kit": "^2.22.5",
 		"@sveltejs/package": "^2.0.0",
 		"@sveltejs/vite-plugin-svelte": "^5.1.1",
