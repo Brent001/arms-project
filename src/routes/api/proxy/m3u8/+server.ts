@@ -11,7 +11,7 @@ export const GET: RequestHandler = async ({ url }) => {
   }
 
   let headers: Record<string, string> = {
-    'User-Agent': 'Mozilla/5.0'
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
   };
 
   if (headersParam) {
@@ -23,11 +23,18 @@ export const GET: RequestHandler = async ({ url }) => {
     }
   }
 
-  // Always use the proxy base from .env
-  const proxyUrl = `${M3U8_PROXY}/streamingProxy?url=${encodeURIComponent(m3u8Url)}&headers=${encodeURIComponent(JSON.stringify(headers))}`;
-
   try {
-    const resp = await fetch(proxyUrl);
+    let resp;
+    
+    // If M3U8_PROXY is configured, use it; otherwise, fetch directly
+    if (M3U8_PROXY) {
+      const proxyUrl = `${M3U8_PROXY}/streamingProxy?url=${encodeURIComponent(m3u8Url)}&headers=${encodeURIComponent(JSON.stringify(headers))}`;
+      resp = await fetch(proxyUrl);
+    } else {
+      // Fall back to direct fetch
+      resp = await fetch(m3u8Url, { headers });
+    }
+    
     const contentType = resp.headers.get('content-type') || 'application/vnd.apple.mpegurl';
     const body = await resp.arrayBuffer();
 
@@ -40,6 +47,7 @@ export const GET: RequestHandler = async ({ url }) => {
       }
     });
   } catch (err) {
+    console.error('M3U8 proxy error:', err);
     return new Response('Failed to fetch m3u8', { status: 500 });
   }
 };

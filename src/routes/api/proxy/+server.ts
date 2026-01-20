@@ -10,18 +10,24 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
     const headers = {
         'Referer': 'https://hianimez.to/',
         'Origin': 'https://hianimez.to',
-        // ...add more if needed
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
     };
 
-    const resp = await fetch(targetUrl, { headers });
-    const body = await resp.arrayBuffer();
+    try {
+        const resp = await fetch(targetUrl, { headers });
+        const body = await resp.arrayBuffer();
 
-    // Pass through content-type and enable CORS
-    return new Response(body, {
-        status: resp.status,
-        headers: {
-            'Content-Type': resp.headers.get('content-type') || 'application/vnd.apple.mpegurl',
-            'Access-Control-Allow-Origin': '*'
-        }
-    });
+        // Pass through content-type and enable CORS
+        return new Response(body, {
+            status: resp.status,
+            headers: {
+                'Content-Type': resp.headers.get('content-type') || 'application/vnd.apple.mpegurl',
+                'Access-Control-Allow-Origin': '*',
+                'Cache-Control': 'public, max-age=3600'
+            }
+        });
+    } catch (err) {
+        console.error('Proxy error:', err);
+        return new Response('Failed to fetch resource', { status: 500 });
+    }
 };

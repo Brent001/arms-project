@@ -22,7 +22,11 @@ export const GET: RequestHandler = async ({ url }) => {
     const contentType = res.headers.get('content-type') || 'text/vtt';
     return new Response(await res.text(), {
       status: 200,
-      headers: { 'content-type': contentType }
+      headers: {
+        'content-type': contentType,
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'public, max-age=3600'
+      }
     });
   } catch (e) {
     return new Response('Error fetching VTT', { status: 500 });
