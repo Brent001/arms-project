@@ -46,6 +46,7 @@
   let updatingSources = false;
   let autoPlay = false;
   let autoSkipIntro = false;
+  let autoSkipOutro = false;
   let autoNext = false;
   let imageLoadedStates: { [key: string]: boolean } = {};
 
@@ -355,6 +356,35 @@
     updatingSources = false;
   }
 
+  async function playNext() {
+    try {
+      // Find current episode index
+      const currentIndex = episodes.findIndex(ep => ep.episodeId === currentEpisodeId);
+      
+      // Check if we have a next episode
+      if (currentIndex === -1) {
+        console.warn('Current episode not found in episodes list');
+        return;
+      }
+      
+      if (currentIndex >= episodes.length - 1) {
+        console.log('Reached last episode - no next episode available');
+        return;
+      }
+      
+      // Get and play next episode
+      const nextEpisode = episodes[currentIndex + 1];
+      if (nextEpisode && nextEpisode.episodeId) {
+        console.log('Auto-playing next episode:', nextEpisode.episodeId, `(${nextEpisode.number})`);
+        await goToEpisode(nextEpisode.episodeId);
+      } else {
+        console.warn('Next episode data incomplete');
+      }
+    } catch (error) {
+      console.error('Error in playNext:', error);
+    }
+  }
+
   const AUTO_PLAY_KEY = 'arms:autoPlay';
   const AUTO_SKIP_INTRO_KEY = 'arms:autoSkipIntro';
   const AUTO_NEXT_KEY = 'arms:autoNext';
@@ -373,6 +403,9 @@
     autoSkipIntro = loadToggle(AUTO_SKIP_INTRO_KEY, false);
     autoNext = loadToggle(AUTO_NEXT_KEY, false);
   });
+
+  // Auto skip outro whenever auto skip intro is enabled
+  $: autoSkipOutro = autoSkipIntro;
 
   let showFullDescription = false;
   let isLongDescription = false;
@@ -487,17 +520,19 @@
               {videoSrc}
               {poster}
               {subtitles}
-              {useArtPlayer}
               {useIframePlayer}
               goToEpisode={goToEpisode}
               onRefreshSource={handleRefreshSource}
               {intro}
               {outro}
               {autoSkipIntro}
+              {autoSkipOutro}
+              {autoPlay}
+              {autoNext}
+              {playNext}
               animeInfo={data.anime?.info}
               episodeNum={episodes.find(e => e.episodeId === currentEpisodeId)?.number}
               episodes={episodes}
-              autoNext={autoNext}
               episodeId={
                 (() => {
                   const match = currentEpisodeId.match(/ep=(\d+)/);
