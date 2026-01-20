@@ -11,6 +11,8 @@
   export let autoNext: boolean = false;
   export let apiIframeUrl: string | null = null;
   export let currentServer: string = 'hd-2';
+  export let autoPlay: boolean = false;
+  export let autoSkipIntro: boolean = false;
 
   // Extract code after ep= if present, else use episodeId
   function getIframeEpisodeCode(id: string) {
@@ -32,9 +34,24 @@
       console.log('Using HD-2 megaplay URL:', `${baseURL}/${code}/${category}`);
       return `${baseURL}/${code}/${category}`;
     }
-    // For HD-1 and HD-3, use API iframe URL
+    // For HD-1 and HD-3, use API iframe URL with autoPlay and autoSkipIntro parameters
     if ((serverLower === 'hd-1' || serverLower === 'hd-3') && apiIframeUrl) {
-      const urlWithDebug = `${apiIframeUrl}&_debug=true`;
+      let url = apiIframeUrl;
+      // Update autoPlay parameter based on autoPlay state
+      if (url.includes('autoPlay=0')) {
+        url = url.replace('autoPlay=0', `autoPlay=${autoPlay ? '1' : '0'}`);
+      } else if (!url.includes('autoPlay=')) {
+        url += `&autoPlay=${autoPlay ? '1' : '0'}`;
+      }
+      // Update asi (autoSkipIntro) parameter based on autoSkipIntro state
+      if (url.includes('asi=0')) {
+        url = url.replace('asi=0', `asi=${autoSkipIntro ? '1' : '0'}`);
+      } else if (url.includes('asi=1')) {
+        url = url.replace('asi=1', `asi=${autoSkipIntro ? '1' : '0'}`);
+      } else if (!url.includes('asi=')) {
+        url += `&asi=${autoSkipIntro ? '1' : '0'}`;
+      }
+      const urlWithDebug = `${url}&_debug=true`;
       console.log('Using API iframe URL for', currentServer, ':', urlWithDebug);
       return urlWithDebug;
     }

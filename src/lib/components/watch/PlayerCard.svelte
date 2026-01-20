@@ -4,13 +4,13 @@
   export let videoSrc: string = '';
   export let poster: string = '';
   export let subtitles: Array<any> = [];
-  export let useArtPlayer: boolean = true;
   export let useIframePlayer: boolean = false;
   export let goToEpisode: (id: string) => void;
   export let onRefreshSource: (videoUrl: string) => void = () => {};
   export let intro: { start: number; end: number } | null = null;
-  export let outro: { start: number; end: number } | null = null;
   export let autoSkipIntro: boolean = false;
+  export let autoSkipOutro: boolean = false;
+  export let outro: { start: number; end: number } | null = null;
   export let episodeId: string = '';
   export let category: string = 'sub';
   export let animeInfo: any;
@@ -19,6 +19,8 @@
   export let autoNext: boolean = false;
   export let apiIframeUrl: string | null = null;
   export let currentServer: string = 'hd-2';
+  export let autoPlay: boolean = false;
+  export let playNext: () => void = () => {};
 
   function setUseIframePlayer(v: boolean) { useIframePlayer = v; }
 
@@ -26,6 +28,11 @@
   function getIframeEpisodeCode(id: string) {
     const match = id.match(/ep=(\d+)/);
     return match ? match[1] : id;
+  }
+
+  // Wrapper for playNext that doesn't require parameters
+  async function handlePlayNext() {
+    await playNext();
   }
 </script>
 
@@ -41,6 +48,8 @@
       autoNext={autoNext}
       {apiIframeUrl}
       {currentServer}
+      {autoPlay}
+      {autoSkipIntro}
     />
   {:else}
     {#key videoSrc}
@@ -52,6 +61,10 @@
         {intro}
         {outro}
         {autoSkipIntro}
+        {autoSkipOutro}
+        {autoPlay}
+        {autoNext}
+        playNext={handlePlayNext}
       />
     {/key}
   {/if}

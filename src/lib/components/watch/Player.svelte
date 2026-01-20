@@ -15,7 +15,12 @@
   export let onRefreshSource: (videoUrl: string) => void = () => {};
 
   export let intro: { start: number; end: number } | null = null;
+  export let outro: { start: number; end: number } | null = null;
   export let autoSkipIntro: boolean = false;
+  export let autoSkipOutro: boolean = false;
+  export let autoPlay: boolean = false;
+  export let autoNext: boolean = false;
+  export let playNext: () => void = () => {};
 
   let videoRef: HTMLVideoElement | null = null;
   let plyr: any = null;
@@ -25,6 +30,17 @@
   let selectedLanguage = 'auto';
   let loading = false;
   let buffering = false;
+
+  // Store event handler references to properly remove them
+  let bufferingHandlers: {
+    onWaiting?: () => void;
+    onPlaying?: () => void;
+    onCanPlay?: () => void;
+    onSeeking?: () => void;
+    onSeeked?: () => void;
+    onEnded?: () => void;
+    onPause?: () => void;
+  } = {};
 
   // Dynamically import libraries only in browser
   let Plyr: any = null;
@@ -51,6 +67,11 @@
   }
 
   function cleanup() {
+    detachBufferingEvents();
+    detachVideoEndedHandler();
+    stopDurationMonitor();
+    
+    // Destroy player instances
     if (plyr) {
       plyr.destroy();
       plyr = null;
@@ -204,13 +225,22 @@
     
     cleanup();
     addSubtitleTracks();
+    
+    // Reset buffering state
+    buffering = false;
 
     if (Hls.isSupported() && videoType === 'application/x-mpegURL') {
-      hls = new Hls();
+      console.log('Initializing HLS player with URL:', videoUrl);
+      hls = new Hls({
+        enableWorker: true,
+        lowLatencyMode: false,
+        backBufferLength: 90
+      });
       hls.loadSource(videoUrl);
       hls.attachMedia(videoRef);
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        console.log('HLS manifest parsed');
         if (!videoRef) return;
 
         // Get available quality levels (resolutions)
@@ -256,18 +286,34 @@
 
         setupOrientationHandling();
         setupCaptionEvents();
+        attachBufferingEvents();
       });
 
       hls.on(Hls.Events.ERROR, function (event: any, data: any) {
-        if (data.fatal && data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-          // Notify parent to delete cache and refetch sources
-          onRefreshSource(videoUrl);
+        console.error('HLS error:', data);
+        if (data.fatal) {
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              console.log('Network error - attempting recovery');
+              hls.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              console.log('Media error - attempting recovery');
+              hls.recoverMediaError();
+              break;
+            default:
+              console.log('Fatal error - refreshing source');
+              onRefreshSource(videoUrl);
+              break;
+          }
         }
       });
     } else {
+      console.log('Using fallback video player for URL:', videoUrl);
       if (!videoRef) return;
       videoRef.src = videoUrl;
       videoRef.addEventListener('loadedmetadata', () => {
+        console.log('Video metadata loaded');
         if (!videoRef) return;
         plyr = new Plyr(videoRef, {
           controls: [
@@ -283,13 +329,9 @@
         });
         setupOrientationHandling();
         setupCaptionEvents();
+        attachBufferingEvents();
       }, { once: true });
     }
-    
-    setTimeout(() => {
-      detachBufferingEvents();
-      attachBufferingEvents();
-    }, 0);
   }
 
   // Extracted caption event setup for reusability
@@ -327,31 +369,109 @@
     });
   }
 
-  // Add event listeners for buffering/loading
+  // Add event listeners for buffering/loading - FIXED VERSION
   function attachBufferingEvents() {
     if (!videoRef || !browser) return;
-    // HTML5 events
-    videoRef.addEventListener('waiting', () => { buffering = true; });
-    videoRef.addEventListener('playing', () => { buffering = false; });
-    videoRef.addEventListener('canplay', () => { buffering = false; });
-    videoRef.addEventListener('seeking', () => { buffering = true; });
-    videoRef.addEventListener('seeked', () => { buffering = false; });
-    videoRef.addEventListener('ended', () => { buffering = false; });
-    videoRef.addEventListener('pause', () => { buffering = false; });
-    // Plyr events (if needed)
-    plyr?.on('waiting', () => { buffering = true; });
-    plyr?.on('playing', () => { buffering = false; });
+    
+    // First, detach any existing handlers
+    detachBufferingEvents();
+    
+    // Create new handler functions
+    bufferingHandlers.onWaiting = () => { 
+      if (videoType !== 'application/x-mpegURL') {
+        console.log('Buffering started (waiting)');
+        buffering = true;
+      }
+    };
+    
+    bufferingHandlers.onPlaying = () => { 
+      console.log('Playing - clearing buffering');
+      buffering = false;
+    };
+    
+    bufferingHandlers.onCanPlay = () => { 
+      console.log('Can play - clearing buffering');
+      buffering = false;
+    };
+    
+    bufferingHandlers.onSeeking = () => { 
+      if (videoType !== 'application/x-mpegURL') {
+        console.log('Seeking - buffering');
+        buffering = true;
+      }
+    };
+    
+    bufferingHandlers.onSeeked = () => { 
+      console.log('Seeked - clearing buffering');
+      buffering = false;
+    };
+    
+    bufferingHandlers.onEnded = () => {
+      buffering = false;
+      // Video end event is now handled by handleVideoEnded()
+    };
+    
+    bufferingHandlers.onPause = () => { 
+      console.log('Paused - clearing buffering');
+      buffering = false;
+    };
+    
+    // Attach the handlers
+    videoRef.addEventListener('waiting', bufferingHandlers.onWaiting);
+    videoRef.addEventListener('playing', bufferingHandlers.onPlaying);
+    videoRef.addEventListener('canplay', bufferingHandlers.onCanPlay);
+    videoRef.addEventListener('seeking', bufferingHandlers.onSeeking);
+    videoRef.addEventListener('seeked', bufferingHandlers.onSeeked);
+    videoRef.addEventListener('ended', bufferingHandlers.onEnded);
+    videoRef.addEventListener('pause', bufferingHandlers.onPause);
+    
+    // Plyr events - disable buffering display for HLS
+    if (plyr) {
+      plyr.on('waiting', () => { 
+        if (videoType !== 'application/x-mpegURL') {
+          console.log('Plyr waiting - buffering');
+          buffering = true;
+        }
+      });
+      plyr.on('playing', () => { 
+        console.log('Plyr playing - clearing buffering');
+        buffering = false;
+      });
+      plyr.on('ended', () => {
+        buffering = false;
+        // Video end event is now handled by handleVideoEnded()
+      });
+    }
   }
 
   function detachBufferingEvents() {
     if (!videoRef || !browser) return;
-    videoRef.removeEventListener('waiting', () => { buffering = true; });
-    videoRef.removeEventListener('playing', () => { buffering = false; });
-    videoRef.removeEventListener('canplay', () => { buffering = false; });
-    videoRef.removeEventListener('seeking', () => { buffering = true; });
-    videoRef.removeEventListener('seeked', () => { buffering = false; });
-    videoRef.removeEventListener('ended', () => { buffering = false; });
-    videoRef.removeEventListener('pause', () => { buffering = false; });
+    
+    // Remove all event listeners using the stored references
+    if (bufferingHandlers.onWaiting) {
+      videoRef.removeEventListener('waiting', bufferingHandlers.onWaiting);
+    }
+    if (bufferingHandlers.onPlaying) {
+      videoRef.removeEventListener('playing', bufferingHandlers.onPlaying);
+    }
+    if (bufferingHandlers.onCanPlay) {
+      videoRef.removeEventListener('canplay', bufferingHandlers.onCanPlay);
+    }
+    if (bufferingHandlers.onSeeking) {
+      videoRef.removeEventListener('seeking', bufferingHandlers.onSeeking);
+    }
+    if (bufferingHandlers.onSeeked) {
+      videoRef.removeEventListener('seeked', bufferingHandlers.onSeeked);
+    }
+    if (bufferingHandlers.onEnded) {
+      videoRef.removeEventListener('ended', bufferingHandlers.onEnded);
+    }
+    if (bufferingHandlers.onPause) {
+      videoRef.removeEventListener('pause', bufferingHandlers.onPause);
+    }
+    
+    // Clear the handlers object
+    bufferingHandlers = {};
   }
 
   $: {
@@ -381,7 +501,6 @@
     if (browser) {
       unlockOrientation();
       cleanup();
-      detachBufferingEvents();
     }
   });
 
@@ -415,6 +534,8 @@
   // Store handler references
   let enterFullscreenHandler: (() => void) | null = null;
   let exitFullscreenHandler: (() => void) | null = null;
+  let videoEndedHandler: ((event?: any) => Promise<void>) | null = null;
+  let durationCheckInterval: NodeJS.Timeout | null = null;
 
   function setupOrientationHandling() {
     if (!plyr || !browser) return;
@@ -430,9 +551,9 @@
     enterFullscreenHandler = async () => {
       if (!isMobileDevice()) return;
       // Standard API
-      if (screen.orientation?.lock) {
+      if ((screen.orientation as any)?.lock) {
         try {
-          await screen.orientation.lock('landscape');
+          await (screen.orientation as any).lock('landscape');
         } catch {}
       } else if ((screen as any).lockOrientation) {
         (screen as any).lockOrientation('landscape');
@@ -463,6 +584,64 @@
     plyr.on('exitfullscreen', exitFullscreenHandler);
   }
 
+  function updateTimelineMarkers() {
+    if (!videoRef || !plyr || !browser) return;
+    
+    const progressBar = document.querySelector('.plyr__progress') as HTMLElement;
+    if (!progressBar) return;
+    
+    const duration = videoRef.duration;
+    if (!duration || duration === 0) return;
+    
+    // Remove existing markers
+    const existingMarkers = progressBar.querySelectorAll('[data-timeline-marker]');
+    existingMarkers.forEach(m => m.remove());
+    
+    // Add intro marker (purple)
+    if (intro && intro.start < intro.end) {
+      const startPercent = (intro.start / duration) * 100;
+      const endPercent = (intro.end / duration) * 100;
+      const introMarker = document.createElement('div');
+      introMarker.setAttribute('data-timeline-marker', 'intro');
+      introMarker.style.cssText = `
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        left: ${startPercent}%;
+        width: ${endPercent - startPercent}%;
+        height: 5px;
+        background: #a855f7;
+        opacity: 0.9;
+        pointer-events: none;
+        border-radius: 2px;
+        box-shadow: 0 0 6px #a855f7;
+      `;
+      progressBar.appendChild(introMarker);
+    }
+    
+    // Add outro marker (blue)
+    if (outro && outro.start < outro.end) {
+      const startPercent = (outro.start / duration) * 100;
+      const endPercent = (outro.end / duration) * 100;
+      const outroMarker = document.createElement('div');
+      outroMarker.setAttribute('data-timeline-marker', 'outro');
+      outroMarker.style.cssText = `
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        left: ${startPercent}%;
+        width: ${endPercent - startPercent}%;
+        height: 5px;
+        background: #3b82f6;
+        opacity: 0.9;
+        pointer-events: none;
+        border-radius: 2px;
+        box-shadow: 0 0 6px #3b82f6;
+      `;
+      progressBar.appendChild(outroMarker);
+    }
+  }
+
   function initializePlyr() {
     if (!videoRef || plyr || !browser || !Plyr) return;
 
@@ -489,25 +668,222 @@
 
     // Attach orientation handling after Plyr is ready
     setupOrientationHandling();
+    
+    // Update timeline markers when metadata is loaded
+    if (videoRef) {
+      videoRef.addEventListener('loadedmetadata', () => {
+        setTimeout(updateTimelineMarkers, 200);
+      }, { once: false });
+      plyr.on('ready', () => {
+        setTimeout(updateTimelineMarkers, 200);
+      });
+      
+      // Call immediately in case metadata is already loaded
+      setTimeout(updateTimelineMarkers, 300);
+    }
   }
 
-  function setupIntroSkipPlyr() {
-    if (!plyr || !intro || !autoSkipIntro || !browser) return;
+  function setupSkipHandlers() {
+    if (!plyr || !browser) return;
+    
     const onTimeUpdate = () => {
-      if (
-        plyr && // <-- add this check
-        plyr.currentTime >= intro.start &&
-        plyr.currentTime < intro.end
-      ) {
+      if (!plyr) return;
+      
+      // Skip intro if enabled and within intro timeline
+      if (intro && autoSkipIntro && plyr.currentTime >= intro.start && plyr.currentTime < intro.end) {
+        console.log('Skipping intro, jumping to:', intro.end);
         plyr.currentTime = intro.end;
+        return;
+      }
+      
+      // Skip outro if enabled and within outro timeline
+      if (outro && autoSkipOutro && plyr.currentTime >= outro.start && plyr.currentTime < outro.end) {
+        console.log('Skipping outro, jumping to:', outro.end);
+        plyr.currentTime = outro.end;
+        return;
       }
     };
+    
     plyr.on('timeupdate', onTimeUpdate);
     onDestroy(() => plyr && plyr.off('timeupdate', onTimeUpdate));
   }
 
-  $: if (browser && plyr && intro && autoSkipIntro) {
-    setupIntroSkipPlyr();
+  $: if (browser && plyr && (intro || outro) && (autoSkipIntro || autoSkipOutro)) {
+    setupSkipHandlers();
+  }
+
+  function setupAutoPlayPlyr() {
+    if (!plyr || !autoPlay || !browser) return;
+    
+    let autoPlayAttempted = false;
+    
+    const onCanPlay = () => {
+      if (!autoPlayAttempted && plyr) {
+        autoPlayAttempted = true;
+        plyr.play().catch((err: any) => {
+          // Autoplay might be blocked by browser
+          console.log('Autoplay blocked or failed:', err);
+        });
+      }
+    };
+    
+    const onTimeUpdate = () => {
+      if (!autoPlayAttempted && plyr && plyr.currentTime > 0) {
+        autoPlayAttempted = true;
+        plyr.play().catch((err: any) => {
+          console.log('Autoplay blocked or failed:', err);
+        });
+      }
+    };
+    
+    plyr.once('canplay', onCanPlay);
+    plyr.on('timeupdate', onTimeUpdate);
+  }
+
+  /**
+   * Unified handler for video ended event
+   * Handles both autoNext and autostop (pause) functionality
+   */
+  async function handleVideoEnded() {
+    console.log('Video ended', { autoNext, autoPlay });
+    
+    // Ensure video is paused and time is clamped with multiple attempts
+    if (videoRef) {
+      videoRef.pause();
+      videoRef.currentTime = videoRef.duration;
+      console.log('Native video paused at:', videoRef.currentTime, 'duration:', videoRef.duration);
+      
+      // Force pause after a short delay for HLS reliability
+      await new Promise(resolve => setTimeout(resolve, 100));
+      if (!videoRef.paused) {
+        videoRef.pause();
+      }
+    }
+    
+    // Also ensure Plyr is paused if it exists
+    if (plyr) {
+      plyr.pause();
+      plyr.currentTime = plyr.duration;
+      console.log('Plyr paused at:', plyr.currentTime, 'duration:', plyr.duration);
+      
+      // Force pause after a short delay
+      await new Promise(resolve => setTimeout(resolve, 100));
+      if (plyr.playing) {
+        plyr.pause();
+      }
+    }
+    
+    // If autoNext is enabled, trigger the next episode
+    if (autoNext) {
+      console.log('Auto-playing next episode');
+      // Small delay to ensure UI updates before transition
+      await new Promise(resolve => setTimeout(resolve, 500));
+      playNext();
+    } else {
+      console.log('Video stopped - waiting for user interaction');
+    }
+  }
+  
+  /**
+   * Attach unified video ended handler to both Plyr and native video element
+   */
+  function attachVideoEndedHandler() {
+    if (!browser) return;
+    detachVideoEndedHandler();
+    
+    videoEndedHandler = handleVideoEnded;
+    
+    if (plyr) {
+      plyr.on('ended', videoEndedHandler);
+    }
+    
+    if (videoRef) {
+      videoRef.addEventListener('ended', videoEndedHandler, { once: false });
+    }
+    
+    // Start monitoring for videos that don't fire ended event reliably
+    startDurationMonitor();
+  }
+  
+  /**
+   * Remove unified video ended handler
+   */
+  function detachVideoEndedHandler() {
+    if (!browser) return;
+    
+    if (videoEndedHandler) {
+      if (plyr) {
+        plyr.off('ended', videoEndedHandler);
+      }
+      if (videoRef) {
+        videoRef.removeEventListener('ended', videoEndedHandler);
+      }
+      videoEndedHandler = null;
+    }
+  }
+
+  /**
+   * Start monitoring video duration to ensure it stops at the end
+   * This is a fallback for HLS streams where ended event might not fire
+   */
+  function startDurationMonitor() {
+    if (!browser) return;
+    
+    stopDurationMonitor();
+    
+    durationCheckInterval = setInterval(() => {
+      if (!videoRef || !plyr) return;
+      
+      // Check if video is near or at the end
+      const currentTime = plyr.currentTime || videoRef.currentTime;
+      const duration = plyr.duration || videoRef.duration;
+      
+      // Consider video ended if within 0.5 seconds of duration
+      if (duration > 0 && currentTime >= duration - 0.5) {
+        console.log('Duration monitor: Video reached end, pausing...', {
+          currentTime,
+          duration,
+          difference: duration - currentTime
+        });
+        
+        // Call the ended handler if it hasn't been called already
+        if (!videoRef.paused || (plyr && plyr.playing)) {
+          handleVideoEnded();
+        }
+      }
+    }, 100); // Check every 100ms
+  }
+
+  /**
+   * Stop the duration monitor
+   */
+  function stopDurationMonitor() {
+    if (durationCheckInterval) {
+      clearInterval(durationCheckInterval);
+      durationCheckInterval = null;
+    }
+  }
+
+  $: if (browser && plyr && autoPlay) {
+    setupAutoPlayPlyr();
+  }
+
+  // Re-attach ended handler when autoNext flag or player changes
+  $: if (browser && plyr && videoRef) {
+    attachVideoEndedHandler();
+  }
+
+  // Update timeline markers whenever intro or outro changes (independent of autoskip)
+  $: if (browser && plyr && videoRef && intro && outro) {
+    setTimeout(() => updateTimelineMarkers(), 50);
+  }
+  
+  $: if (browser && plyr && videoRef && intro && !outro) {
+    setTimeout(() => updateTimelineMarkers(), 50);
+  }
+  
+  $: if (browser && plyr && videoRef && !intro && outro) {
+    setTimeout(() => updateTimelineMarkers(), 50);
   }
 </script>
 
@@ -527,7 +903,7 @@
     <track kind="captions" label="No captions" srclang="en" src="" default hidden />
     <!-- Subtitle tracks are added dynamically -->
   </video>
-  {#if buffering}
+  {#if buffering && videoType !== 'application/x-mpegURL'}
     <div class="buffering-spinner" aria-label="Loading">
       <div class="spinner"></div>
     </div>
@@ -541,7 +917,7 @@
     max-width: 100%;
     aspect-ratio: 16 / 9;
     background: black;
-    border-radius: 0.25rem; /* Reduced from 0.75rem to 0.25rem */
+    border-radius: 0.25rem;
     overflow: hidden;
     display: flex;
     align-items: center;
@@ -559,7 +935,7 @@
     height: 100% !important;
     object-fit: contain !important;
     background: black;
-    border-radius: 0.25rem; /* Reduced from 0.75rem to 0.25rem */
+    border-radius: 0.25rem;
     display: block;
     box-sizing: border-box;
   }
@@ -568,53 +944,45 @@
     font-size: 1.1em;
     color: #fff;
     text-shadow: 0 2px 4px #000, 0 0 2px #000;
-    /* Remove background for subtitles */
     background: none !important;
     padding: 0.2em 0.6em;
-    border-radius: 0.15rem; /* Reduced from 0.3em to 0.15rem */
+    border-radius: 0.15rem;
     line-height: 1.4;
   }
 
-  /* Subtitles 14px on mobile when NOT fullscreen */
   @media (max-width: 768px) {
     :global(.plyr__captions) {
       font-size: 12px !important;
     }
   }
 
-  /* Show captions control button */
   :global(.plyr__controls .plyr__control--overlaid) {
     display: block !important;
   }
 
-  /* Ensure captions menu is properly styled */
   :global(.plyr__menu__container .plyr__control[role="menuitemradio"]) {
     color: #fff !important;
   }
 
   :global(.plyr__menu__container .plyr__control[role="menuitemradio"][aria-checked="true"]) {
-    color: #f97316 !important; /* Orange color for selected */
+    color: #f97316 !important;
   }
 
   @media (max-width: 768px) {
-    /* Hide the volume range slider, keep the mute button */
     :global(.plyr__controls .plyr__volume input[type="range"]) {
       display: none !important;
     }
-    /* Optionally, shrink the volume control area */
     :global(.plyr__controls .plyr__volume) {
       min-width: 0 !important;
       width: auto !important;
     }
   }
 
-  /* Remove custom controller background, use Plyr's default */
   :global(.plyr__controls) {
     background: unset !important;
-    border-radius: 0 0 0.25rem 0.25rem; /* Reduced from 0.75rem to 0.25rem */
+    border-radius: 0 0 0.25rem 0.25rem;
   }
 
-  /* Restore Plyr's default controller background for video */
   :global(.plyr--video .plyr__controls) {
     background: linear-gradient(#0000, #000000bf) !important;
     background: var(--plyr-video-controls-background, linear-gradient(#0000, #000000bf)) !important;
@@ -634,11 +1002,10 @@
     z-index: 3;
   }
 
-  /* Keep the rest of your dark mode theme */
   :global(.plyr) {
-    --plyr-color-main: #f97316; /* orange-400 */
-    --plyr-video-background: #18181b; /* gray-900 */
-    --plyr-menu-background: #27272a; /* gray-800 */
+    --plyr-color-main: #f97316;
+    --plyr-video-background: #18181b;
+    --plyr-menu-background: #27272a;
     --plyr-menu-color: #fff;
     --plyr-control-color: #fff;
     --plyr-control-hover-background: #f97316;
@@ -649,7 +1016,7 @@
     --plyr-audio-control-hover-background: #f97316;
     background: #18181b !important;
     color: #fff !important;
-    border-radius: 0.25rem; /* Reduced from 0.75rem to 0.25rem */
+    border-radius: 0.25rem;
   }
 
   :global(.plyr__control) {
@@ -663,13 +1030,11 @@
     color: #f97316 !important;
   }
 
-  /* Remove always-on background for the settings icon */
   :global(.plyr__control[aria-expanded="true"]) {
     background: #f97316 !important;
     color: #18181b !important;
   }
 
-  /* Optional: normal state (no background) */
   :global(.plyr__control[aria-expanded="false"]) {
     background: unset !important;
     color: #fff !important;
@@ -679,11 +1044,22 @@
     color: #f97316 !important;
   }
 
+  :global(.plyr__progress) {
+    position: relative !important;
+  }
+
+  :global(.plyr__progress [data-timeline-marker]) {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+  }
+
   :global(.plyr__menu__container) {
-    /* DO NOT set display: block or display: flex here! */
     background: #27272a !important;
     color: #fff !important;
-    border-radius: 0.25rem; /* Reduced from 0.5rem to 0.25rem */
+    border-radius: 0.25rem;
   }
 
   :global(.plyr__menu__container .plyr__control[role="menuitemradio"][aria-checked="true"]) {
@@ -701,7 +1077,6 @@
     text-shadow: 0 2px 4px #000, 0 0 2px #000;
   }
 
-  /* Make Plyr settings and captions menu smaller on mobile */
   @media (max-width: 640px) {
     :global(.plyr__menu__container) {
       max-height: 150px !important;
@@ -709,7 +1084,7 @@
       max-width: 140px !important;
       font-size: 0.75rem !important;
       padding: 0.15rem 0.3rem !important;
-      border-radius: 0.15rem !important; /* Reduced from 0.3rem to 0.15rem */
+      border-radius: 0.15rem !important;
       overflow-y: auto !important;
       overscroll-behavior: contain;
     }
@@ -722,7 +1097,6 @@
     }
   }
 
-  /* Hide the captions/subtitles (CC) icon on mobile */
   @media (max-width: 640px) {
     :global(.plyr__control[data-plyr="captions"]) {
       display: none !important;
@@ -737,7 +1111,7 @@
     justify-content: center;
     z-index: 20;
     pointer-events: none;
-    background: rgba(24, 24, 27, 0.18); /* subtle dark overlay */
+    background: rgba(24, 24, 27, 0.18);
     transition: background 0.2s;
   }
   .spinner {
@@ -761,7 +1135,6 @@
     }
   }
 
-  /* Always keep the fullscreen icon white, even on hover, focus, or active */
   :global(.plyr__control[data-plyr="fullscreen"]),
   :global(.plyr__control[data-plyr="fullscreen"]:hover),
   :global(.plyr__control[data-plyr="fullscreen"]:focus),
@@ -770,7 +1143,6 @@
     background: unset !important;
   }
 
-  /* Play, pause, and captions (CC/sub) icons: always white */
   :global(.plyr__control[data-plyr="play"] svg),
   :global(.plyr__control[data-plyr="pause"] svg),
   :global(.plyr__control[data-plyr="captions"] svg) {
