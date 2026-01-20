@@ -28,7 +28,7 @@ export const GET: RequestHandler = async ({ url }) => {
     
     // If M3U8_PROXY is configured, use it; otherwise, fetch directly
     if (M3U8_PROXY) {
-      const proxyUrl = `${M3U8_PROXY}/streamingProxy?url=${encodeURIComponent(m3u8Url)}&headers=${encodeURIComponent(JSON.stringify(headers))}`;
+      const proxyUrl = `${M3U8_PROXY}/m3u8-proxy?url=${encodeURIComponent(m3u8Url)}&headers=${encodeURIComponent(JSON.stringify(headers))}`;
       resp = await fetch(proxyUrl);
     } else {
       // Fall back to direct fetch
