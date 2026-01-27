@@ -5,6 +5,7 @@
   import type { PageData } from './$types.js';
   import { onMount, onDestroy } from 'svelte';
   import { browser } from '$app/environment';
+  import { flip } from 'svelte/animate';
 
   export let data: PageData;
 
@@ -76,10 +77,20 @@
   // New variable for custom provider dropdown
   let showProviderDropdown = false;
   let imageLoadedStates: { [key: string]: boolean } = {};
+  const MAX_RETRIES = 3;
+  let imageRetries: { [key: string]: number } = {};
+  
+  // Character expansion
+  let showAllCharacters = false;
+  const CHARACTERS_MOBILE = 6;
+  const CHARACTERS_DESKTOP = 12;
+  $: displayedCharacters = showAllCharacters ? characters : (isMobile ? characters.slice(0, CHARACTERS_MOBILE) : characters.slice(0, CHARACTERS_DESKTOP));
+  $: hasMoreCharacters = characters.length > (isMobile ? CHARACTERS_MOBILE : CHARACTERS_DESKTOP);
 
-  // Reset image loaded states when the manga data changes
+  // Reset image states when the manga data changes
   $: if (manga) {
     imageLoadedStates = {};
+    imageRetries = {};
   }
 
   function updateIsMobile() {
@@ -88,17 +99,59 @@
     }
   }
 
-  // Safe image error handling
+  // Image error handling with retry mechanism
   function handleImageError(event: Event) {
     const img = event.target as HTMLImageElement;
-    if (img && !img.dataset.errorHandled) {
-      img.dataset.errorHandled = 'true';
+    const imageId = img.dataset.imageId || '';
+    const imageSrc = img.src;
+    
+    if (!imageId) return;
+    
+    // Initialize retry count if not exists
+    if (!imageRetries[imageId]) {
+      imageRetries[imageId] = 0;
+    }
+    
+    // Attempt retry if we haven't exceeded max retries
+    if (imageRetries[imageId] < MAX_RETRIES) {
+      imageRetries[imageId]++;
+      // Small delay before retry with progressive backoff
+      setTimeout(() => {
+        const originalSrc = img.dataset.originalSrc || imageSrc;
+        const separator = originalSrc.includes('?') ? '&' : '?';
+        img.src = originalSrc + separator + 'retry=' + Date.now();
+      }, 300 * imageRetries[imageId]);
+    } else {
+      // After max retries, mark as loaded to remove skeleton
+      imageLoadedStates[imageId] = true;
       img.onerror = null; // Prevent infinite loop
     }
   }
 
   function handleImageLoad(id: string) {
     imageLoadedStates[id] = true;
+  }
+
+  // Force reload all images on the page (useful for SSR hydration issues)
+  function reloadAllImages() {
+    if (!browser) return;
+    
+    document.querySelectorAll('img[data-image-id]').forEach((img: Element) => {
+      const htmlImg = img as HTMLImageElement;
+      const imageId = htmlImg.dataset.imageId;
+      
+      if (imageId) {
+        // Reset loaded state and reload
+        imageLoadedStates[imageId] = false;
+        imageRetries[imageId] = 0;
+        
+        // Trigger reload by resetting src
+        const originalSrc = htmlImg.dataset.originalSrc;
+        if (originalSrc) {
+          htmlImg.src = originalSrc + '?t=' + Date.now();
+        }
+      }
+    });
   }
 
   // Safe string truncation
@@ -190,6 +243,12 @@
       }
       document.addEventListener('click', handleClickOutside);
 
+      // Force reload all images to handle SSR hydration issues
+      // This ensures images from direct URL navigation work properly
+      setTimeout(() => {
+        reloadAllImages();
+      }, 100);
+
       const storedProvider = localStorage.getItem('selectedMangaProvider');
       let initialProviderToFetch = data.selectedProvider || 'mangahere';
 
@@ -262,9 +321,12 @@
                       <img
                         src={manga.image}
                         alt={safeTruncate(manga.title?.english || manga.title?.romaji || manga.title?.native, 50)}
-                        class="shadow-2xl w-full h-full object-cover {imageLoadedStates[`main-${manga.id}`] ? 'opacity-100' : 'opacity-0'}"
+                        class="shadow-2xl w-full h-full object-cover transition-opacity duration-300 {imageLoadedStates[`main-${manga.id}`] ? 'opacity-100' : 'opacity-0'}"
+                        data-image-id="main-{manga.id}"
+                        data-original-src={manga.image}
                         on:error={handleImageError}
                         on:load={() => handleImageLoad(`main-${manga.id}`)}
+                        loading="eager"
                       />
                     </div>
                   </div>
@@ -541,10 +603,12 @@
                             <img 
                               src={rec.image} 
                               alt={rec.title?.english || rec.title?.romaji || rec.title?.native} 
-                              class="w-full h-full object-cover {imageLoadedStates[`rec-${rec.id}`] ? 'opacity-100' : 'opacity-0'}" 
-                              loading="lazy" 
+                              class="w-full h-full object-cover transition-opacity duration-300 {imageLoadedStates[`rec-${rec.id}`] ? 'opacity-100' : 'opacity-0'}" 
+                              data-image-id="rec-{rec.id}"
+                              data-original-src={rec.image}
                               on:load={() => handleImageLoad(`rec-${rec.id}`)}
                               on:error={handleImageError}
+                              loading="lazy"
                             />
                             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                           </div>
@@ -586,10 +650,12 @@
                             <img 
                               src={rel.image} 
                               alt={rel.title?.english || rel.title?.romaji || rel.title?.native} 
-                              class="w-full h-full object-cover {imageLoadedStates[`rel-${rel.id}`] ? 'opacity-100' : 'opacity-0'}" 
-                              loading="lazy" 
+                              class="w-full h-full object-cover transition-opacity duration-300 {imageLoadedStates[`rel-${rel.id}`] ? 'opacity-100' : 'opacity-0'}" 
+                              data-image-id="rel-{rel.id}"
+                              data-original-src={rel.image}
                               on:load={() => handleImageLoad(`rel-${rel.id}`)}
                               on:error={handleImageError}
+                              loading="lazy"
                             />
                             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                           </div>
@@ -613,39 +679,75 @@
                 <!-- Characters -->
                 {#if characters.length}
                   <section>
-                    <h2 class="text-2xl font-bold text-orange-400 mb-4">Characters</h2>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                      {#each characters as char, i}
-                        <div class="flex gap-4 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-xl shadow-lg p-4 border border-gray-800 hover:border-orange-400 transition">
-                          <div class="relative w-20 h-28 rounded-lg border-2 border-gray-700 shadow overflow-hidden bg-gray-800">
+                    <h2 class="text-2xl font-bold text-orange-400 mb-6">Characters</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 overflow-hidden">
+                      {#each displayedCharacters as char, i (char + i)}
+                        <div 
+                          class="flex gap-3 bg-gray-800 rounded-lg overflow-hidden border border-gray-700 hover:border-orange-400 transition-colors duration-200"
+                          animate:flip={{ duration: 300 }}
+                        >
+                          <!-- Character Image -->
+                          <div class="relative w-16 h-20 md:w-20 md:h-24 flex-shrink-0 bg-gray-700 overflow-hidden">
                             {#if !imageLoadedStates[`char-${i}`]}
-                              <div class="skeleton-loader absolute inset-0"></div>
+                              <div class="skeleton-loader w-full h-full absolute inset-0"></div>
                             {/if}
                             <img
                               src={char.image}
                               alt={char.name?.full || char.name?.native}
                               class="w-full h-full object-cover {imageLoadedStates[`char-${i}`] ? 'opacity-100' : 'opacity-0'}"
+                              data-image-id="char-{i}"
+                              data-original-src={char.image}
                               on:load={() => handleImageLoad(`char-${i}`)}
                               on:error={handleImageError}
+                              loading="lazy"
                             />
                           </div>
-                          <div class="flex-1 min-w-0 flex flex-col justify-center">
-                            <div class="flex items-center gap-2 mb-1">
-                              <span class="font-bold text-base text-orange-300 truncate">{char.name?.full || char.name?.native}</span>
-                              {#if char.role}
-                                <span class="ml-2 bg-orange-400 text-gray-900 px-2 py-0.5 rounded-full text-xs font-bold">{char.role}</span>
-                              {/if}
-                            </div>
-                            {#if char.name?.native && char.name?.native !== char.name?.full}
-                              <div class="text-xs text-gray-400 truncate">{char.name.native}</div>
+
+                          <!-- Character Info -->
+                          <div class="flex-1 flex flex-col justify-center py-3 pr-3 min-w-0">
+                            <h3 class="font-bold text-white text-sm md:text-base leading-tight line-clamp-2" title={char.name?.full || char.name?.native}>
+                              {char.name?.full || char.name?.native || 'Unknown'}
+                            </h3>
+                            {#if char.role}
+                              <p class="text-xs md:text-sm text-cyan-400 mt-1">
+                                {char.role}
+                              </p>
                             {/if}
-                            {#if char.description}
-                              <div class="text-xs text-gray-300 mt-1 line-clamp-2">{char.description}</div>
+                            {#if char.name?.native && char.name?.native !== char.name?.full}
+                              <p class="text-xs text-gray-400 mt-1 line-clamp-1">
+                                {char.name.native}
+                              </p>
                             {/if}
                           </div>
                         </div>
                       {/each}
                     </div>
+                    
+                    {#if hasMoreCharacters}
+                      <div class="flex justify-center mt-6">
+                        <button
+                          class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 active:scale-95 text-gray-900 font-semibold rounded-lg transition-all duration-200 shadow-lg hover:shadow-orange-500/50 text-sm"
+                          on:click={() => (showAllCharacters = !showAllCharacters)}
+                        >
+                          <svg 
+                            class="w-4 h-4 transition-transform duration-300 {showAllCharacters ? 'rotate-180' : ''}" 
+                            xmlns="http://www.w3.org/2000/svg" 
+                            viewBox="0 0 24 24" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            stroke-width="2.5" 
+                            stroke-linecap="round" 
+                            stroke-linejoin="round"
+                          >
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                          </svg>
+                          <span>{showAllCharacters ? 'Less' : 'More'}</span>
+                          {#if !showAllCharacters}
+                            <span class="text-xs opacity-80 font-normal">+{characters.length - displayedCharacters.length}</span>
+                          {/if}
+                        </button>
+                      </div>
+                    {/if}
                   </section>
                 {/if}
               </section>
