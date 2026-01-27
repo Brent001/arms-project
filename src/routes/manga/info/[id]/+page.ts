@@ -29,7 +29,7 @@ export const load: PageLoad = async ({ params, fetch, url }) => {
       relations: manga.relations ?? [],
       characters: manga.characters ?? [],
       chapters: manga.chapters ?? [],
-      selectedProvider: provider // Return the provider used for this fetch
+      selectedProvider: provider
     };
   } catch (err) {
     console.error('Error loading manga info:', err);
