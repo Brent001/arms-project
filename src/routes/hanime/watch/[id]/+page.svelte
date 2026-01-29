@@ -150,7 +150,7 @@
         {#if info && watch}
           <section class="flex-1 flex flex-col gap-3 mb-6">
             <!-- Player Card -->
-            <div class="flex flex-col gap-3 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-sm shadow-2xl border border-[#ff003c]/20 p-1.5 sm:p-6">
+            <div class="player-card-mobile flex flex-col gap-3 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-sm shadow-2xl border border-[#ff003c]/20 p-1.5 sm:p-6">
               <PlayerCard
                 videoSrc={videoSrc}
                 poster={poster}
@@ -404,6 +404,16 @@
 </div>
 
 <style>
+  /* Mobile player - full width with no side padding */
+  @media (max-width: 768px) {
+    .player-card-mobile {
+      margin-left: -0.625rem;
+      margin-right: -0.625rem;
+      border-radius: 0;
+      padding: 0.375rem !important;
+    }
+  }
+
   @media (max-width: 768px) {
     .flex-shrink-0 {
       margin-left: auto;
