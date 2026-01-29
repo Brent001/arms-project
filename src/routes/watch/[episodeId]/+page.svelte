@@ -556,7 +556,7 @@
               />
             </div>
 
-            <div class="bg-gray-800 rounded-lg pt-0 px-4 pb-4 shadow-lg">
+            <div class="bg-gray-800 rounded-lg pt-3 px-4 pb-4 shadow-lg">
               <PlayerSelector
                 {useIframePlayer}
                 setUseIframePlayer={setUseIframePlayer}
