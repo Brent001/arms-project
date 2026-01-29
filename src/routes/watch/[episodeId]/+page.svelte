@@ -515,7 +515,7 @@
       <div class="max-w-[1920px] w-full mx-auto flex flex-col gap-10">
         <section class="flex-1 flex flex-col gap-3 mb-6"> <!-- changed from gap-8 to gap-3 -->
           <!-- Player Card -->
-          <div class="flex flex-col gap-2 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-1.5 sm:p-6">
+          <div class="player-card-mobile flex flex-col gap-2 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-1.5 sm:p-6">
             <PlayerCard
               {videoSrc}
               {poster}
@@ -935,6 +935,16 @@
 
 <!-- Add responsive styles -->
 <style>
+  /* Mobile player - full width with no side padding */
+  @media (max-width: 768px) {
+    .player-card-mobile {
+      margin-left: -0.5rem;
+      margin-right: -0.5rem;
+      border-radius: 0;
+      padding: 0.375rem !important;
+    }
+  }
+
   @media (max-width: 768px) {
     .flex-shrink-0 {
       margin-left: auto;

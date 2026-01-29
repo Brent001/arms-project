@@ -1,5 +1,16 @@
 import type { PageLoad } from './$types.js';
 
+// Helper function to proxy image URLs
+function proxiedImage(url: string): string {
+  if (!url) return url;
+  // If URL is already a proxy, return as-is
+  if (url.includes('/api/proxy/image')) return url;
+  // If URL is relative or data URL, return as-is
+  if (url.startsWith('/') || url.startsWith('data:')) return url;
+  // Otherwise, proxy the image
+  return `/api/proxy/image?url=${encodeURIComponent(url)}`;
+}
+
 export const load: PageLoad = async ({ params, fetch }) => {
   const episodeId = params.episodeId;
   const animeId = episodeId.split('?')[0];
@@ -113,11 +124,26 @@ export const load: PageLoad = async ({ params, fetch }) => {
 
     return {
       episodeId,
-      anime: animeInfoJson.data.anime,
+      anime: {
+        ...animeInfoJson.data.anime,
+        info: {
+          ...animeInfoJson.data.anime.info,
+          poster: proxiedImage(animeInfoJson.data.anime.info.poster)
+        }
+      },
       episodes: episodesJson.data.episodes || [],
-      seasons: animeInfoJson.data.seasons || [],
-      relatedAnimes: animeInfoJson.data.relatedAnimes || [],
-      recommendedAnimes: animeInfoJson.data.recommendedAnimes || [],
+      seasons: (animeInfoJson.data.seasons || []).map((season: any) => ({
+        ...season,
+        poster: proxiedImage(season.poster)
+      })),
+      relatedAnimes: (animeInfoJson.data.relatedAnimes || []).map((anime: any) => ({
+        ...anime,
+        poster: proxiedImage(anime.poster)
+      })),
+      recommendedAnimes: (animeInfoJson.data.recommendedAnimes || []).map((anime: any) => ({
+        ...anime,
+        poster: proxiedImage(anime.poster)
+      })),
       videoSources: [], // This will be populated when sources are fetched
       subtitles: initialSubtitles,
       apiIframeUrl,
