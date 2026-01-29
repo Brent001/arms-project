@@ -515,7 +515,7 @@
       <div class="max-w-[1920px] w-full mx-auto flex flex-col gap-10">
         <section class="flex-1 flex flex-col gap-3 mb-6"> <!-- changed from gap-8 to gap-3 -->
           <!-- Player Card -->
-          <div class="player-card-mobile flex flex-col gap-2 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-1.5 sm:p-6">
+          <div class="player-card-mobile flex flex-col gap-1 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-lg shadow-2xl p-1.5 sm:p-6">
             <PlayerCard
               {videoSrc}
               {poster}
@@ -545,7 +545,7 @@
             />
 
             <!-- Use PlayerController component here -->
-            <div class="sm:block flex justify-center"> <!-- Center on mobile, block on desktop -->
+            <div class="sm:block flex justify-center pb-1"> <!-- Center on mobile, block on desktop -->
               <PlayerController
                 {autoPlay}
                 {autoSkipIntro}
@@ -556,7 +556,7 @@
               />
             </div>
 
-            <div class="bg-gray-800 rounded-lg p-4 shadow-lg">
+            <div class="bg-gray-800 rounded-lg pt-0 px-4 pb-4 shadow-lg">
               <PlayerSelector
                 {useIframePlayer}
                 setUseIframePlayer={setUseIframePlayer}
@@ -564,7 +564,7 @@
                 serverName={currentServer}
               />
               
-              <div class="my-3"></div>
+              <div class="my-1.5"></div>
               
               <ServerSelector
                 {servers}
