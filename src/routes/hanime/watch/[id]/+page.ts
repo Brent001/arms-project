@@ -38,10 +38,7 @@ export const load: PageLoad = async ({ params, fetch }) => {
     videoSrc = videoSources[0].url;
   }
 
-  // Proxy mp4 through backend for CORS handling
-  if (videoSrc && videoSrc.includes('.mp4')) {
-    videoSrc = `/api/hanime/proxy-mp4?url=${encodeURIComponent(videoSrc)}`;
-  }
+
 
   return {
     info: episodeInfo,

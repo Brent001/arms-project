@@ -201,9 +201,6 @@
 
     if (picked) {
       let url = picked.url ?? picked;
-      if (typeof url === 'string' && url.includes('.mp4')) {
-        url = `/api/hanime/proxy-mp4?url=${encodeURIComponent(url)}`;
-      }
       // assign to reactive videoSrc so Player updates
       videoSrc = url;
     }
