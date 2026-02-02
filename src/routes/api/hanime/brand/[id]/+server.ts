@@ -26,7 +26,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
   try {
     if (!redis) {
       console.log('Redis not configured, fetching from API');
-      const resp = await fetch(`${API_URL}/api/hen/tv/brand/${encodeURIComponent(id)}/${encodeURIComponent(page)}`);
+      const resp = await fetch(`${API_URL}/api/hen/mama/studios/${encodeURIComponent(id)}/${encodeURIComponent(page)}`);
       if (!resp.ok) {
         console.error('API fetch failed', resp.status);
         return new Response(JSON.stringify({ status: 'error', error: 'Failed to fetch brand data' }), { status: resp.status });
@@ -59,7 +59,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
 
     // Cache miss: fetch and cache
     console.log('Cache MISS, fetching from API');
-    const resp = await fetch(`${API_URL}/api/hen/tv/brand/${encodeURIComponent(id)}/${encodeURIComponent(page)}`);
+    const resp = await fetch(`${API_URL}/api/hen/mama/studios/${encodeURIComponent(id)}/${encodeURIComponent(page)}`);
     if (!resp.ok) {
       console.error('API fetch failed', resp.status);
       return new Response(JSON.stringify({ status: 'error', error: 'Failed to fetch brand data' }), { status: resp.status });

@@ -10,26 +10,15 @@ const redis = useRedis
   ? new Redis({ url: REDIS_URL!, token: REDIS_TOKEN! })
   : null;
 
-const CACHE_TTL = 432000; // 5 days in seconds (60 * 60 * 24 * 5)
+const CACHE_KEY = 'hanime_home_v1';
+const CACHE_TTL = 1800; // 30 minutes
 
-export const GET: RequestHandler = async ({ url }) => {
-  const id = url.searchParams.get('id');
-  if (!id) {
-    return new Response(JSON.stringify({ status: 'error', error: 'Missing id parameter' }), { status: 400 });
-  }
-
-  const CACHE_KEY = `hanime_watch_${id}_v1`;
-
-  // If Redis is not configured, passthrough mode (no caching)
+export const GET: RequestHandler = async () => {
   if (!redis) {
     try {
-      const resp = await fetch(`${API_URL}/api/hen/mama/watch/${encodeURIComponent(id)}`, {
-        headers: {
-          'Referer': 'https://hanime.tv/'
-        }
-      });
+      const resp = await fetch(`${API_URL}/api/hen/mama/home`);
       if (!resp.ok) {
-        return new Response(JSON.stringify({ status: 'error', error: 'Failed to fetch watch data' }), { status: resp.status });
+        return new Response(JSON.stringify({ status: 'error', error: 'Failed to fetch home data' }), { status: resp.status });
       }
       const data = await resp.json();
       return new Response(JSON.stringify(data), {
@@ -52,13 +41,9 @@ export const GET: RequestHandler = async ({ url }) => {
 
   // Cache miss: fetch and cache
   try {
-    const resp = await fetch(`${API_URL}/api/hen/mama/watch/${encodeURIComponent(id)}`, {
-      headers: {
-        'Referer': 'https://hanime.tv/'
-      }
-    });
+    const resp = await fetch(`${API_URL}/api/hen/mama/home`);
     if (!resp.ok) {
-      return new Response(JSON.stringify({ status: 'error', error: 'Failed to fetch watch data' }), { status: resp.status });
+      return new Response(JSON.stringify({ status: 'error', error: 'Failed to fetch home data' }), { status: resp.status });
     }
     const data = await resp.json();
     await redis.set(CACHE_KEY, data, { ex: CACHE_TTL });

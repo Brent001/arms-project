@@ -17,7 +17,7 @@ export const GET: RequestHandler = async () => {
   let cached = await redis?.get(CACHE_KEY);
 
   // Always fetch latest data
-  const resp = await fetch(`${API_URL}/api/hen/tv/random`);
+  const resp = await fetch(`${API_URL}/api/hen/mama/random`);
   if (!resp.ok) {
     return new Response(JSON.stringify({ status: 'error', error: 'Failed to fetch random data' }), { status: resp.status });
   }

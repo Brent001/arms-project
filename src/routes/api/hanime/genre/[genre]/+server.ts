@@ -24,12 +24,44 @@ export const GET: RequestHandler = async ({ params, url }) => {
 
   if (!redis) {
     try {
-      const resp = await fetch(`${API_URL}/api/hen/tv/genre/${encodeURIComponent(genre)}/${encodeURIComponent(page)}`);
+      const resp = await fetch(`${API_URL}/api/hen/mama/genre/${encodeURIComponent(genre)}/${encodeURIComponent(page)}`);
       if (!resp.ok) {
         return new Response(JSON.stringify({ status: 'error', error: 'Failed to fetch genre data' }), { status: resp.status });
       }
-      const data = await resp.json();
-      return new Response(JSON.stringify(data), {
+      const apiJson = await resp.json();
+
+      // Normalize various upstream shapes
+      const nested = apiJson?.data?.data ?? apiJson?.data ?? apiJson;
+      const resultsRaw: any[] = nested?.results || nested?.items || [];
+      const pagination = nested?.pagination || nested?.meta || {};
+
+      // Map upstream result fields to the frontend-friendly shape
+      const results = resultsRaw.map((item: any) => ({
+        id: item.slug || item.id || item.seriesId || '',
+        image: item.posterUrl || item.imageUrl || item.featuredImageUrl || item.image || '',
+        title: item.title || item.name || '',
+        duration: item.duration || item.runTime || '--:--',
+        views: item.views || item.viewCount || 0,
+        rating: item.rating || null,
+        year: item.year || null,
+        genres: item.genres || item.categories || []
+      }));
+
+      // Extract pagination info
+      let totalPages = pagination?.totalPages ?? pagination?.total;
+      const currentPage = pagination?.currentPage ?? 1;
+      const hasNextPage = pagination?.hasNextPage ?? false;
+
+      // Recalculate totalPages if needed
+      if ((!totalPages || currentPage >= totalPages) && hasNextPage) {
+        totalPages = currentPage + 1;
+      }
+      if (currentPage > 1 && totalPages < currentPage) {
+        totalPages = currentPage + (hasNextPage ? 1 : 0);
+      }
+      totalPages = totalPages ?? 1;
+
+      return new Response(JSON.stringify({ status: 'success', data: { results, currentPage, totalPages } }), {
         status: 200,
         headers: { 'Content-Type': 'application/json', 'X-Cache': 'NONE' }
       });
@@ -49,13 +81,56 @@ export const GET: RequestHandler = async ({ params, url }) => {
 
   // Cache miss: fetch and cache
   try {
-    const resp = await fetch(`${API_URL}/api/hen/tv/genre/${encodeURIComponent(genre)}/${encodeURIComponent(page)}`);
+    const resp = await fetch(`${API_URL}/api/hen/mama/genre/${encodeURIComponent(genre)}/${encodeURIComponent(page)}`);
     if (!resp.ok) {
       return new Response(JSON.stringify({ status: 'error', error: 'Failed to fetch genre data' }), { status: resp.status });
     }
-    const data = await resp.json();
-    await redis.set(CACHE_KEY, data, { ex: CACHE_TTL });
-    return new Response(JSON.stringify(data), {
+    const apiJson = await resp.json();
+
+    // Normalize various upstream shapes (e.g. hentaimama wraps results under data.data)
+    const nested = apiJson?.data?.data ?? apiJson?.data ?? apiJson;
+    const resultsRaw: any[] = nested?.results || nested?.items || [];
+    const pagination = nested?.pagination || nested?.meta || {};
+
+    // Map upstream result fields to the frontend-friendly shape
+    const results = resultsRaw.map((item: any) => ({
+      id: item.slug || item.id || item.seriesId || '',
+      image: item.posterUrl || item.imageUrl || item.featuredImageUrl || item.image || '',
+      title: item.title || item.name || '',
+      duration: item.duration || item.runTime || '--:--',
+      views: item.views || item.viewCount || 0,
+      rating: item.rating || null,
+      year: item.year || null,
+      genres: item.genres || item.categories || []
+    }));
+
+    // Extract pagination info; if totalPages is missing but hasNextPage is true, recalculate
+    let totalPages = pagination?.totalPages ?? pagination?.total;
+    const currentPage = pagination?.currentPage ?? 1;
+    const hasNextPage = pagination?.hasNextPage ?? false;
+
+    // If currentPage >= totalPages but hasNextPage is true, or totalPages is missing, recalculate
+    if ((!totalPages || currentPage >= totalPages) && hasNextPage) {
+      totalPages = currentPage + 1;
+    }
+    // If we're on page 2+ but totalPages is 1, there's definitely an issue; ensure it's at least currentPage
+    if (currentPage > 1 && totalPages < currentPage) {
+      totalPages = currentPage + (hasNextPage ? 1 : 0);
+    }
+    // Default to at least 1
+    totalPages = totalPages ?? 1;
+
+    const normalizedData = {
+      status: 'success',
+      data: {
+        results,
+        currentPage,
+        totalPages
+      }
+    };
+
+    await redis.set(CACHE_KEY, normalizedData, { ex: CACHE_TTL });
+    return new Response(JSON.stringify(normalizedData), {
       status: 200,
       headers: { 'Content-Type': 'application/json', 'X-Cache': 'MISS' }
     });

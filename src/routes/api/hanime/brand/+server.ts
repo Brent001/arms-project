@@ -16,7 +16,7 @@ const CACHE_TTL = 86400; // 24 hours
 export const GET: RequestHandler = async () => {
   if (!redis) {
     try {
-      const response = await fetch(`${API_URL}/api/hen/tv/brand-list`);
+      const response = await fetch(`${API_URL}/api/hen/mama/studios`);
       if (!response.ok) {
         return new Response(
           JSON.stringify({ status: 'error', error: 'Failed to fetch brands' }),
@@ -47,7 +47,7 @@ export const GET: RequestHandler = async () => {
 
   // Cache miss: fetch and cache
   try {
-    const response = await fetch(`${API_URL}/api/hen/tv/brand-list`);
+    const response = await fetch(`${API_URL}/api/hen/mama/studios`);
     if (!response.ok) {
       return new Response(
         JSON.stringify({ status: 'error', error: 'Failed to fetch brands' }),
