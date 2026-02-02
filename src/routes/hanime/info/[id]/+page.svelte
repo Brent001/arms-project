@@ -7,8 +7,9 @@
 
   export let data: any;
 
-  $: info = data?.info?.results;
-  $: related = info?.related ?? [];
+  $: info = data?.info;
+  $: episodes = info?.episodes ?? [];
+  $: similarSeries = info?.similarSeries ?? [];
 
   let loading = false;
   let showWarning = true;
@@ -96,9 +97,9 @@
 </script>
 
 <svelte:head>
-  <title>{info?.name || 'ARMS Hentai'} | ARMS Hentai</title>
+  <title>{info?.title || 'ARMS Hentai'} | ARMS Hentai</title>
   <meta name="description" content={info?.description || 'Hanime information page'}>
-  <meta property="og:title" content={info?.name || 'Hanime Info'}>
+  <meta property="og:title" content={info?.title || 'Hanime Info'}>
   <meta property="og:description" content={info?.description || 'Hanime information page'}>
   <meta property="og:url" content={info ? `/hanime/info/${info.id}` : ''}>
 </svelte:head>
@@ -134,8 +135,8 @@
                     <div class="skeleton-loader rounded-lg shadow-2xl w-64 h-96 border-4 border-[#3a0d16]"></div>
                   {/if}
                   <img
-                    src={info.poster}
-                    alt={info.name}
+                    src={info.posterUrl}
+                    alt={info.title}
                     class="rounded-lg shadow-2xl w-64 h-auto object-cover border-4 border-[#3a0d16] {imageLoadedStates[info.id] ? 'opacity-100' : 'opacity-0'}"
                     on:error={handleImageError}
                     on:load={() => handleImageLoad(info.id)}
@@ -148,14 +149,14 @@
                   <div class="flex items-center gap-2 sm:gap-3 md:ml-0 ml-[-8px]">
                     <h1 class="text-xl sm:text-3xl font-bold text-[#ff003c] 
                       {isMobile ? 'w-full text-center' : ''}">
-                      {info.name}
+                      {info.title}
                     </h1>
                   </div>
 
                   <div class="space-y-3">
                     <!-- Genres -->
                     <div class="flex flex-wrap gap-1.5 md:ml-0 ml-[-8px]">
-                      {#each (isMobile && !showAllGenres ? info.genre.slice(0, 3) : info.genre) as genre}
+                      {#each (isMobile && !showAllGenres ? info.genres.slice(0, 3) : info.genres) as genre}
                         <a
                           href={`/hanime/genre/${genre.replace(/\s+/g, '-').toLowerCase()}`}
                           class="bg-[#ff003c]/20 text-[#ff003c] px-2 py-1 rounded text-xs font-medium hover:bg-[#ff003c]/30 transition"
@@ -164,27 +165,26 @@
                           {genre}
                         </a>
                       {/each}
-                      {#if isMobile && info.genre.length > 3}
+                      {#if isMobile && info.genres.length > 3}
                         <button
                           class="text-[#ff003c] hover:text-[#c2002e] text-xs font-semibold"
                           on:click={() => (showAllGenres = !showAllGenres)}
                           style="background: none; border: none; cursor: pointer; padding: 0;"
                         >
-                          {showAllGenres ? '- Less' : `+${info.genre.length - 3} More`}
+                          {showAllGenres ? '- Less' : `+${info.genres.length - 3} More`}
                         </button>
                       {/if}
                     </div>
 
-                    <!-- Brand/Studio -->
-                    {#if info.brandName}
+                    <!-- Studio -->
+                    {#if info.studio}
                       <div class="text-sm flex flex-wrap items-center gap-2 md:ml-0 ml-[-8px]">
                         <span class="text-[#ff003c] font-medium">Studio:</span>
                         <span
                           class="text-[#ffb3c6] text-xs cursor-pointer hover:text-[#ff003c] transition"
                           style="text-decoration: none;"
-                          on:click={() => goto(`/hanime/studio/${encodeURIComponent(info.brandName.replace(/\s+/g, '-').toLowerCase())}`)}
                         >
-                          {info.brandName}
+                          {info.studio}
                         </span>
                       </div>
                     {/if}
@@ -243,7 +243,7 @@
                     {#if isMobile}
                       <div class="flex justify-center py-2">
                         <a
-                          href={`/hanime/watch/${info.id}`}
+                          href={`/hanime/watch/${episodes?.[0]?.slug || info.id}`}
                           class="inline-flex items-center justify-center gap-2 bg-[#ff003c] hover:bg-[#c2002e] text-white font-bold px-12 py-2 rounded-lg shadow transition text-sm"
                         >
                           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 20 20">
@@ -255,7 +255,7 @@
                       </div>
                     {:else}
                       <a
-                        href={`/hanime/watch/${info.id}`}
+                        href={`/hanime/watch/${episodes?.[0]?.slug || info.id}`}
                         class="inline-flex items-center gap-2 bg-[#ff003c] hover:bg-[#c2002e] text-white font-bold px-5 py-2 rounded-lg shadow transition text-sm md:ml-0 ml-[-8px]"
                         style="margin-bottom: 0.5rem;"
                       >
@@ -269,22 +269,22 @@
 
                     <!-- Stats Grid -->
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-1 text-xs">
-                      {#if info.releaseDate}
+                      {#if info.firstAirDate}
                         <div class="bg-[#ff003c]/10 p-2 rounded border border-[#ff003c]/20">
-                          <span class="text-[#ff003c] font-medium block">Released:</span>
-                          <div class="text-[#ffb3c6]">{info.releaseDate}</div>
+                          <span class="text-[#ff003c] font-medium block">Aired:</span>
+                          <div class="text-[#ffb3c6]">{info.firstAirDate}</div>
                         </div>
                       {/if}
-                      {#if info.uploadDate}
+                      {#if info.lastAirDate}
                         <div class="bg-[#ff003c]/10 p-2 rounded border border-[#ff003c]/20">
-                          <span class="text-[#ff003c] font-medium block">Uploaded:</span>
-                          <div class="text-[#ffb3c6]">{info.uploadDate}</div>
+                          <span class="text-[#ff003c] font-medium block">Last Aired:</span>
+                          <div class="text-[#ffb3c6]">{info.lastAirDate}</div>
                         </div>
                       {/if}
-                      {#if info.views}
+                      {#if info.status}
                         <div class="bg-[#ff003c]/10 p-2 rounded border border-[#ff003c]/20 col-span-2 sm:col-span-1">
-                          <span class="text-[#ff003c] font-medium block">Views:</span>
-                          <div class="text-[#ffb3c6]">{info.views}</div>
+                          <span class="text-[#ff003c] font-medium block">Status:</span>
+                          <div class="text-[#ffb3c6]">{info.status}</div>
                         </div>
                       {/if}
                     </div>
@@ -292,47 +292,89 @@
                 </div>
               </div>
 
-              <!-- Related Hanime -->
-              {#if related.length}
+              <!-- Episodes Section -->
+                  {#if episodes.length}
                 <section>
-                  <h2 class="text-2xl font-bold text-[#ff003c] mb-4">Related Titles</h2>
-                  <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1">
-                    {#each related as rel}
+                  <h2 class="text-2xl font-bold text-[#ff003c] mb-4">Episodes</h2>
+                  <!-- Mobile: 2 cols, Desktop: 7 cols -->
+                  <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-1">
+                    {#each episodes as episode}
                       <a
-                        href={`/hanime/info/${rel.id}`}
-                        on:click|preventDefault={() => handleRelatedClick(rel.id)}
-                        class="group relative bg-gradient-to-br from-[#2a0008] via-[#3a0d16] to-[#1a0106] rounded-md overflow-hidden shadow transition-transform duration-200 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer block hover:scale-[1.03]"
-                        style="min-height: 120px;"
+                        href={`/hanime/watch/${episode.slug}`}
+                        class="group relative bg-gradient-to-br from-[#2a0008] via-[#3a0d16] to-[#1a0106] rounded-md overflow-hidden shadow transition-transform duration-200 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer block hover:scale-[1.02]"
                       >
-                        <div class="relative aspect-[16/7] w-full">
-                          {#if !imageLoadedStates[rel.id]}
+                        <div class="relative aspect-[16/9] w-full">
+                          {#if !imageLoadedStates[episode.slug]}
                             <div class="skeleton-loader w-full h-full absolute inset-0"></div>
                           {/if}
                           <img 
-                            src={rel.image} 
-                            alt={safeTruncate(rel.title, 50)} 
-                            class="w-full h-full object-cover rounded-none {imageLoadedStates[rel.id] ? 'opacity-100' : 'opacity-0'}"
-                            style="aspect-ratio: 16/7;"
+                            src={episode.imageUrl} 
+                            alt={episode.title} 
+                            class="w-full h-full object-cover {imageLoadedStates[episode.slug] ? 'opacity-100' : 'opacity-0'}"
                             loading="lazy"
                             on:error={handleImageError}
-                            on:load={() => handleImageLoad(rel.id)}
+                            on:load={() => handleImageLoad(episode.slug)}
                           />
                           <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                         </div>
                         <div class="absolute bottom-0 left-0 right-0 p-2">
-                          <h3 class="font-semibold text-white text-xs mb-0.5 truncate group-hover:text-[#ffb3c6] transition-colors" title={rel.title}>
-                            {safeTruncate(rel.title, 60)}
+                          <h3 class="font-semibold text-white text-sm mb-1 group-hover:text-[#ffb3c6] transition-colors" title={episode.title}>
+                            {episode.number}
                           </h3>
                           <div class="flex flex-wrap gap-1">
-                            <span class="bg-[#ff003c] text-white px-1.5 py-0.5 rounded text-[10px] font-bold">
-                              Hanime
-                            </span>
-                            {#if rel.views}
+                            {#if episode.status}
+                              <span class="bg-[#ff003c] text-white px-1.5 py-0.5 rounded text-[10px] font-bold">
+                                {episode.status}
+                              </span>
+                            {/if}
+                            {#if episode.rating}
                               <span class="bg-[#2a0008] text-[#ffb3c6] px-1.5 py-0.5 rounded text-[10px]">
-                                {rel.views} views
+                                ⭐ {episode.rating}
                               </span>
                             {/if}
                           </div>
+                          {#if episode.releaseDate}
+                            <p class="text-[#ffb3c6] text-[10px] mt-1">{episode.releaseDate}</p>
+                          {/if}
+                        </div>
+                      </a>
+                    {/each}
+                  </div>
+                </section>
+              {/if}
+
+              <!-- Similar Series -->
+              {#if similarSeries.length}
+                <section>
+                  <h2 class="text-2xl font-bold text-[#ff003c] mb-4">Similar Series</h2>
+                  <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-1">
+                    {#each similarSeries as series}
+                      <a
+                        href={`/hanime/info/${series.slug}`}
+                        class="group relative bg-gradient-to-br from-[#2a0008] via-[#3a0d16] to-[#1a0106] rounded-md overflow-hidden shadow transition-transform duration-200 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer block hover:scale-[1.03]"
+                        style="min-height: 120px;"
+                      >
+                        <div class="relative aspect-[3/4] w-full">
+                          {#if !imageLoadedStates[series.slug]}
+                            <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                          {/if}
+                          <img 
+                            src={series.imageUrl} 
+                            alt={series.title} 
+                            class="w-full h-full object-cover rounded-none {imageLoadedStates[series.slug] ? 'opacity-100' : 'opacity-0'}"
+                            loading="lazy"
+                            on:error={handleImageError}
+                            on:load={() => handleImageLoad(series.slug)}
+                          />
+                          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                        </div>
+                        <div class="absolute bottom-0 left-0 right-0 p-2">
+                          <h3 class="font-semibold text-white text-xs truncate group-hover:text-[#ffb3c6] transition-colors" title={series.title}>
+                            {safeTruncate(series.title, 60)}
+                          </h3>
+                          <span class="bg-[#ff003c] text-white px-1.5 py-0.5 rounded text-[10px] font-bold inline-block">
+                            Series
+                          </span>
                         </div>
                       </a>
                     {/each}
@@ -385,5 +427,6 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    line-clamp: 2;
   }
 </style>

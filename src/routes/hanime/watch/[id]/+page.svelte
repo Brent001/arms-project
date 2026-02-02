@@ -2,32 +2,26 @@
   import Navbar from '$lib/components/hanime/Navbar.svelte';
   import Footer from '$lib/components/hanime/Footer.svelte';
   import PlayerCard from '$lib/components/hanime/watch/PlayerCard.svelte';
+  import ServerSelector from '$lib/components/hanime/watch/ServerSelector.svelte';
   import AdultWarning from '$lib/components/hanime/AdultWarning.svelte';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
 
   export let data;
 
-  $: info = data?.info?.results;
-  $: watch = data?.watch?.results;
+  $: info = data?.info;
+  $: videoSrc = data?.videoSrc ?? '';
+  $: relatedEpisodes = data?.relatedEpisodes ?? [];
+  $: similarSeries = data?.similarSeries ?? [];
 
-  $: poster = info?.poster ?? '';
+  $: poster = info?.posterUrl ?? '';
   $: description = info?.description ?? '';
-  $: title = info?.name ?? '';
-  $: genres = info?.genre ?? [];
-  $: type = info?.type ?? '';
-  $: brand = info?.brandName ?? '';
-  $: views = info?.views ?? '';
-  $: releaseDate = info?.releaseDate ?? '';
-  $: altTitle = info?.altTitle ?? '';
-
-  $: sources = watch?.sources ?? [];
-  $: subSource = sources.find((s: any) => s.format === 'mp4' && s.src.endsWith('-sub.mp4'));
-  $: rawSource = sources.find((s: any) => s.format === 'mp4' && s.src.endsWith('.mp4') && !s.src.endsWith('-sub.mp4'));
-  $: srtSource = sources.find((s: any) => s.format === 'srt');
-  $: videoSrc = subSource?.src || rawSource?.src || sources[0]?.src || '';
-  $: videoFormat = subSource ? 'mp4' : (rawSource ? 'mp4' : (sources[0]?.format || ''));
-  $: srtUrl = srtSource?.src || null;
+  $: title = info?.title ?? '';
+  $: genres = info?.genres ?? [];
+  $: studio = info?.studio ?? '';
+  $: airDate = info?.airDate ?? '';
+  $: rating = info?.rating ?? '';
+  $: ratingCount = info?.ratingCount ?? '';
 
   let showWarning = true;
   let loading = true;
@@ -81,8 +75,16 @@
 
   function handleImageError(event: Event) {
     const img = event.target as HTMLImageElement;
+    // Use a tiny transparent GIF as a safe fallback so thumbnails always render
+    const PLACEHOLDER_DATA_URL = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
     if (img && !img.dataset.errorHandled) {
       img.dataset.errorHandled = 'true';
+      try {
+        // Replace the src with the placeholder (explicitly keep this exact string as requested)
+        img.src = PLACEHOLDER_DATA_URL;
+      } catch (e) {
+        // If replacement fails, just silence further errors
+      }
       img.onerror = null;
     }
   }
@@ -96,16 +98,7 @@
       window.addEventListener('resize', updateIsMobile);
     }
 
-    (async () => {
-      if (data?.search) {
-        searchLoading = true;
-        const res = await fetch(`/api/hanime/search?query=${encodeURIComponent(data.search)}`);
-        const json = await res.json();
-        searchResults = json?.data?.results ?? [];
-        searchLoading = false;
-      }
-      loading = false;
-    })();
+    loading = false;
 
     return () => {
       if (typeof window !== 'undefined') {
@@ -116,6 +109,104 @@
 
   function goToEpisode(id: string) {
     window.location.href = `/hanime/watch/${id}`;
+  }
+
+  // Server selector state
+  // Expand servers into per-mirror entries so each mp4 mirror appears as its own button
+  let serversList: any[] = [];
+  $: if (info?.videoServers) {
+    serversList = info.videoServers.flatMap((s: any, idx: number) => {
+      const serverDisplay = s.server || s.serverName || s.name || `Server ${idx + 1}`;
+      const mp4Arr = s.mp4Sources ?? s.mp4s ?? s.mp4_list ?? [];
+      if (Array.isArray(mp4Arr) && mp4Arr.length) {
+        return mp4Arr.map((m: any, mi: number) => ({
+          serverId: `${idx}-${mi}`,
+          // unique token used for selection; includes original server name and mirror index
+          serverName: `${serverDisplay}__mirror__${mi + 1}`,
+          displayName: `HD-${mi + 1}`,
+          category: s.category || 'sub',
+          source: m
+        }));
+      }
+
+      // Fallback: if no mp4Sources, fall back to iframeSources or a single server entry
+      const iframeArr = s.iframeSources ?? s.sources ?? [];
+      if (Array.isArray(iframeArr) && iframeArr.length) {
+        return iframeArr.map((m: any, mi: number) => ({
+          serverId: `${idx}-${mi}`,
+          serverName: `${serverDisplay}__mirror__${mi + 1}`,
+          displayName: `HD-${mi + 1}`,
+          category: s.category || 'sub',
+          source: m
+        }));
+      }
+
+      return [{
+        serverId: `${idx}-0`,
+        serverName: serverDisplay,
+        displayName: serverDisplay,
+        category: s.category || 'sub',
+        source: s
+      }];
+    });
+  }
+
+  let currentServerName = '';
+  let currentCategory: 'sub' | 'dub' | 'raw' = 'sub';
+
+  // Set default selected server metadata (do not override videoSrc on load)
+  $: if (serversList && serversList.length && !currentServerName) {
+    currentServerName = serversList[0].serverName;
+    currentCategory = serversList[0].category ?? 'sub';
+  }
+
+  function handleChangeServer(name: string, category: 'sub' | 'dub' | 'raw') {
+    // Find matching server entry in info.videoServers
+    currentServerName = name;
+    currentCategory = category;
+    // Attempt to parse mirror token like "ServerName__mirror__2"
+    let picked: any = null;
+    const mirrorMatch = typeof name === 'string' && name.match(/(.+)__mirror__([0-9]+)/);
+    if (mirrorMatch) {
+      const serverDisplay = mirrorMatch[1];
+      const mirrorIndex = parseInt(mirrorMatch[2], 10);
+
+      // Find the corresponding videoServers entry by display name
+      const vs = (info?.videoServers ?? []).find((s: any) => {
+        const sName = s.server || s.serverName || s.name || '';
+        return sName === serverDisplay;
+      });
+
+      if (vs) {
+        const mp4Arr = vs.mp4Sources ?? vs.mp4s ?? vs.mp4_list ?? [];
+        if (Array.isArray(mp4Arr) && mp4Arr.length) {
+          picked = mp4Arr[mirrorIndex - 1] || mp4Arr[0];
+        } else {
+          const iframeArr = vs.iframeSources ?? vs.sources ?? [];
+          picked = iframeArr[mirrorIndex - 1] || iframeArr[0];
+        }
+      }
+    }
+
+    // If not found via mirror token, try to find in expanded serversList
+    if (!picked && Array.isArray(serversList)) {
+      const sEntry = serversList.find((s: any) => s.serverName === name || s.displayName === name);
+      if (sEntry) picked = sEntry.source || sEntry;
+    }
+
+    // Final fallback: use top-level videoSources
+    if (!picked && Array.isArray(info?.videoSources)) {
+      picked = info.videoSources.find((x: any) => x.type === 'mp4' || (typeof x.url === 'string' && x.url.includes('.mp4'))) || info.videoSources[0];
+    }
+
+    if (picked) {
+      let url = picked.url ?? picked;
+      if (typeof url === 'string' && url.includes('.mp4')) {
+        url = `/api/hanime/proxy-mp4?url=${encodeURIComponent(url)}`;
+      }
+      // assign to reactive videoSrc so Player updates
+      videoSrc = url;
+    }
   }
 </script>
 
@@ -147,42 +238,50 @@
           />
         </div>
       {:else}
-        {#if info && watch}
+        {#if info}
           <section class="flex-1 flex flex-col gap-3 mb-6">
             <!-- Player Card -->
             <div class="player-card-mobile flex flex-col gap-3 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-sm shadow-2xl border border-[#ff003c]/20 p-1.5 sm:p-6">
-              <PlayerCard
-                videoSrc={videoSrc}
-                poster={poster}
-                srtUrl={srtUrl}
-              />
-
-              {#if subSource || rawSource}
-                <div class="flex items-center gap-3 justify-start">
-                  <span class="font-semibold text-[#ff003c] text-sm">Source:</span>
-                  {#if subSource}
-                    <button
-                      class="px-3 py-1 rounded-sm text-sm font-semibold transition-colors
-                             {videoSrc === subSource.src ? 'bg-[#ff003c] text-black' : 'bg-[#2a0008] text-[#ffb3c6] hover:bg-[#ff003c]/80 hover:text-black'}"
-                      on:click={() => videoSrc = subSource.src}
-                      disabled={videoSrc === subSource.src}
-                    >
-                      Sub
-                    </button>
-                  {/if}
-                  {#if rawSource}
-                    <button
-                      class="px-3 py-1 rounded-sm text-sm font-semibold transition-colors
-                             {videoSrc === rawSource.src ? 'bg-[#ff003c] text-black' : 'bg-[#2a0008] text-[#ffb3c6] hover:bg-[#ff003c]/80 hover:text-black'}"
-                      on:click={() => videoSrc = rawSource.src}
-                      disabled={videoSrc === rawSource.src}
-                    >
-                      Raw
-                    </button>
-                  {/if}
-                </div>
-              {/if}
+              {#key `${info?.id ?? title}-${videoSrc}`}
+                <PlayerCard
+                  videoSrc={videoSrc}
+                  poster={poster}
+                  subtitles={[]}
+                />
+              {/key}
             </div>
+
+                    
+                      {#if info}
+                        <div class="mt-2">
+                          <ServerSelector
+                            servers={serversList}
+                            currentServer={currentServerName}
+                            category={currentCategory}
+                            changeServerManual={handleChangeServer}
+                          />
+                        </div>
+                      {/if}
+
+                    <!-- Gallery / Screenshots -->
+                    {#if info?.galleryImages && info.galleryImages.length}
+                      <div class="mt-3">
+                        <h3 class="text-sm font-semibold text-[#ff003c] mb-2">Screenshots</h3>
+                        <!-- Horizontal scroll strip for all sizes (desktop uses larger thumbnails) -->
+                        <div class="flex gap-2 overflow-x-auto pb-2 flex-nowrap gallery-strip">
+                          {#each info.galleryImages as img, i}
+                            <img
+                              src={img}
+                              alt={`screenshot-${i}`}
+                              class="h-20 md:h-28 rounded-md object-cover cursor-pointer border border-transparent hover:border-[#ff003c]/40 flex-shrink-0 inline-block w-auto"
+                              on:click={() => window.open(img, '_blank')}
+                              on:load={() => handleImageLoad(`gallery-${i}`)}
+                              on:error={handleImageError}
+                            />
+                          {/each}
+                        </div>
+                      </div>
+                    {/if}
 
             <!-- Info Card -->
             <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-lg shadow-2xl p-6 md:p-10 border border-[#ff003c]/20">
@@ -207,12 +306,6 @@
                     {title}
                   </h1>
                 </div>
-
-                {#if altTitle}
-                  <div class="text-[#ffb3c6]/80 text-lg font-medium italic w-full text-center md:text-left md:ml-0 ml-[-8px]">
-                    {altTitle}
-                  </div>
-                {/if}
                 
                 <div class="space-y-3">
                   <!-- Genres -->
@@ -240,21 +333,11 @@
                   {/if}
 
                   <!-- Brand/Studio -->
-                  {#if brand}
+                  {#if studio}
                     <div class="text-sm flex flex-wrap items-center gap-2 md:ml-0 ml-[-8px]">
                       <span class="text-[#ff003c] font-medium">Studio:</span>
-                      <span
-                        class="text-[#ffb3c6] text-xs cursor-pointer hover:text-[#ff003c] transition"
-                        style="text-decoration: none;"
-                        role="link"
-                        tabindex="0"
-                        on:click={() => goto(`/hanime/studio/${encodeURIComponent(brand.replace(/\s+/g, '-').toLowerCase())}`)}
-                        on:keydown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ')
-                            goto(`/hanime/studio/${encodeURIComponent(brand.replace(/\s+/g, '-').toLowerCase())}`);
-                        }}
-                      >
-                        {brand}
+                      <span class="text-[#ffb3c6] text-xs">
+                        {studio}
                       </span>
                     </div>
                   {/if}
@@ -301,22 +384,22 @@
 
                   <!-- Stats Grid -->
                   <div class="grid grid-cols-2 sm:grid-cols-3 gap-1 text-xs">
-                    {#if releaseDate}
+                    {#if airDate}
                       <div class="bg-[#ff003c]/10 p-2 rounded border border-[#ff003c]/20">
-                        <span class="text-[#ff003c] font-medium block">Released:</span>
-                        <div class="text-[#ffb3c6]">{releaseDate}</div>
+                        <span class="text-[#ff003c] font-medium block">Aired:</span>
+                        <div class="text-[#ffb3c6]">{airDate}</div>
                       </div>
                     {/if}
-                    {#if type}
+                    {#if rating}
                        <div class="bg-[#ff003c]/10 p-2 rounded border border-[#ff003c]/20">
-                        <span class="text-[#ff003c] font-medium block">Type:</span>
-                        <div class="text-[#ffb3c6]">{type}</div>
+                        <span class="text-[#ff003c] font-medium block">Rating:</span>
+                        <div class="text-[#ffb3c6]">{rating}/10</div>
                       </div>
                     {/if}
-                    {#if views}
+                    {#if ratingCount}
                       <div class="bg-[#ff003c]/10 p-2 rounded border border-[#ff003c]/20 col-span-2 sm:col-span-1">
-                        <span class="text-[#ff003c] font-medium block">Views:</span>
-                        <div class="text-[#ffb3c6]">{views}</div>
+                        <span class="text-[#ff003c] font-medium block">Votes:</span>
+                        <div class="text-[#ffb3c6]">{ratingCount}</div>
                       </div>
                     {/if}
                   </div>
@@ -326,61 +409,81 @@
 
           </section>
 
-          <!-- Related List -->
-          <section class="flex flex-col gap-4 mt-2">
-            <h2 class="text-xl font-bold text-[#ff003c] mb-2">Related Hentai</h2>
-            {#if searchLoading}
-              <div class="text-[#ffb3c6]">Loading related...</div>
-            {:else if searchResults.length}
-              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-7 gap-2">
-                {#each searchResults as ep, idx}
-                  <button
-                    type="button"
-                    on:click={() => goToEpisode(ep.id)}
-                    class="group relative bg-[#1a0106] rounded-sm overflow-hidden shadow transition-all duration-150 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer"
-                    style="display: block;"
-                    aria-label={`Go to episode ${ep.title}`}
+          <!-- Related Episodes Section -->
+          {#if relatedEpisodes.length}
+            <section class="flex flex-col gap-4 mt-2">
+              <h2 class="text-2xl font-bold text-[#ff003c] mb-4">Related Episodes</h2>
+              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-3">
+                {#each relatedEpisodes as ep, idx}
+                  <a
+                    href={`/hanime/watch/${ep.slug}`}
+                    class="group relative bg-[#1a0106] rounded-lg overflow-hidden shadow-lg transition-all duration-200 border border-[#ff003c]/20 hover:border-[#ff003c]/60 hover:shadow-[#ff003c]/30 cursor-pointer hover:scale-[1.02]"
                   >
-                    <div class="relative aspect-[3/4]">
-                      {#if !imageLoadedStates[ep.id]}
+                    <div class="relative aspect-video">
+                      {#if !imageLoadedStates[ep.slug]}
                         <div class="skeleton-loader w-full h-full absolute inset-0"></div>
                       {/if}
                       <img
-                        src={ep.image}
+                        src={ep.imageUrl}
                         alt={ep.title}
-                        class="w-full h-full object-cover {imageLoadedStates[ep.id] ? 'opacity-100' : 'opacity-0'}"
-                        loading={idx < 12 ? 'eager' : 'lazy'}
-                        on:load={() => handleImageLoad(ep.id)}
+                        class="w-full h-full object-cover {imageLoadedStates[ep.slug] ? 'opacity-100' : 'opacity-0'}"
+                        loading={idx < 6 ? 'eager' : 'lazy'}
+                        on:load={() => handleImageLoad(ep.slug)}
+                        on:error={handleImageError}
+                      />
+                      <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+                      <div class="absolute bottom-0 left-0 right-0 p-2">
+                        <h3 class="font-semibold text-white text-xs mb-0.5 line-clamp-1 group-hover:text-[#ffb3c6] transition-colors" title={ep.title}>
+                          {ep.title}
+                        </h3>
+                        <span class="text-[#ffb3c6] text-[10px]">{ep.releaseDate}</span>
+                      </div>
+                    </div>
+                  </a>
+                {/each}
+              </div>
+            </section>
+          {/if}
+
+          <!-- Similar Series Section -->
+          {#if similarSeries.length}
+            <section class="flex flex-col gap-4 mt-2">
+              <h2 class="text-xl font-bold text-[#ff003c] mb-2">Similar Series</h2>
+              <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-2 md:gap-3">
+                {#each similarSeries as series, idx}
+                  <a
+                    href={`/hanime/info/${series.slug}`}
+                    class="group relative bg-[#1a0106] rounded-sm overflow-hidden shadow transition-all duration-150 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer"
+                  >
+                    <div class="relative aspect-[3/4]">
+                      {#if !imageLoadedStates[series.slug]}
+                        <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                      {/if}
+                      <img
+                        src={series.imageUrl}
+                        alt={series.title}
+                        class="w-full h-full object-cover {imageLoadedStates[series.slug] ? 'opacity-100' : 'opacity-0'}"
+                        loading={idx < 6 ? 'eager' : 'lazy'}
+                        on:load={() => handleImageLoad(series.slug)}
                         on:error={handleImageError}
                       />
                       <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                       <div class="absolute top-2 left-2">
                         <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded-sm text-[10px] font-semibold shadow">
-                          Related
+                          Series
                         </span>
                       </div>
                       <div class="absolute bottom-0 left-0 right-0 p-2">
-                        <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 group-hover:text-[#ffb3c6] transition-colors" title={ep.title}>
-                          {ep.title}
+                        <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 group-hover:text-[#ffb3c6] transition-colors" title={series.title}>
+                          {series.title}
                         </h3>
-                        <div class="flex items-center justify-between">
-                          <span class="bg-[#ff003c] text-white px-1.5 py-0.5 rounded-sm text-[10px] font-bold">18+</span>
-                          <span class="text-[#ffb3c6] text-[10px] flex items-center gap-1">
-                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 18.657l-6.828-6.829a4 4 0 010-5.656z"/>
-                            </svg>
-                            {ep.views?.toLocaleString() || '0'}
-                          </span>
-                        </div>
                       </div>
                     </div>
-                  </button>
+                  </a>
                 {/each}
               </div>
-            {:else}
-              <div class="text-[#ffb3c6]">No related found.</div>
-            {/if}
-          </section>
+            </section>
+          {/if}
         {:else}
           <!-- Error State -->
           <section class="flex flex-col items-center justify-center py-24">
@@ -428,14 +531,6 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  
-  .line-clamp-3 {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
 
   /* Add responsive container widths */
   @media (min-width: 1920px) {
@@ -451,5 +546,13 @@
 
   img {
     transition: opacity 0.3s ease-in-out;
+  }
+
+  /* Gallery strip improvements: keep thumbnails in a horizontal scroll on desktop */
+  .gallery-strip {
+    -webkit-overflow-scrolling: touch;
+  }
+  .gallery-strip img {
+    display: inline-block;
   }
 </style>
