@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  
   export let animes: any[] = [];
   export let intervalMs: number = 10000;
   export let onWatch: (id: string) => void = () => {};
@@ -11,13 +12,7 @@
   function resetInterval() {
     clearInterval(carouselInterval);
     carouselInterval = setInterval(() => {
-      if (animes?.length > 0 && !isTransitioning) {
-        isTransitioning = true;
-        carouselIndex = (carouselIndex + 1) % animes.length;
-        setTimeout(() => {
-          isTransitioning = false;
-        }, 800);
-      }
+      if (animes?.length > 0 && !isTransitioning) nextSlide();
     }, intervalMs);
   }
 
@@ -25,9 +20,7 @@
     if (animes?.length > 0 && !isTransitioning) {
       isTransitioning = true;
       carouselIndex = (carouselIndex - 1 + animes.length) % animes.length;
-      setTimeout(() => {
-        isTransitioning = false;
-      }, 800);
+      setTimeout(() => { isTransitioning = false; }, 800);
       resetInterval();
     }
   }
@@ -36,9 +29,7 @@
     if (animes?.length > 0 && !isTransitioning) {
       isTransitioning = true;
       carouselIndex = (carouselIndex + 1) % animes.length;
-      setTimeout(() => {
-        isTransitioning = false;
-      }, 800);
+      setTimeout(() => { isTransitioning = false; }, 800);
       resetInterval();
     }
   }
@@ -53,342 +44,93 @@
   });
 </script>
 
-<div class="relative w-full max-w-[1800px] mx-auto rounded-lg overflow-hidden shadow-2xl min-h-[220px] sm:min-h-[420px] flex items-center bg-black">
+<div class="relative w-full max-w-[1800px] mx-auto rounded-xl overflow-hidden shadow-2xl min-h-[220px] sm:min-h-[460px] flex items-center bg-[#0a0a0a] group/carousel">
   {#each animes as anime, i (anime.id)}
-    <div
-      class="carousel-slide {i === carouselIndex ? 'active' : i === (carouselIndex - 1 + animes.length) % animes.length ? 'prev' : i === (carouselIndex + 1) % animes.length ? 'next' : ''}"
-    >
+    <div class="carousel-slide {i === carouselIndex ? 'active' : i === (carouselIndex - 1 + animes.length) % animes.length ? 'prev' : i === (carouselIndex + 1) % animes.length ? 'next' : ''}">
       {#if Math.abs(i - carouselIndex) <= 1 || (i === 0 && carouselIndex === animes.length - 1) || (i === animes.length - 1 && carouselIndex === 0) || i === carouselIndex}
-        <a href={`/hanime/info/${anime.id}`} class="block group relative w-full h-[220px] sm:h-[420px]">
-          <div class="absolute inset-0 w-full h-full image-container">
-            <img
-              src={anime.poster}
-              alt={anime.name}
-              class="w-full h-full object-cover rounded-lg carousel-image"
-              style="object-position:center;"
-              draggable="false"
-            />
-            <div class="absolute inset-0 bg-gradient-to-tr from-black/90 via-black/60 to-transparent rounded-lg pointer-events-none gradient-overlay"></div>
+        <a href={`/hanime/info/${anime.id}`} class="block relative w-full h-[220px] sm:h-[460px]">
+          <div class="absolute inset-0 w-full h-full image-container overflow-hidden">
+            <img src={anime.poster} alt={anime.name} class="w-full h-full object-cover" style="object-position: center 20%;" draggable="false" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent"></div>
           </div>
-          <div class="absolute left-3 sm:left-6 bottom-3 sm:bottom-10 z-10 max-w-[calc(100vw-120px)] sm:max-w-[60%] flex flex-col gap-1 sm:gap-3 content-container">
-            <h2 class="text-white text-lg sm:text-3xl md:text-4xl font-bold truncate drop-shadow anime-title">{anime.name}</h2>
-            <div class="flex gap-2 sm:gap-3 text-white text-xs sm:text-base font-medium anime-badges">
-              <span class="flex items-center gap-1 bg-[#ff003c] text-white px-2 sm:px-3 py-1 rounded-full text-xs font-bold shadow rank-badge">
-                ⭐ {anime.rank}
+
+          <div class="absolute left-0 bottom-0 w-full px-4 pt-4 pb-8 sm:p-10 z-20 content-container flex flex-col items-start gap-0.5 sm:gap-2">
+            <div class="flex items-center gap-2 sm:gap-3 text-white text-xs sm:text-base font-medium anime-badges opacity-0 mt-6 sm:mt-0">
+               <span class="flex items-center gap-1 bg-[#ff003c] text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-bold shadow">
+                Rank #{anime.rank || 'N/A'}
               </span>
-              <span class="flex items-center gap-1 bg-gray-900/70 text-[#ffb3c6] px-2 sm:px-3 py-1 rounded text-xs font-medium year-badge">
-                {anime.description}
+              <span class="flex items-center gap-1 bg-black/30 text-orange-300 px-2 sm:px-3 py-1 rounded text-xs episode-badge">
+                HD
               </span>
             </div>
+
+            <h2 class="text-white text-lg sm:text-3xl md:text-4xl font-bold truncate drop-shadow anime-title max-w-[90%] -mt-1 sm:mt-0">
+              {anime.name}
+            </h2>
+
+            <p class="text-gray-300 text-xs sm:text-sm md:text-base drop-shadow anime-description">
+              {anime.description}
+            </p>
+
+            <button
+              class="absolute right-3 sm:right-10 bottom-3 sm:bottom-10 z-10 flex items-center gap-2 sm:gap-3 bg-[#ff003c] hover:bg-[#d90033] text-white font-bold px-4 py-2 sm:px-8 sm:py-4 rounded-lg transition-all duration-300 shadow-[0_0_15px_rgba(255,0,60,0.3)] hover:shadow-[0_0_25px_rgba(255,0,60,0.6)] active:scale-95"
+              on:click|preventDefault={() => onWatch(anime.id)}
+            >
+              <svg class="w-4 h-4 sm:w-6 sm:h-6 fill-current transition-transform duration-300" viewBox="0 0 20 20"><path d="M6 4l12 6-12 6V4z"/></svg>
+              <span class="hidden sm:inline text-xs sm:text-lg font-bold tracking-widest">WATCH NOW</span>
+            </button>
           </div>
-          <button
-            class="absolute right-3 sm:right-10 bottom-3 sm:bottom-10 z-10 flex items-center gap-2 sm:gap-3 bg-[#ff003c] text-white font-bold rounded-lg px-4 sm:px-8 py-2 sm:py-4 text-xs sm:text-lg shadow-lg hover:bg-[#c2002e] transition watch-button"
-            title="Watch now"
-            on:click|preventDefault={() => onWatch(anime.id)}
-          >
-            <svg class="w-5 h-5 sm:w-6 sm:h-6 play-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M6 4l12 6-12 6V4z"/></svg>
-            <span class="hidden sm:inline">WATCH</span>
-          </button>
         </a>
       {/if}
     </div>
   {/each}
-  <!-- Carousel Controls -->
-  <button
-    on:click={prevSlide}
-    aria-label="Previous Slide"
-    class="absolute left-2 sm:left-8 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-[#ff003c] text-white hover:text-white rounded-full w-8 sm:w-14 h-8 sm:h-14 flex items-center justify-center shadow-lg transition z-10 border-2 border-white/10 hover:border-[#ff003c] carousel-control"
-  >
+
+  <button on:click|stopPropagation={prevSlide} class="absolute left-2 sm:left-8 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-orange-400 text-white hover:text-gray-900 rounded-full w-8 sm:w-14 h-8 sm:h-14 flex items-center justify-center shadow-lg transition z-10 border-2 border-white/10 hover:border-orange-400 carousel-control" aria-label="Previous Slide">
     <svg class="w-5 h-5 sm:w-8 sm:h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" /></svg>
   </button>
-  <button
-    on:click={nextSlide}
-    aria-label="Next Slide"
-    class="absolute right-2 sm:right-8 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-[#ff003c] text-white hover:text-white rounded-full w-8 sm:w-14 h-8 sm:h-14 flex items-center justify-center shadow-lg transition z-10 border-2 border-white/10 hover:border-[#ff003c] carousel-control"
-  >
+  <button on:click|stopPropagation={nextSlide} class="absolute right-2 sm:right-8 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-orange-400 text-white hover:text-gray-900 rounded-full w-8 sm:w-14 h-8 sm:h-14 flex items-center justify-center shadow-lg transition z-10 border-2 border-white/10 hover:border-orange-400 carousel-control" aria-label="Next Slide">
     <svg class="w-5 h-5 sm:w-8 sm:h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" /></svg>
   </button>
-  <!-- Dots -->
-  <div class="dots-container">
+
+  <div class="absolute bottom-4 left-1/2 -translate-x-1/2 hidden sm:flex items-center gap-2 z-30">
     {#each animes as _, i}
-      <span class="carousel-dot {i === carouselIndex ? 'active' : ''}"></span>
+      <button 
+        on:click={() => { if(!isTransitioning) { isTransitioning = true; carouselIndex = i; setTimeout(() => isTransitioning = false, 800); resetInterval(); }}}
+        class="h-1.5 rounded-full transition-all duration-500 {i === carouselIndex ? 'w-8 bg-[#ff003c] shadow-[0_0_10px_rgba(255,0,60,0.6)]' : 'w-1.5 bg-white/30 hover:bg-white/60'}"
+        aria-label="Go to slide {i}"
+      ></button>
     {/each}
   </div>
 </div>
 
 <style>
-  .carousel-dot {
-    width: 0.60rem;      /* reduced from 0.75rem */
-    height: 0.60rem;     /* reduced from 0.75rem */
-    border-radius: 9999px;
-    border: 2px solid #ff003c; /* red theme */
-    background: #1f2937; /* gray-800 */
-    margin: 0 0.12rem;  /* slightly reduced margin */
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    opacity: 0.6;
-    transform: scale(1);
-    display: inline-block;
-    cursor: pointer;
-  }
-  
-  .carousel-dot.active {
-    background: #ff003c;
-    opacity: 1;
-    transform: scale(1.25);
-    box-shadow: 0 0 0 2px #fff2, 0 0 20px rgba(255, 0, 60, 0.5);
-  }
-  
   .carousel-slide {
-    transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    will-change: transform, opacity;
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0; 
-    left: 0;
-    opacity: 0;
-    z-index: 0;
-    pointer-events: none;
+    position: absolute; width: 100%; height: 100%; top: 0; left: 0;
+    opacity: 0; z-index: 0; pointer-events: none; transform: scale(1.05);
+    transition: opacity 0.8s ease-out, transform 0.8s ease-out;
   }
+  .carousel-slide.active { opacity: 1; z-index: 2; pointer-events: auto; transform: scale(1); }
+  .carousel-slide.prev, .carousel-slide.next { opacity: 0; z-index: 1; }
+  .carousel-slide.active .image-container img { animation: slowPan 10s linear forwards; }
+  @keyframes slowPan { from { transform: scale(1.1); } to { transform: scale(1.0); } }
   
-  .carousel-slide.active {
-    opacity: 1;
-    z-index: 2;
-    pointer-events: auto;
-    transform: translateX(0);
-  }
-  
-  .carousel-slide.prev {
-    opacity: 1;
-    z-index: 1;
-    transform: translateX(-100%);
-  }
-  
-  .carousel-slide.next {
-    opacity: 1;
-    z-index: 1;
-    transform: translateX(100%);
-  }
-  
-  /* Default position for non-adjacent slides */
-  .carousel-slide:not(.active):not(.prev):not(.next) {
-    opacity: 0;
-    transform: translateX(200%);
-  }
+  /* Staggered Text Animation */
+  .carousel-slide.active .anime-badges { animation: fadeSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards; }
+  .carousel-slide.active .anime-title { opacity: 0; animation: fadeSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards; }
+  .carousel-slide.active .anime-description { opacity: 0; animation: fadeSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; }
+  .carousel-slide.active button[on\:click] { opacity: 0; animation: fadeSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards; }
 
-  .carousel-slide.active .image-container {
-    animation: imageZoom 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  }
-
-  @keyframes imageZoom {
-    0% {
-      transform: scale(1.1);
-    }
-    100% {
-      transform: scale(1);
-    }
-  }
-
-  .carousel-slide.active .content-container {
-    animation: contentSlideUp 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.1s both;
-  }
-
-  @keyframes contentSlideUp {
-    0% {
-      transform: translateY(30px);
-      opacity: 0;
-    }
-    100% {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-
-  .carousel-slide.active .anime-title {
-    animation: titleSlideIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.2s both;
-  }
-
-  @keyframes titleSlideIn {
-    0% {
-      transform: translateX(-30px);
-      opacity: 0;
-    }
-    100% {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-
-  .carousel-slide.active .anime-badges {
-    animation: badgesSlideIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.3s both;
-  }
-
-  @keyframes badgesSlideIn {
-    0% {
-      transform: translateX(-20px);
-      opacity: 0;
-    }
-    100% {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-
-  .carousel-slide.active .anime-description {
-    animation: descriptionFadeIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.4s both;
-  }
-
-  @keyframes descriptionFadeIn {
-    0% {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  /* Enhanced description styling with proper line clamping */
-  .anime-description {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    word-wrap: break-word;
-    word-break: break-word;
-    line-height: 1.4;
-    max-height: 2.8em; /* 2 lines on mobile */
-    -webkit-line-clamp: 2;
-    line-clamp: 2; /* add this */
-  }
-
-  /* Desktop and larger screens */
-  @media (min-width: 640px) {
-    .anime-description {
-      max-height: 4.2em; /* 3 lines on desktop */
-      -webkit-line-clamp: 3;
-      line-clamp: 3; /* add this */
-      line-height: 1.4;
-    }
-  }
-
-  /* Large desktop screens */
-  @media (min-width: 1024px) {
-    .anime-description {
-      max-height: 4.2em; /* keep 3 lines on large screens too */
-      -webkit-line-clamp: 3;
-      line-clamp: 3; /* add this */
-    }
-  }
-
-  /* Fallback for browsers that don't support line-clamp */
-  @supports not (-webkit-line-clamp: 2) {
-    .anime-description {
-      max-height: 2.8em;
-      overflow: hidden;
-      position: relative;
-    }
-    
-    .anime-description::after {
-      content: '...';
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      background: linear-gradient(to right, transparent, #000 50%);
-      padding-left: 1rem;
-    }
-    
-    @media (min-width: 640px) {
-      .anime-description {
-        max-height: 4.2em;
-      }
-    }
-    
-    @media (min-width: 1024px) {
-      .anime-description {
-        max-height: 4.2em;
-      }
-    }
-  }
-
-  .carousel-slide.active .watch-button {
-    animation: buttonBounceIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.5s both;
-  }
-
-  @keyframes buttonBounceIn {
-    0% {
-      transform: scale(0.8) translateY(20px);
-      opacity: 0;
-    }
-    60% {
-      transform: scale(1.05) translateY(-5px);
-      opacity: 0.8;
-    }
-    100% {
-      transform: scale(1) translateY(0);
-      opacity: 1;
-    }
-  }
-
-  .watch-button:hover .play-icon {
-    animation: playIconPulse 0.4s ease-in-out;
-  }
-
-  @keyframes playIconPulse {
-    0%, 100% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(1.2);
-    }
-  }
+  @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
   .carousel-control {
     transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    top: 45%; /* moved up from 50% */
+    top: 45% !important;
   }
 
-  .gradient-overlay {
-    transition: opacity 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  }
-
-  .carousel-slide.active .gradient-overlay {
-    animation: gradientPulse 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  }
-
-  @keyframes gradientPulse {
-    0% {
-      opacity: 0.8;
-    }
-    50% {
-      opacity: 1;
-    }
-    100% {
-      opacity: 1;
-    }
-  }
-
-  .dots-container {
-    position: absolute;
-    left: 50%;
-    bottom: 1rem; 
-    transform: translateX(-50%);
-    display: flex;
-    z-index: 10;
-    animation: dotsSlideUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.6s both;
-  }
-
-  /* Hide dots on mobile */
-  @media (max-width: 639px) {
-    .dots-container {
-      display: none;
-    }
-  }
-
-  @media (min-width: 640px) {
-    .dots-container {
-      bottom: 1rem; /* was 2rem */
-      display: flex;
+  @media (max-width: 640px) {
+    button[aria-label="Previous Slide"], button[aria-label="Next Slide"] {
+      opacity: 1 !important; width: 2.5rem; height: 2.5rem; background: rgba(0,0,0,0.4);
     }
   }
 </style>

@@ -40,12 +40,13 @@
       const json = await response.json();
       let fetchedGenres: string[] = [];
 
-      // Find hentaitv provider genres
-      if (Array.isArray(json)) {
-        const hentaitv = json.find((g) => g.provider === 'hentai.tv' || g.provider === 'hentaitv');
-        fetchedGenres = hentaitv?.genres || [];
-      } else if (json.data && Array.isArray(json.data.genres)) {
+      // Expecting: { status: 'success', data: { provider, type, data: { genres: [...] } } }
+      if (json?.status === 'success' && json?.data?.data?.genres) {
+        fetchedGenres = json.data.data.genres;
+      } else if (json?.data?.genres) {
         fetchedGenres = json.data.genres;
+      } else if (Array.isArray(json)) {
+        fetchedGenres = json;
       }
 
       if (fetchedGenres.length > 0) {
