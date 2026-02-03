@@ -1,330 +1,134 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
-  import { fly, fade } from 'svelte/transition';
-  import { goto } from '$app/navigation';
+  import NavBarSidebar from '$lib/components/hanime/NavBar-Sidebar.svelte';
+  import { browser } from '$app/environment';
 
-  export let isOpen = false;
-  export let onClose: () => void;
+  let mobileMenuOpen = false;
+  let mobileSearchOpen = false;
+  let searchQuery = '';
+  let isOpen = false;
+  let searchInput: HTMLInputElement;
 
-  let genres: string[] = [];
-  let loadingGenres = true;
-  let errorGenres: string | null = null;
-  let showAllGenres = false;
-
-  // Module-level cache for genres to prevent re-fetching
-  let cachedHanimeGenres: string[] | null = null;
-
-  function sanitizeGenreName(genre: string): string {
-    return genre
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '');
+  // Determine the logo based on the current month
+  let currentLogoSrc: string;
+  const currentMonth = new Date().getMonth(); // 0-indexed (0 for Jan, 11 for Dec)
+  if (currentMonth === 11) { // December
+    currentLogoSrc = '/assets/logo_christmas.png';
+  } else {
+    currentLogoSrc = '/assets/logo.png';
   }
 
-  async function fetchGenres() {
-    // Use cached data if available
-    if (cachedHanimeGenres) {
-      genres = cachedHanimeGenres;
-      loadingGenres = false;
-      return;
-    }
+  function toggleMobileMenu() {
+    mobileMenuOpen = !mobileMenuOpen;
+    if (mobileMenuOpen) mobileSearchOpen = false;
+  }
 
-    loadingGenres = true;
-    errorGenres = null;
-    
-    try {
-      const response = await fetch('/api/hanime/genre/');
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      const json = await response.json();
-      let fetchedGenres: string[] = [];
-
-      // Expecting: { status: 'success', data: { provider, type, data: { genres: [...] } } }
-      if (json?.status === 'success' && json?.data?.data?.genres) {
-        fetchedGenres = json.data.data.genres;
-      } else if (json?.data?.genres) {
-        fetchedGenres = json.data.genres;
-      } else if (Array.isArray(json)) {
-        fetchedGenres = json;
-      }
-
-      if (fetchedGenres.length > 0) {
-        genres = fetchedGenres;
-        cachedHanimeGenres = genres; // Cache the result for future use
-      } else {
-        errorGenres = 'Could not find genres for the provider';
-      }
-    } catch (err) {
-      errorGenres = err instanceof Error ? err.message : 'Failed to fetch genres';
-    } finally {
-      loadingGenres = false;
+  function toggleMobileSearch() {
+    mobileSearchOpen = !mobileSearchOpen;
+    if (mobileSearchOpen) {
+      mobileMenuOpen = false;
+      // Wait for DOM update, then focus
+      setTimeout(() => searchInput?.focus(), 0);
     }
   }
 
-  function navigateTo(path: string) {
-    goto(path);
-    onClose();
+  function closeAll() {
+    mobileMenuOpen = false;
+    mobileSearchOpen = false;
   }
 
-  // Prevent page scroll when sidebar is open
-  $: {
-    if (typeof window !== 'undefined') {
-      if (isOpen) {
-        document.body.style.overflow = 'hidden';
-      } else {
-        document.body.style.overflow = '';
-      }
-    }
+  function toggleSidebar() {
+    isOpen = !isOpen;
   }
 
-  onDestroy(() => {
-    if (typeof window !== 'undefined') {
-      document.body.style.overflow = '';
-    }
-  });
-
-  onMount(() => {
-    fetchGenres();
-  });
+  async function handleSearch(event: Event) {
+    event.preventDefault();
+    if (!searchQuery.trim()) return;
+    // Use the hanime search API route and correct query param
+    window.location.href = `/hanime/search?query=${encodeURIComponent(searchQuery)}&page=1`;
+  }
 </script>
 
-<style>
-  /* Sidebar Overlay */
-  .sidebar-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    width: 100vw;
-    height: 100vh;
-    backdrop-filter: blur(10px);
-    background: rgba(42, 0, 8, 0.85); /* Dark red overlay */
-    z-index: 1000;
-  }
-
-  /* Sidebar */
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 80%;
-    max-width: 300px;
-    height: 100%;
-    background: #1a0106; /* Solid color, no gradient */
-    backdrop-filter: blur(10px) brightness(0.7);
-    box-shadow: 0 4px 16px 0 rgba(255, 0, 60, 0.15);
-    z-index: 1100;
-    overflow-y: auto;
-    scrollbar-width: none;
-    border-right: 2px solid #7a2233;
-  }
-
-  .sidebar::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* Menu Items */
-  .menu-item {
-    width: 100%;
-    padding: 1rem;
-    border-bottom: 1px solid rgba(255, 0, 60, 0.15);
-    font-weight: 600;
-    color: #ff4d79; /* Vibrant pink */
-    cursor: pointer;
-    transition: color 0.2s, transform 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: transparent;
-  }
-
-  .menu-item:hover {
-    color: #fff;
-    background: rgba(255, 0, 60, 0.08);
-    transform: scale(1.05);
-  }
-
-  /* Loading and Error Messages */
-  .loading-message,
-  .error-message {
-    padding: 1rem;
-    font-size: 0.875rem;
-    color: #ff4d79;
-  }
-
-  /* Genre Section */
-  .genre-section {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 0.5rem;
-    margin-top: 1rem;
-  }
-
-  .genre-link {
-    font-size: 0.875rem;
-    font-weight: 600;
-    text-transform: capitalize;
-    cursor: pointer;
-    transition: color 0.2s, transform 0.2s;
-    color: #ffb3c6;
-    text-align: left;
-    background: transparent;
-    border-radius: 0.375rem;
-    padding: 0.25rem 0.5rem;
-  }
-
-  .genre-link:hover {
-    transform: scale(1.05);
-    color: #fff;
-    background: #ff003c;
-  }
-
-  /* Show More Button */
-  .show-more-button {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #ff4d79;
-    cursor: pointer;
-    margin-top: 1rem;
-    transition: color 0.2s, transform 0.2s;
-    background: transparent;
-  }
-
-  .show-more-button:hover {
-    color: #fff;
-    transform: scale(1.05);
-  }
-
-  /* Mobile-specific styles */
-  @media (max-width: 768px) {
-    .sidebar {
-      width: 65%;
-      max-width: 300px;
-    }
-
-    .menu-item {
-      font-size: 0.875rem;
-      padding: 0.75rem;
-    }
-
-    .genre-section {
-      grid-template-columns: repeat(2, 1fr);
-    }
-
-    .genre-link {
-      font-size: 0.75rem;
-    }
-
-    .show-more-button {
-      font-size: 0.75rem;
-    }
-  }
-</style>
-
-{#if isOpen}
-  <button 
-    class="sidebar-overlay" 
-    on:click={onClose} 
-    aria-label="Close sidebar"
-    transition:fade={{ duration: 300 }}
-  ></button>
-{/if}
-
-{#if isOpen}
-  <div 
-    class="sidebar"
-    transition:fly={{ x: -300, duration: 350, opacity: 0.8 }}
-  >
-    <!-- Close Button -->
-    <div class="px-4 py-3 border-b border-gray-700">
-      <button
-        on:click={onClose}
-        class="text-white flex items-center gap-2 px-3 py-2 transition"
-        in:fly={{ x: -50, duration: 400, delay: 100 }}
-      >
-        <!-- Icon -->
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" class="w-5 h-5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+<nav class="fixed top-0 left-0 w-full z-50 bg-[#2a0008]/80 backdrop-blur-md shadow">
+  <div class="w-full mx-auto flex items-center justify-between px-4 lg:px-6 xl:px-8 py-2">
+    <!-- Left: Logo & Hamburger -->
+    <div class="flex items-center gap-3 z-50 flex-shrink-0">
+      <!-- Hamburger Icon -->
+      <button class="p-2" on:click={toggleSidebar} aria-label="Toggle sidebar">
+        <svg class="h-6 w-6 text-[#ff003c]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <line x1="4" y1="6" x2="20" y2="6" />
+          <line x1="4" y1="12" x2="20" y2="12" />
+          <line x1="4" y1="18" x2="20" y2="18" />
         </svg>
-        <span>Close Menu</span>
+      </button>
+      <!-- Logo -->
+      <a href="/hanime" class="flex items-center gap-2" on:click={closeAll}>
+        <img src={currentLogoSrc} alt="Anifire logo" class="h-9 w-9 object-contain rounded z-50" />
+        <span class="text-xl font-black text-[#ff003c] tracking-wide drop-shadow">ARMS</span>
+        <span class="ml-1 text-xs bg-[#ff003c] text-black px-2 py-0.5 rounded font-bold shadow">18+</span>
+      </a>
+    </div>
+
+    <!-- Center/Right: Desktop Search Bar -->
+    <div class="flex items-center gap-3 flex-1 justify-end ml-4">
+      <!-- Desktop Search Bar - Centered with max width -->
+      <form class="hidden md:flex items-center relative w-full max-w-md" on:submit={handleSearch}>
+        <input
+          bind:this={searchInput}
+          class="w-full h-10 rounded bg-[#3a0d16] text-[#ffb3c6] pl-4 pr-12 focus:outline-none focus:ring-2 focus:ring-[#ff003c] placeholder-[#ffb3c6]/60 border border-[#ff003c44]"
+          placeholder="Search hanime..."
+          type="text"
+          bind:value={searchQuery}
+        />
+        <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2" aria-label="Search">
+          <svg class="h-5 w-5 text-[#ff003c]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </button>
+      </form>
+      <!-- Mobile Search Button -->
+      <button class="md:hidden p-2 flex-shrink-0" on:click={toggleMobileSearch} aria-label="Open search">
+        <svg class="h-6 w-6 text-[#ff003c]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
       </button>
     </div>
-
-    <!-- Menu Items -->
-    <ul class="text-white">
-      <li in:fly={{ x: -100, duration: 300, delay: 150 }}>
-        <button class="menu-item" on:click={() => navigateTo('/hanime')} aria-label="Go to Hanime Home">
-          Home
-        </button>
-      </li>
-      <li in:fly={{ x: -100, duration: 300, delay: 175 }}>
-        <button class="menu-item" on:click={() => navigateTo('/hanime/random')} aria-label="Go to Random Hanime">
-          Random
-        </button>
-      </li>
-      <li in:fly={{ x: -100, duration: 300, delay: 200 }}>
-        <button class="menu-item" on:click={() => navigateTo('/hanime/studios')} aria-label="Go to Studios">
-          Studios
-        </button>
-      </li>
-      <li in:fly={{ x: -100, duration: 300, delay: 225 }}>
-        <button class="menu-item" on:click={() => navigateTo('/home')} aria-label="Go to Home">
-          Exit Hanime
-        </button>
-      </li>
-    </ul>
-
-    <!-- Genre Section -->
-    <div 
-      class="text-white mt-4 px-4" 
-      style="margin-bottom: 2rem;"
-      in:fly={{ y: 50, duration: 400, delay: 250 }}
-    >
-      <h5 class="text-lg font-bold mb-2">Genres</h5>
-      {#if loadingGenres}
-        <p class="loading-message" in:fade={{ duration: 200 }}>Loading genres...</p>
-      {:else if errorGenres}
-        <p class="error-message" in:fade={{ duration: 200 }}>{errorGenres}</p>
-      {:else}
-        <div class="genre-section">
-          {#each (showAllGenres ? genres : genres.slice(0, 26)) as genre, i (genre)}
-            <button
-              class="genre-link"
-              on:click={() => navigateTo(`/hanime/genre/${sanitizeGenreName(genre)}`)}
-              aria-label={`Go to ${sanitizeGenreName(genre)}`}
-              in:fly={{ x: -30, duration: 250, delay: 300 + (i * 30) }}
-            >
-              {sanitizeGenreName(genre).replace('-', ' ')}
-            </button>
-          {/each}
-        </div>
-        {#if genres.length > 10}
-          <button 
-            class="show-more-button" 
-            on:click={() => (showAllGenres = !showAllGenres)}
-            in:fly={{ x: -30, duration: 300, delay: 500 }}
-          >
-            {#if showAllGenres}
-              <!-- Icon for "Show Less" -->
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" class="w-5 h-5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4" />
-              </svg>
-              Show Less
-            {:else}
-              <!-- Icon for "Show More" -->
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" class="w-5 h-5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              Show More
-            {/if}
-          </button>
-        {/if}
-      {/if}
-    </div>
   </div>
+
+  <!-- Mobile Search Bar -->
+  {#if mobileSearchOpen}
+    <div class="md:hidden bg-[#2a0008] px-4 py-2 border-t border-[#ff003c44] animate-fade-in-down">
+      <form class="flex items-center relative" on:submit={handleSearch}>
+        <input
+          class="w-full h-10 rounded bg-[#3a0d16] text-[#ffb3c6] pl-4 pr-12 focus:outline-none focus:ring-2 focus:ring-[#ff003c] placeholder-[#ffb3c6]/60 border border-[#ff003c44]"
+          placeholder="Search hanime..."
+          type="text"
+          bind:value={searchQuery}
+          autofocus
+        />
+        <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2" aria-label="Search">
+          <svg class="h-5 w-5 text-[#ff003c]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </button>
+      </form>
+    </div>
+  {/if}
+</nav>
+
+<!-- Sidebar (client-only to avoid SSR/hydration issues) -->
+{#if browser}
+  <NavBarSidebar {isOpen} onClose={() => (isOpen = false)} />
 {/if}
+
+<style>
+  .animate-fade-in-down {
+    animation: fade-in-down 0.2s;
+  }
+  @keyframes fade-in-down {
+    from { opacity: 0; transform: translateY(-10px);}
+    to { opacity: 1; transform: translateY(0);}
+  }
+</style>
