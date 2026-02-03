@@ -285,6 +285,8 @@
         'play-large', 'play', 'progress', 'current-time', 'mute', 'volume',
         'captions', 'settings', 'quality', 'fullscreen'
       ],
+      // --- FIX 1: Enforce 16:9 Aspect Ratio ---
+      ratio: '16:9', 
       captions: {
         active: false, // Start with captions off, let user enable
         language: 'auto',
@@ -458,7 +460,6 @@
     class="responsive-video"
     preload="metadata"
   >
-    <!-- Subtitle tracks are added dynamically in JavaScript -->
     <track kind="captions" label="No captions available" srclang="en" default>
     Your browser does not support the video tag.
   </video>
@@ -477,23 +478,30 @@
     justify-content: center; 
     min-height: 120px;
     box-sizing: border-box;
-    border-radius: 0.25rem; /* Reduced from 0.75rem to 0.25rem */
+    border-radius: 0.25rem;
+    contain: content; /* Helps isolate layout */
   }
 
   .responsive-video {
     width: 100% !important;
     max-width: 100% !important;
     height: 100% !important;
-    object-fit: contain !important; /* Changed from 'cover' to 'contain' to prevent zooming */
+    object-fit: contain !important; /* Ensures low-res video doesn't stretch */
     background: black;
     display: block;
     box-sizing: border-box;
     border-radius: 0.25rem;
   }
 
-  /* Reddish accent for Plyr */
+  /* --- FIX 2: CSS Overrides for Player Size --- */
+
+  /* Force Plyr to take full width/height of container */
   :global(.plyr) {
-    --plyr-color-main: #ff003c; /* reddish accent */
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 100% !important;
+    
+    --plyr-color-main: #ff003c;
     --plyr-control-color: #fff;
     --plyr-control-hover-background: #ff003c;
     --plyr-tooltip-background: #2a0008;
@@ -502,13 +510,29 @@
     --plyr-menu-color: #fff;
     background: transparent !important;
     color: #fff !important;
-    border-radius: 0.25rem; /* Reduced from 0.75rem to 0.25rem */
+    border-radius: 0.25rem;
   }
+
+  /* Ensure the wrapper inside Plyr fills the area */
+  :global(.plyr__video-wrapper) {
+    width: 100% !important;
+    height: 100% !important;
+    background: black;
+  }
+
+  /* Ensure the video tag inside Plyr matches the wrapper */
+  :global(.plyr video) {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+  }
+
+  /* --- End of Fixes --- */
 
   :global(.plyr__control) {
     color: #fff !important;
     background: transparent !important;
-    border-radius: 0.25rem !important; /* Reduced from 0.5rem to 0.25rem */
+    border-radius: 0.25rem !important;
     transition: background 0.2s, color 0.2s;
   }
 
@@ -536,7 +560,7 @@
   :global(.plyr__menu__container) {
     background: #2a0008 !important;
     color: #fff !important;
-    border-radius: 0.25rem; /* Reduced from 0.5rem to 0.25rem */
+    border-radius: 0.25rem;
   }
 
   :global(.plyr__menu__container .plyr__control[role="menuitemradio"][aria-checked="true"]) {
@@ -554,7 +578,7 @@
     text-shadow: 0 2px 4px #000, 0 0 2px #000 !important;
     background: none !important;
     padding: 0.2em 0.6em !important;
-    border-radius: 0.15rem !important; /* Reduced from 0.3em to 0.15rem */
+    border-radius: 0.15rem !important;
     line-height: 1.4 !important;
     bottom: 3% !important;
     position: absolute !important;
