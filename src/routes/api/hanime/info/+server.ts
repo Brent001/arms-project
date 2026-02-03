@@ -23,7 +23,7 @@ export const GET: RequestHandler = async ({ url }) => {
   // If Redis is not configured, passthrough mode (no caching)
   if (!redis) {
     try {
-      const resp = await fetch(`${API_URL}/api/hen/tv/info/${encodeURIComponent(id)}`);
+      const resp = await fetch(`${API_URL}/api/hen/mama/info/${encodeURIComponent(id)}`);
       if (!resp.ok) {
         return new Response(JSON.stringify({ status: 'error', error: 'Failed to fetch info data' }), { status: resp.status });
       }
@@ -48,7 +48,7 @@ export const GET: RequestHandler = async ({ url }) => {
 
   // Cache miss: fetch and cache
   try {
-    const resp = await fetch(`${API_URL}/api/hen/tv/info/${encodeURIComponent(id)}`);
+    const resp = await fetch(`${API_URL}/api/hen/mama/info/${encodeURIComponent(id)}`);
     if (!resp.ok) {
       return new Response(JSON.stringify({ status: 'error', error: 'Failed to fetch info data' }), { status: resp.status });
     }

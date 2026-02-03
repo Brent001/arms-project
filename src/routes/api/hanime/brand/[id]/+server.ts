@@ -23,25 +23,46 @@ export const GET: RequestHandler = async ({ params, url }) => {
 
   const CACHE_KEY = `hanime_brand_${id}_${page}_v1`;
 
+  // Helper to transform new API format to expected format
+  function transformResults(apiResponse: any) {
+    const results = apiResponse?.data?.data?.results || [];
+    const pagination = apiResponse?.data?.data?.pagination;
+    
+    // Transform each result to match expected format
+    const transformed = results.map((item: any) => ({
+      id: item.slug || '',
+      title: item.title || '',
+      image: item.posterUrl || '',
+      duration: item.duration || '--:--',
+      views: 0, // New API doesn't provide views
+      slug: item.slug,
+      year: item.year,
+      rating: item.rating
+    }));
+
+    return {
+      status: 'success',
+      data: {
+        results: transformed,
+        currentPage: pagination?.currentPage || 1,
+        totalPages: pagination?.totalPages || 1
+      },
+      timestamp: apiResponse?.timestamp || new Date().toISOString()
+    };
+  }
+
   try {
     if (!redis) {
       console.log('Redis not configured, fetching from API');
-      const resp = await fetch(`${API_URL}/api/hen/tv/brand/${encodeURIComponent(id)}/${encodeURIComponent(page)}`);
+      const resp = await fetch(`${API_URL}/api/hen/mama/studio/${encodeURIComponent(id)}/${encodeURIComponent(page)}`);
       if (!resp.ok) {
         console.error('API fetch failed', resp.status);
         return new Response(JSON.stringify({ status: 'error', error: 'Failed to fetch brand data' }), { status: resp.status });
       }
       const data = await resp.json();
+      const transformed = transformResults(data);
 
-      // Patch: ensure each result has a duration property
-      if (data?.data?.results) {
-        data.data.results = data.data.results.map((item: any) => ({
-          duration: null, // or '' if you prefer
-          ...item
-        }));
-      }
-
-      return new Response(JSON.stringify(data), {
+      return new Response(JSON.stringify(transformed), {
         status: 200,
         headers: { 'Content-Type': 'application/json', 'X-Cache': 'NONE' }
       });
@@ -59,30 +80,16 @@ export const GET: RequestHandler = async ({ params, url }) => {
 
     // Cache miss: fetch and cache
     console.log('Cache MISS, fetching from API');
-    const resp = await fetch(`${API_URL}/api/hen/tv/brand/${encodeURIComponent(id)}/${encodeURIComponent(page)}`);
+    const resp = await fetch(`${API_URL}/api/hen/mama/studios/${encodeURIComponent(id)}/${encodeURIComponent(page)}`);
     if (!resp.ok) {
       console.error('API fetch failed', resp.status);
       return new Response(JSON.stringify({ status: 'error', error: 'Failed to fetch brand data' }), { status: resp.status });
     }
     const data = await resp.json();
+    const transformed = transformResults(data);
 
-    // Patch: ensure each result has a duration property
-    if (data?.data?.results) {
-      data.data.results = data.data.results.map((item: any) => ({
-        duration: null, // or '' if you prefer
-        ...item
-      }));
-    }
-
-    if (!redis) {
-      return new Response(JSON.stringify(data), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json', 'X-Cache': 'NONE' }
-      });
-    }
-
-    await redis.set(CACHE_KEY, data, { ex: CACHE_TTL });
-    return new Response(JSON.stringify(data), {
+    await redis.set(CACHE_KEY, transformed, { ex: CACHE_TTL });
+    return new Response(JSON.stringify(transformed), {
       status: 200,
       headers: { 'Content-Type': 'application/json', 'X-Cache': 'MISS' }
     });
