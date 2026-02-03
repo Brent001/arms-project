@@ -137,7 +137,7 @@ export const GET: RequestHandler = async ({ url, request }) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
-    let resp: Response;
+    let resp: Response | null = null;
     let retries = 0;
     const maxRetries = 2;
 
@@ -168,6 +168,11 @@ export const GET: RequestHandler = async ({ url, request }) => {
     }
 
     clearTimeout(timeoutId);
+
+    // Ensure resp was assigned
+    if (!resp) {
+      throw new Error('Failed to fetch video after retries');
+    }
 
     // Handle non-successful responses (except 206 Partial Content)
     if (!resp.ok && resp.status !== 206) {
