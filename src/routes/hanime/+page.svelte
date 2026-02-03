@@ -6,6 +6,7 @@
   import Carousel from '$lib/components/hanime/Carousel.svelte';
 
   let featured: any[] = [];
+  let monthlyReleases: any[] = [];
   let recentUncensored: any[] = [];
   let recentSeries: any[] = [];
   let recentEpisodes: any[] = [];
@@ -76,6 +77,11 @@
           description: `${item.year} • Rating: ${item.rating}`,
           slug: item.slug
         }));
+        
+        // Get monthly releases items (limit on mobile)
+        monthlyReleases = isMobile
+          ? (homeData.monthlyReleases || []).slice(0, 12)
+          : (homeData.monthlyReleases || []);
         
         // Get recent uncensored items (limit on mobile)
         recentUncensored = isMobile 
@@ -162,16 +168,80 @@
           {/if}
         </section>
 
+        <!-- Monthly Releases Section -->
+        <section id="monthly" class="mb-8">
+          <div class="flex items-center justify-between mb-6 gap-2">
+            <div class="flex items-center gap-2 sm:gap-3">
+              <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
+              <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-white">Monthly Releases</h2>
+            </div>
+            <a href="/hanime#monthly" class="see-more-btn flex-shrink-0">
+              <span>See More</span>
+              <svg class="see-more-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+          </div>
+          
+          <div class="grid-monthly">
+            {#each monthlyReleases as item, index}
+              <a
+                href={`/hanime/watch/${item.slug}`}
+                class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow {isMobile ? 'border border-transparent' : 'transition-all duration-150 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40'} cursor-pointer block"
+              >
+                <div class="relative aspect-[3/4]">
+                  {#if !imageLoadedStates[item.slug]}
+                    <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                  {/if}
+                  <img
+                    src={item.imageUrl}
+                    alt={item.seriesTitle}
+                    class="w-full h-full object-cover {imageLoadedStates[item.slug] ? 'opacity-100' : 'opacity-0'}"
+                    loading={index < (isMobile ? 6 : 12) ? 'eager' : 'lazy'}
+                    decoding="async"
+                    on:load={() => handleImageLoad(item.slug)}
+                  />
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                  <div class="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
+                    <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow">
+                      Monthly
+                    </span>
+                    <span class="bg-black/70 {isMobile ? '' : 'backdrop-blur-sm'} text-[#ffb3c6] px-2 py-0.5 rounded text-[10px] flex items-center gap-1">
+                      <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                      </svg>
+                      {item.rating || '0'}
+                    </span>
+                  </div>
+                  <div class="absolute bottom-0 left-0 right-0 p-2">
+                    <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 {isMobile ? '' : 'group-hover:text-[#ffb3c6] transition-colors'}" title={item.seriesTitle}>
+                      {item.seriesTitle}
+                    </h3>
+                    <p class="text-[#ffb3c6] text-[10px] mb-1">{item.episodeTitle}</p>
+                    <div class="flex items-center justify-between">
+                      <span class="bg-[#ff003c] text-white px-1.5 py-0.5 rounded text-[10px] font-bold">18+</span>
+                      <span class="text-[#ffb3c6] text-[10px]">{item.releaseDate || '--'}</span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            {/each}
+          </div>
+        </section>
+
         <!-- Recent Uncensored Section -->
         <section id="uncensored" class="mb-8">
-          <div class="flex items-center justify-between mb-8">
-            <div class="flex items-center gap-3">
-              <div class="w-1 h-8 bg-[#ff003c] rounded-full"></div>
-              <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">Recent Uncensored</h2>
-              <span class="bg-[#ff003c]/20 text-[#ff003c] px-3 py-1 rounded-full text-sm font-medium">
-                {recentUncensored.length} items
-              </span>
+          <div class="flex items-center justify-between mb-6 gap-2">
+            <div class="flex items-center gap-2 sm:gap-3">
+              <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
+              <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-white">Recent Uncensored</h2>
             </div>
+            <a href="/hanime#uncensored" class="see-more-btn flex-shrink-0">
+              <span>See More</span>
+              <svg class="see-more-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
           </div>
           
           <div class="grid-responsive">
@@ -208,6 +278,7 @@
                     <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 {isMobile ? '' : 'group-hover:text-[#ffb3c6] transition-colors'}" title={item.seriesTitle}>
                       {item.seriesTitle}
                     </h3>
+                    <p class="text-[#ffb3c6] text-[10px] mb-1">{item.episodeTitle}</p>
                     <div class="flex items-center justify-between">
                       <span class="bg-[#ff003c] text-white px-1.5 py-0.5 rounded text-[10px] font-bold">18+</span>
                       <span class="text-[#ffb3c6] text-[10px]">{item.releaseDate || '--'}</span>
@@ -221,14 +292,17 @@
 
         <!-- Recent Series Section -->
         <section id="series" class="mb-8">
-          <div class="flex items-center justify-between mb-8">
-            <div class="flex items-center gap-3">
-              <div class="w-1 h-8 bg-[#ff003c] rounded-full"></div>
-              <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">Recent Series</h2>
-              <span class="bg-[#ff003c]/20 text-[#ff003c] px-3 py-1 rounded-full text-sm font-medium">
-                {recentSeries.length} items
-              </span>
+          <div class="flex items-center justify-between mb-6 gap-2">
+            <div class="flex items-center gap-2 sm:gap-3">
+              <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
+              <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-white">Recent Series</h2>
             </div>
+            <a href="/hanime#series" class="see-more-btn flex-shrink-0">
+              <span>See More</span>
+              <svg class="see-more-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
           </div>
           
           <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
@@ -278,14 +352,17 @@
 
         <!-- Recent Episodes Section -->
         <section id="episodes" class="mb-8">
-          <div class="flex items-center justify-between mb-8">
-            <div class="flex items-center gap-3">
-              <div class="w-1 h-8 bg-[#ff003c] rounded-full"></div>
-              <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">Recent Episodes</h2>
-              <span class="bg-[#ff003c]/20 text-[#ff003c] px-3 py-1 rounded-full text-sm font-medium">
-                {recentEpisodes.length} items
-              </span>
+          <div class="flex items-center justify-between mb-6 gap-2">
+            <div class="flex items-center gap-2 sm:gap-3">
+              <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
+              <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-white">Recent Episodes</h2>
             </div>
+            <a href="/hanime#episodes" class="see-more-btn flex-shrink-0">
+              <span>See More</span>
+              <svg class="see-more-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
           </div>
           
           <div class="grid-responsive">
@@ -354,7 +431,41 @@
 {/if}
 
 <style>
-  /* Responsive container with proper max-width scaling */
+  /* ─── See More button ─── */
+  .see-more-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #ff003c;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .see-more-btn:hover {
+    color: #fff;
+    background: #ff003c;
+    border-color: #ff003c;
+    box-shadow: 0 0 12px rgba(255, 0, 60, 0.45);
+  }
+
+  .see-more-btn:hover .see-more-icon {
+    transform: translateX(3px);
+  }
+
+  .see-more-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    transition: transform 0.25s ease;
+  }
+
+  /* ─── Layout container ─── */
   .container-custom {
     width: 100%;
     margin-left: auto;
@@ -402,7 +513,28 @@
     }
   }
 
-  /* Responsive grid that adapts to screen size (reduced gaps) */
+  /* ─── Monthly grid (8 cols desktop) ─── */
+  .grid-monthly {
+    display: grid;
+    gap: 0.25rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (min-width: 640px) {
+    .grid-monthly {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.25rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .grid-monthly {
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      gap: 0.25rem;
+    }
+  }
+
+  /* ─── Generic responsive grid ─── */
   .grid-responsive {
     display: grid;
     gap: 0.25rem;
@@ -451,7 +583,7 @@
     }
   }
 
-  /* Skeleton Loader - plain background for performance */
+  /* ─── Skeleton & image fade ─── */
   .skeleton-loader {
     background-color: #3a0d16;
   }
@@ -460,22 +592,7 @@
     transition: opacity 0.3s ease-in-out;
   }
 
-  @keyframes fade-in {
-    from { 
-      opacity: 0; 
-      transform: scale(0.95) translateY(20px);
-    }
-    to { 
-      opacity: 1; 
-      transform: scale(1) translateY(0);
-    }
-  }
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  
+  /* ─── Utilities ─── */
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -483,8 +600,8 @@
     overflow: hidden;
     line-clamp: 2;
   }
-  
-  /* Desktop-only styles */
+
+  /* ─── Desktop card hover ─── */
   @media (min-width: 768px) {
     .group {
       border: 2px solid transparent;
@@ -494,7 +611,7 @@
       border-color: #ff003c;
       box-shadow: 0 0 0 2px #ff003c44, 0 4px 24px #ff003c22;
     }
-    
+
     @supports (backdrop-filter: blur(10px)) {
       .backdrop-blur-sm {
         backdrop-filter: blur(4px);

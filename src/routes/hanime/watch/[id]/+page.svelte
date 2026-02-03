@@ -224,7 +224,7 @@
   </div>
 
   <main class="relative z-10 flex-1 w-full pt-16 pb-2">
-    <div class="max-w-[1920px] mx-auto flex flex-col gap-6 px-2.5 sm:px-4">
+    <div class="max-w-[1920px] mx-auto flex flex-col gap-4 px-2.5 sm:px-4">
       {#if loading}
         <div class="flex items-center justify-center min-h-[300px]">
           <img
@@ -238,7 +238,7 @@
         {#if info}
           <section class="flex-1 flex flex-col gap-3 mb-6">
             <!-- Player Card -->
-            <div class="player-card-mobile flex flex-col gap-3 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-sm shadow-2xl border border-[#ff003c]/20 p-1.5 sm:p-6">
+            <div class="player-card-mobile flex flex-col gap-2 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-sm shadow-2xl border border-[#ff003c]/20 p-1.5 sm:p-6">
               {#key `${info?.id ?? title}-${videoSrc}`}
                 <PlayerCard
                   videoSrc={videoSrc}
@@ -250,7 +250,7 @@
 
                     
                       {#if info}
-                        <div class="mt-2">
+                        <div class="mt-2 px-2 sm:px-0">
                           <ServerSelector
                             servers={serversList}
                             currentServer={currentServerName}
@@ -264,24 +264,38 @@
                     {#if info?.galleryImages && info.galleryImages.length}
                       <div class="mt-3">
                         <h3 class="text-sm font-semibold text-[#ff003c] mb-2">Screenshots</h3>
-                        <!-- Horizontal scroll strip for all sizes (desktop uses larger thumbnails) -->
-                        <div class="flex gap-2 overflow-x-auto pb-2 flex-nowrap gallery-strip">
-                          {#each info.galleryImages as img, i}
-                            <img
-                              src={img}
-                              alt={`screenshot-${i}`}
-                              class="h-20 md:h-28 rounded-md object-cover cursor-pointer border border-transparent hover:border-[#ff003c]/40 flex-shrink-0 inline-block w-auto"
-                              on:click={() => window.open(img, '_blank')}
-                              on:load={() => handleImageLoad(`gallery-${i}`)}
-                              on:error={handleImageError}
-                            />
-                          {/each}
-                        </div>
+                        {#if isMobile && info.galleryImages.length <= 2}
+                          <!-- Grid layout for mobile with 2 or fewer images -->
+                          <div class="grid grid-cols-2 gap-0.5">
+                            {#each info.galleryImages as img, i}
+                              <img
+                                src={img}
+                                alt={`screenshot-${i}`}
+                                class="h-24 rounded-md object-cover border border-transparent hover:border-[#ff003c]/40 w-full"
+                                on:load={() => handleImageLoad(`gallery-${i}`)}
+                                on:error={handleImageError}
+                              />
+                            {/each}
+                          </div>
+                        {:else}
+                          <!-- Horizontal scroll for desktop or more than 2 images on mobile -->
+                          <div class="flex gap-2 overflow-x-auto pb-2 flex-nowrap gallery-strip">
+                            {#each info.galleryImages as img, i}
+                              <img
+                                src={img}
+                                alt={`screenshot-${i}`}
+                                class="h-20 md:h-28 rounded-md object-cover border border-transparent hover:border-[#ff003c]/40 flex-shrink-0 inline-block w-auto"
+                                on:load={() => handleImageLoad(`gallery-${i}`)}
+                                on:error={handleImageError}
+                              />
+                            {/each}
+                          </div>
+                        {/if}
                       </div>
                     {/if}
 
             <!-- Info Card -->
-            <div class="flex flex-col md:flex-row gap-8 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-lg shadow-2xl p-6 md:p-10 border border-[#ff003c]/20">
+            <div class="flex flex-col md:flex-row gap-4 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-lg shadow-2xl p-6 md:p-10 border border-[#ff003c]/20">
               <!-- Poster -->
               <div class="relative w-64 h-96 flex-shrink-0 mx-auto md:mx-0">
                 {#if !imageLoadedStates[info.id]}
@@ -333,9 +347,13 @@
                   {#if studio}
                     <div class="text-sm flex flex-wrap items-center gap-2 md:ml-0 ml-[-8px]">
                       <span class="text-[#ff003c] font-medium">Studio:</span>
-                      <span class="text-[#ffb3c6] text-xs">
+                      <a
+                        href={`/hanime/studio/${studio.replace(/\s+/g, '-').toLowerCase()}`}
+                        class="text-[#ffb3c6] text-xs hover:text-[#ff003c] transition-colors"
+                        style="text-decoration: none;"
+                      >
                         {studio}
-                      </span>
+                      </a>
                     </div>
                   {/if}
                   
@@ -408,9 +426,9 @@
 
           <!-- Related Episodes Section -->
           {#if relatedEpisodes.length}
-            <section class="flex flex-col gap-4 mt-2">
+            <section class="flex flex-col gap-2 mt-2">
               <h2 class="text-2xl font-bold text-[#ff003c] mb-4">Related Episodes</h2>
-              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-3">
+              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1 md:gap-2">
                 {#each relatedEpisodes as ep, idx}
                   <a
                     href={`/hanime/watch/${ep.slug}`}
@@ -444,9 +462,9 @@
 
           <!-- Similar Series Section -->
           {#if similarSeries.length}
-            <section class="flex flex-col gap-4 mt-2">
+            <section class="flex flex-col gap-2 mt-2">
               <h2 class="text-xl font-bold text-[#ff003c] mb-2">Similar Series</h2>
-              <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-2 md:gap-3">
+              <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-1 md:gap-2">
                 {#each similarSeries as series, idx}
                   <a
                     href={`/hanime/info/${series.slug}`}

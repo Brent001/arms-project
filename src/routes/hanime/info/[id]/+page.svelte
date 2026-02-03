@@ -243,7 +243,7 @@
                     {#if isMobile}
                       <div class="flex justify-center py-2">
                         <a
-                          href={`/hanime/watch/${episodes?.[0]?.slug || info.id}`}
+                          href={`/hanime/watch/${episodes?.[episodes.length - 1]?.slug || info.id}`}
                           class="inline-flex items-center justify-center gap-2 bg-[#ff003c] hover:bg-[#c2002e] text-white font-bold px-12 py-2 rounded-lg shadow transition text-sm"
                         >
                           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 20 20">
@@ -255,7 +255,7 @@
                       </div>
                     {:else}
                       <a
-                        href={`/hanime/watch/${episodes?.[0]?.slug || info.id}`}
+                        href={`/hanime/watch/${episodes?.[episodes.length - 1]?.slug || info.id}`}
                         class="inline-flex items-center gap-2 bg-[#ff003c] hover:bg-[#c2002e] text-white font-bold px-5 py-2 rounded-lg shadow transition text-sm md:ml-0 ml-[-8px]"
                         style="margin-bottom: 0.5rem;"
                       >
