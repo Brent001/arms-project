@@ -5,8 +5,8 @@
 
   export let data; // Data from +page.ts
 
-  let brands: { id: string; name: string; slug: string }[] = [];
-  let filteredBrands: { id: string; name: string; slug: string }[] = [];
+  let brands: { id: number; name: string; slug: string }[] = [];
+  let filteredBrands: { id: number; name: string; slug: string }[] = [];
   let error: string | null = null;
   let loading = true;
   let isMobile = false;
@@ -35,12 +35,25 @@
     window.addEventListener('resize', handleResize, { passive: true });
 
     // Assign data from load function
-    brands = data.brands;
-    error = data.error;
+    // Handle both direct brands array and nested response format
+    try {
+      if (data && typeof data === 'object') {
+        const sourceData = data.results ?? data.brands ?? [];
+        if (Array.isArray(sourceData) && sourceData.length > 0) {
+          brands = sourceData;
+        }
+        error = data.error || null;
+      }
+    } catch (err) {
+      console.error('Error processing data:', err);
+      error = 'Failed to process studio data';
+      brands = [];
+    }
+    
     loading = false;
 
     // Initialize filteredBrands with sorted brands or handle initial error
-    if (!error) {
+    if (!error && brands.length > 0) {
       filteredBrands = [...brands].sort((a, b) => a.name.localeCompare(b.name));
     } else {
       filteredBrands = [];
@@ -79,6 +92,16 @@
   function selectLetter(letter: string) {
     selectedLetter = letter;
     searchTerm = ''; // Clear search when selecting a letter
+  }
+
+  // Sanitize slug to convert to URL-friendly format (e.g., "Green Bunny" -> "green-bunny")
+  function sanitizeSlug(slug: string): string {
+    return slug
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/--+/g, '-')
+      .replace(/^-+|-+$/g, '');
   }
 </script>
 
@@ -178,7 +201,7 @@
             <div class="studios-list-grid">
               {#each filteredBrands as brand (brand.id)}
                 <a
-                  href={`/hanime/studio/${brand.slug}`}
+                  href={`/hanime/studio/${sanitizeSlug(brand.slug)}`}
                   class="studio-item group relative bg-[#1a0106] p-2.5 rounded-lg overflow-hidden shadow-md
                          {isMobile ? 'border border-transparent' : 'transition-transform duration-200 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 hover:scale-[1.02]'}
                          cursor-pointer block text-center flex items-center justify-center min-h-[50px]"

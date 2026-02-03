@@ -15,6 +15,9 @@
       title: string;
       image: string;
       views: number;
+      slug?: string;
+      year?: string;
+      rating?: string;
     }>;
     currentPage: number;
     totalPages: number;
@@ -231,7 +234,7 @@
               <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-6 gap-2 lg:gap-2 anime-grid">
                 {#each data.animes as anime, index (anime.id)}
                   <a
-                    href={`/hanime/info/${anime.id}`}
+                    href={`/hanime/info/${anime.slug || anime.id}`}
                     class="anime-card group relative bg-[#1a0106] rounded-xl overflow-hidden shadow transition-transform duration-200 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer block"
                   >
                     <div class="relative aspect-[3/4]">
@@ -266,7 +269,7 @@
                         </h3>
                         <div class="flex items-center justify-between">
                           <span class="bg-[#ff003c] text-white px-1.5 py-0.5 rounded text-[10px] font-bold badge">18+</span>
-                          <span class="text-[#ffb3c6] text-[10px]">{anime.duration || '--:--'}</span>
+                          <span class="text-[#ffb3c6] text-[10px]">{anime.year || anime.duration || '--:--'}</span>
                         </div>
                       </div>
                     </div>

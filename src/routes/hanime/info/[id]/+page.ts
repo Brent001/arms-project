@@ -12,5 +12,6 @@ export const load: PageLoad = async ({ params, fetch }: { params: { id: string }
   }
 
   const data = await res.json();
-  return { info: data?.data ?? null };
+  // Extract the series info from the new API structure
+  return { info: data?.data?.data ?? null };
 };

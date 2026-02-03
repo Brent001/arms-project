@@ -32,10 +32,14 @@ export const load: PageLoad = async ({ params, url, fetch }) => {
       throw error(404, json.error || 'Brand not found');
     }
 
-    // Adapt to your API response structure: { status, data: { results, currentPage, totalPages, ... } }
-    const results = json.data?.results || [];
-    const currentPage = json.data?.currentPage || page;
-    const totalPages = json.data?.totalPages || 1;
+    // Handle transformed API response: { status, data: { results, currentPage, totalPages } }
+    const results = json?.data?.results || [];
+    const currentPage = json?.data?.currentPage || page;
+    const totalPages = json?.data?.totalPages || 1;
+
+    if (!results || results.length === 0) {
+      throw error(404, 'No hanime found for this brand');
+    }
 
     return {
       brand,
@@ -43,7 +47,11 @@ export const load: PageLoad = async ({ params, url, fetch }) => {
       currentPage,
       totalPages
     };
-  } catch (err) {
+  } catch (err: unknown) {
+    // Check if it's a SvelteKit error
+    if (err && typeof err === 'object' && 'status' in err && 'body' in err) {
+      throw err; // Re-throw SvelteKit errors
+    }
     throw error(500, 'Failed to load brand data');
   }
 };

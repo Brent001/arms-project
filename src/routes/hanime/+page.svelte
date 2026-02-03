@@ -3,9 +3,13 @@
   import Navbar from '$lib/components/hanime/Navbar.svelte';
   import Footer from '$lib/components/hanime/Footer.svelte';
   import AdultWarning from '$lib/components/hanime/AdultWarning.svelte';
+  import Carousel from '$lib/components/hanime/Carousel.svelte';
 
-  let trending: any[] = [];
-  let recent: any[] = [];
+  let featured: any[] = [];
+  let monthlyReleases: any[] = [];
+  let recentUncensored: any[] = [];
+  let recentSeries: any[] = [];
+  let recentEpisodes: any[] = [];
   let loading = true;
   let error: string | null = null;
   let showWarning = true;
@@ -57,20 +61,42 @@
       showWarning = false;
     }
     try {
-      const [trendingRes, recentRes] = await Promise.all([
-        fetch('/api/hanime/trending'),
-        fetch('/api/hanime/recent')
-      ]);
-      const trendingJson = await trendingRes.json();
-      const recentJson = await recentRes.json();
+      const homeRes = await fetch('/api/hanime/home');
+      const homeJson = await homeRes.json();
 
-      if (trendingJson.status === 'success') {
-        // Limit items on mobile for better performance
-        trending = isMobile ? trendingJson.data.results.slice(0, 12) : trendingJson.data.results;
-      }
-      if (recentJson.status === 'success') {
-        // Limit items on mobile for better performance
-        recent = isMobile ? recentJson.data.results.slice(0, 12) : recentJson.data.results;
+      if (homeJson.status === 'success' && homeJson.data?.data) {
+        const homeData = homeJson.data.data;
+        
+        // Transform featured data for carousel
+        featured = (homeData.featured || []).map((item: any) => ({
+          id: item.slug,
+          poster: item.imageUrl,
+          name: item.title,
+          rank: Math.round(parseFloat(item.rating) * 10) / 10 || 0,
+          episodes: { sub: 0, dub: 0 },
+          description: `${item.year} • Rating: ${item.rating}`,
+          slug: item.slug
+        }));
+        
+        // Get monthly releases items (limit on mobile)
+        monthlyReleases = isMobile
+          ? (homeData.monthlyReleases || []).slice(0, 12)
+          : (homeData.monthlyReleases || []);
+        
+        // Get recent uncensored items (limit on mobile)
+        recentUncensored = isMobile 
+          ? (homeData.recentUncensored || []).slice(0, 12)
+          : (homeData.recentUncensored || []);
+        
+        // Get recent series items (limit on mobile)
+        recentSeries = isMobile
+          ? (homeData.recentSeries || []).slice(0, 12)
+          : (homeData.recentSeries || []);
+        
+        // Get recent episodes items (limit on mobile)
+        recentEpisodes = isMobile 
+          ? (homeData.recentEpisodes || []).slice(0, 12)
+          : (homeData.recentEpisodes || []);
       }
     } catch (e) {
       error = 'Failed to load content. Please try again later.';
@@ -95,6 +121,13 @@
 
   function handleImageLoad(id: string) {
     imageLoadedStates = { ...imageLoadedStates, [id]: true };
+  }
+
+  function handleWatch(id: string) {
+    const item = featured.find(f => f.id === id);
+    if (item?.slug) {
+      window.location.href = `/hanime/info/${item.slug}`;
+    }
   }
 </script>
 
@@ -122,95 +155,72 @@
   {:else}
     <div class="flex-1 w-full pt-16">
       <div class="container-custom">
-        <!-- Professional Hero Section -->
-        <section class="relative mb-10">
-          <div class="relative {isMobile ? 'bg-[#2a0008]' : 'bg-gradient-to-r from-[#2a0008] via-[#3a0d16] to-[#2a0008]'} rounded-2xl overflow-hidden shadow-xl border border-[#ff003c]/20 px-4 py-8 sm:px-8 sm:py-10">
-            {#if !isMobile}
-              <div class="absolute inset-0 bg-[url('https://i.imgur.com/4M7IWwP.jpg')] bg-cover bg-center opacity-10"></div>
-            {/if}
-            <div class="relative z-10 flex flex-col items-center text-center gap-3">
-              <div class="flex items-center justify-center mb-2">
-                <div class="bg-[#ff003c]/10 p-2 rounded-xl border border-[#ff003c]/30">
-                  <svg class="w-8 h-8 text-[#ff003c]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                  </svg>
-                </div>
-              </div>
-              <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white flex items-center justify-center gap-2">
-                ARMS <span class="text-[#ff003c]">Adult</span>
-                <span class="inline-block bg-[#ff003c] text-black text-xs sm:text-sm px-2 py-0.5 rounded-full font-bold">18+</span>
-              </h1>
-              <p class="text-base sm:text-lg text-[#ffb3c6] font-light max-w-xl mx-auto leading-snug">
-                Premium adult anime for mature audiences.<br>
-                <span class="text-sm">Trending & new series, updated daily.</span>
-              </p>
-              <div class="flex flex-col gap-2 mt-2 w-full max-w-xs sm:max-w-none sm:flex-row sm:justify-center">
-                <a href="#trending"
-                   class="bg-black/80 hover:bg-[#ff003c] text-[#ff003c] hover:text-black font-bold px-4 py-2 rounded-lg shadow border border-[#ff003c] text-xs sm:text-base w-full sm:w-auto transition">
-                  See Trending
-                </a>
-                <a href="#recent"
-                   class={isMobile
-                     ? 'bg-[#ff003c] text-black font-bold px-4 py-2 rounded-lg shadow border border-[#ff003c] text-xs sm:text-base w-full sm:w-auto'
-                     : 'bg-[#ff003c] hover:bg-[#c2002e] text-black font-bold px-4 py-2 rounded-lg shadow ring-2 ring-[#ff003c]/40 text-xs sm:text-base w-full sm:w-auto transition'
-                   }
-                >
-                  Browse Recent
-                </a>
+        <!-- Featured Carousel Section -->
+        <section class="relative mb-6">
+          {#if featured.length > 0}
+            <Carousel animes={featured} intervalMs={10000} onWatch={handleWatch} />
+          {:else}
+            <div class="bg-[#2a0008] rounded-2xl overflow-hidden shadow-xl border border-[#ff003c]/20 px-4 py-8 sm:px-8 sm:py-10">
+              <div class="flex items-center justify-center h-[220px] sm:h-[420px] text-[#ffb3c6]">
+                Loading featured content...
               </div>
             </div>
-          </div>
+          {/if}
         </section>
 
-        <!-- Trending Section -->
-        <section id="trending" class="mb-16">
-          <div class="flex items-center justify-between mb-8">
-            <div class="flex items-center gap-3">
-              <div class="w-1 h-8 bg-[#ff003c] rounded-full"></div>
-              <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">Trending Now</h2>
-              <span class="bg-[#ff003c]/20 text-[#ff003c] px-3 py-1 rounded-full text-sm font-medium">
-                {trending.length} items
-              </span>
+        <!-- Monthly Releases Section -->
+        <section id="monthly" class="mb-8">
+          <div class="flex items-center justify-between mb-6 gap-2">
+            <div class="flex items-center gap-2 sm:gap-3">
+              <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
+              <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-white">Monthly Releases</h2>
             </div>
+            <a href="/hanime#monthly" class="see-more-btn flex-shrink-0">
+              <span>See More</span>
+              <svg class="see-more-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
           </div>
           
-          <div class="grid-responsive">
-            {#each trending as item, index}
+          <div class="grid-monthly">
+            {#each monthlyReleases as item, index}
               <a
-                href={`/hanime/info/${item.id}`}
-                class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow {isMobile ? 'border border-transparent' : 'transition-transform duration-200 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 hover:scale-[1.03]'} cursor-pointer block"
+                href={`/hanime/watch/${item.slug}`}
+                class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow {isMobile ? 'border border-transparent' : 'transition-all duration-150 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40'} cursor-pointer block"
               >
                 <div class="relative aspect-[3/4]">
-                  {#if !imageLoadedStates[item.id]}
+                  {#if !imageLoadedStates[item.slug]}
                     <div class="skeleton-loader w-full h-full absolute inset-0"></div>
                   {/if}
                   <img
-                    src={item.image}
-                    alt={item.title}
-                    class="w-full h-full object-cover {imageLoadedStates[item.id] ? 'opacity-100' : 'opacity-0'}"
+                    src={item.imageUrl}
+                    alt={item.seriesTitle}
+                    class="w-full h-full object-cover {imageLoadedStates[item.slug] ? 'opacity-100' : 'opacity-0'}"
                     loading={index < (isMobile ? 6 : 12) ? 'eager' : 'lazy'}
                     decoding="async"
-                    on:load={() => handleImageLoad(item.id)}
+                    on:load={() => handleImageLoad(item.slug)}
                   />
                   <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                   <div class="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
                     <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow">
-                      Trending
+                      Monthly
                     </span>
                     <span class="bg-black/70 {isMobile ? '' : 'backdrop-blur-sm'} text-[#ffb3c6] px-2 py-0.5 rounded text-[10px] flex items-center gap-1">
                       <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 18.657l-6.828-6.829a4 4 0 010-5.656z"/>
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                       </svg>
-                      {item.views?.toLocaleString() || '0'}
+                      {item.rating || '0'}
                     </span>
                   </div>
                   <div class="absolute bottom-0 left-0 right-0 p-2">
-                    <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 {isMobile ? '' : 'group-hover:text-[#ffb3c6] transition-colors'}" title={item.title}>
-                      {item.title}
+                    <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 {isMobile ? '' : 'group-hover:text-[#ffb3c6] transition-colors'}" title={item.seriesTitle}>
+                      {item.seriesTitle}
                     </h3>
+                    <p class="text-[#ffb3c6] text-[10px] mb-1">{item.episodeTitle}</p>
                     <div class="flex items-center justify-between">
                       <span class="bg-[#ff003c] text-white px-1.5 py-0.5 rounded text-[10px] font-bold">18+</span>
-                      <span class="text-[#ffb3c6] text-[10px]">{item.duration || '--:--'}</span>
+                      <span class="text-[#ffb3c6] text-[10px]">{item.releaseDate || '--'}</span>
                     </div>
                   </div>
                 </div>
@@ -219,46 +229,110 @@
           </div>
         </section>
 
-        <!-- Recent Section -->
-        <section id="recent" class="mb-16">
-          <div class="flex items-center justify-between mb-8">
-            <div class="flex items-center gap-3">
-              <div class="w-1 h-8 bg-[#ff003c] rounded-full"></div>
-              <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">Recently Added</h2>
-              <span class="bg-[#ff003c]/20 text-[#ff003c] px-3 py-1 rounded-full text-sm font-medium">
-                {recent.length} items
-              </span>
+        <!-- Recent Uncensored Section -->
+        <section id="uncensored" class="mb-8">
+          <div class="flex items-center justify-between mb-6 gap-2">
+            <div class="flex items-center gap-2 sm:gap-3">
+              <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
+              <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-white">Recent Uncensored</h2>
             </div>
+            <a href="/hanime#uncensored" class="see-more-btn flex-shrink-0">
+              <span>See More</span>
+              <svg class="see-more-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
           </div>
           
           <div class="grid-responsive">
-            {#each recent as item, index}
+            {#each recentUncensored as item, index}
               <a
-                href={`/hanime/info/${item.id}`}
-                class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow {isMobile ? 'border border-transparent' : 'transition-all duration-150 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40'} cursor-pointer block"
+                href={`/hanime/watch/${item.slug}`}
+                class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow {isMobile ? 'border border-transparent' : 'transition-transform duration-200 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 hover:scale-[1.03]'} cursor-pointer block"
               >
                 <div class="relative aspect-[3/4]">
-                  {#if !imageLoadedStates[item.id]}
+                  {#if !imageLoadedStates[item.slug]}
                     <div class="skeleton-loader w-full h-full absolute inset-0"></div>
                   {/if}
                   <img
-                    src={item.image}
-                    alt={item.title}
-                    class="w-full h-full object-cover {imageLoadedStates[item.id] ? 'opacity-100' : 'opacity-0'}"
+                    src={item.imageUrl}
+                    alt={item.seriesTitle}
+                    class="w-full h-full object-cover {imageLoadedStates[item.slug] ? 'opacity-100' : 'opacity-0'}"
                     loading={index < (isMobile ? 6 : 12) ? 'eager' : 'lazy'}
                     decoding="async"
-                    on:load={() => handleImageLoad(item.id)}
+                    on:load={() => handleImageLoad(item.slug)}
                   />
                   <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                   <div class="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
                     <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow">
-                      New
+                      Uncensored
                     </span>
                     <span class="bg-black/70 {isMobile ? '' : 'backdrop-blur-sm'} text-[#ffb3c6] px-2 py-0.5 rounded text-[10px] flex items-center gap-1">
                       <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 18.657l-6.828-6.829a4 4 0 010-5.656z"/>
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                       </svg>
-                      {item.views?.toLocaleString() || '0'}
+                      {item.rating || '0'}
+                    </span>
+                  </div>
+                  <div class="absolute bottom-0 left-0 right-0 p-2">
+                    <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 {isMobile ? '' : 'group-hover:text-[#ffb3c6] transition-colors'}" title={item.seriesTitle}>
+                      {item.seriesTitle}
+                    </h3>
+                    <p class="text-[#ffb3c6] text-[10px] mb-1">{item.episodeTitle}</p>
+                    <div class="flex items-center justify-between">
+                      <span class="bg-[#ff003c] text-white px-1.5 py-0.5 rounded text-[10px] font-bold">18+</span>
+                      <span class="text-[#ffb3c6] text-[10px]">{item.releaseDate || '--'}</span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            {/each}
+          </div>
+        </section>
+
+        <!-- Recent Series Section -->
+        <section id="series" class="mb-8">
+          <div class="flex items-center justify-between mb-6 gap-2">
+            <div class="flex items-center gap-2 sm:gap-3">
+              <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
+              <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-white">Recent Series</h2>
+            </div>
+            <a href="/hanime#series" class="see-more-btn flex-shrink-0">
+              <span>See More</span>
+              <svg class="see-more-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+          </div>
+          
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
+            {#each recentSeries as item, index}
+              <a
+                href={`/hanime/info/${item.slug}`}
+                class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow {isMobile ? 'border border-transparent' : 'transition-all duration-150 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40'} cursor-pointer block"
+              >
+                <div class="relative aspect-[3/4]">
+                  {#if !imageLoadedStates[item.slug]}
+                    <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                  {/if}
+                  <img
+                    src={item.imageUrl}
+                    alt={item.title}
+                    class="w-full h-full object-cover {imageLoadedStates[item.slug] ? 'opacity-100' : 'opacity-0'}"
+                    loading={index < (isMobile ? 6 : 12) ? 'eager' : 'lazy'}
+                    decoding="async"
+                    on:load={() => handleImageLoad(item.slug)}
+                  />
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                  <div class="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
+                    <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow">
+                      Series
+                    </span>
+                    <span class="bg-black/70 {isMobile ? '' : 'backdrop-blur-sm'} text-[#ffb3c6] px-2 py-0.5 rounded text-[10px] flex items-center gap-1">
+                      <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                      </svg>
+                      {item.rating || '0'}
                     </span>
                   </div>
                   <div class="absolute bottom-0 left-0 right-0 p-2">
@@ -267,8 +341,64 @@
                     </h3>
                     <div class="flex items-center justify-between">
                       <span class="bg-[#ff003c] text-white px-1.5 py-0.5 rounded text-[10px] font-bold">18+</span>
-                      <span class="text-[#ffb3c6] text-[10px]">{item.duration || '--:--'}</span>
+                      <span class="text-[#ffb3c6] text-[10px]">{item.year || '--'}</span>
                     </div>
+                  </div>
+                </div>
+              </a>
+            {/each}
+          </div>
+        </section>
+
+        <!-- Recent Episodes Section -->
+        <section id="episodes" class="mb-8">
+          <div class="flex items-center justify-between mb-6 gap-2">
+            <div class="flex items-center gap-2 sm:gap-3">
+              <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
+              <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-white">Recent Episodes</h2>
+            </div>
+            <a href="/hanime#episodes" class="see-more-btn flex-shrink-0">
+              <span>See More</span>
+              <svg class="see-more-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+          </div>
+          
+          <div class="grid-responsive">
+            {#each recentEpisodes as item, index}
+              <a
+                href={`/hanime/watch/${item.slug}`}
+                class="group relative bg-[#1a0106] rounded-xl overflow-hidden shadow {isMobile ? 'border border-transparent' : 'transition-all duration-150 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40'} cursor-pointer block"
+              >
+                <div class="relative aspect-[16/9]">
+                  {#if !imageLoadedStates[item.slug]}
+                    <div class="skeleton-loader w-full h-full absolute inset-0"></div>
+                  {/if}
+                  <img
+                    src={item.imageUrl}
+                    alt={item.episodeTitle}
+                    class="w-full h-full object-cover {imageLoadedStates[item.slug] ? 'opacity-100' : 'opacity-0'}"
+                    loading={index < (isMobile ? 6 : 12) ? 'eager' : 'lazy'}
+                    decoding="async"
+                    on:load={() => handleImageLoad(item.slug)}
+                  />
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                  <div class="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
+                    <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow">
+                      Episode
+                    </span>
+                    {#if item.releaseDate}
+                      <span class="bg-black/70 {isMobile ? '' : 'backdrop-blur-sm'} text-[#ffb3c6] px-2 py-0.5 rounded text-[10px]">
+                        {item.releaseDate}
+                      </span>
+                    {/if}
+                  </div>
+                  <div class="absolute bottom-0 left-0 right-0 p-2">
+                    <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 {isMobile ? '' : 'group-hover:text-[#ffb3c6] transition-colors'}" title={item.seriesTitle}>
+                      {item.seriesTitle}
+                    </h3>
+                    <p class="text-[#ffb3c6] text-[10px]">{item.episodeTitle}</p>
                   </div>
                 </div>
               </a>
@@ -301,104 +431,159 @@
 {/if}
 
 <style>
-  /* Responsive container with proper max-width scaling */
+  /* ─── See More button ─── */
+  .see-more-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #ff003c;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .see-more-btn:hover {
+    color: #fff;
+    background: #ff003c;
+    border-color: #ff003c;
+    box-shadow: 0 0 12px rgba(255, 0, 60, 0.45);
+  }
+
+  .see-more-btn:hover .see-more-icon {
+    transform: translateX(3px);
+  }
+
+  .see-more-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    transition: transform 0.25s ease;
+  }
+
+  /* ─── Layout container ─── */
   .container-custom {
     width: 100%;
     margin-left: auto;
     margin-right: auto;
-    padding-left: 0.5rem; /* Reduced from 1rem for mobile */
-    padding-right: 0.5rem; /* Reduced from 1rem for mobile */
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
   }
 
   @media (min-width: 640px) {
     .container-custom {
-      padding-left: 1rem; /* Reduced from 1.5rem for sm */
-      padding-right: 1rem; /* Reduced from 1.5rem for sm */
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
     }
   }
 
   @media (min-width: 1024px) {
     .container-custom {
       max-width: 1280px;
-      padding-left: 1.5rem; /* Reduced from 2rem for lg */
-      padding-right: 1.5rem; /* Reduced from 2rem for lg */
+      padding-left: 1rem;
+      padding-right: 1rem;
     }
   }
 
   @media (min-width: 1280px) {
     .container-custom {
       max-width: 1536px;
-      padding-left: 1.5rem; /* Consistent with lg, adjust if more reduction needed */
-      padding-right: 1.5rem; /* Consistent with lg, adjust if more reduction needed */
+      padding-left: 1rem;
+      padding-right: 1rem;
     }
   }
 
   @media (min-width: 1536px) {
     .container-custom {
       max-width: 1792px;
-      padding-left: 1.5rem; /* Consistent */
-      padding-right: 1.5rem; /* Consistent */
+      padding-left: 1rem;
+      padding-right: 1rem;
     }
   }
 
   @media (min-width: 1920px) {
     .container-custom {
       max-width: 1920px;
-      padding-left: 1.5rem; /* Consistent */
-      padding-right: 1.5rem; /* Consistent */
+      padding-left: 1rem;
+      padding-right: 1rem;
     }
   }
 
-  /* Responsive grid that adapts to screen size */
+  /* ─── Monthly grid (8 cols desktop) ─── */
+  .grid-monthly {
+    display: grid;
+    gap: 0.25rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (min-width: 640px) {
+    .grid-monthly {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.25rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .grid-monthly {
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      gap: 0.25rem;
+    }
+  }
+
+  /* ─── Generic responsive grid ─── */
   .grid-responsive {
     display: grid;
-    gap: 0.5rem;
+    gap: 0.25rem;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   @media (min-width: 640px) {
     .grid-responsive {
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 0.5rem;
+      gap: 0.25rem;
     }
   }
 
   @media (min-width: 768px) {
     .grid-responsive {
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 0.5rem;
+      gap: 0.25rem;
     }
   }
 
   @media (min-width: 1024px) {
     .grid-responsive {
       grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 0.5rem;
+      gap: 0.25rem;
     }
   }
 
   @media (min-width: 1280px) {
     .grid-responsive {
       grid-template-columns: repeat(6, minmax(0, 1fr));
-      gap: 0.5rem;
+      gap: 0.25rem;
     }
   }
 
   @media (min-width: 1536px) {
     .grid-responsive {
       grid-template-columns: repeat(7, minmax(0, 1fr));
-      gap: 0.5rem;
+      gap: 0.25rem;
     }
   }
 
   @media (min-width: 1920px) {
     .grid-responsive {
       grid-template-columns: repeat(8, minmax(0, 1fr));
-      gap: 0.5rem;
+      gap: 0.25rem;
     }
   }
 
-  /* Skeleton Loader - plain background for performance */
+  /* ─── Skeleton & image fade ─── */
   .skeleton-loader {
     background-color: #3a0d16;
   }
@@ -407,22 +592,7 @@
     transition: opacity 0.3s ease-in-out;
   }
 
-  @keyframes fade-in {
-    from { 
-      opacity: 0; 
-      transform: scale(0.95) translateY(20px);
-    }
-    to { 
-      opacity: 1; 
-      transform: scale(1) translateY(0);
-    }
-  }
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  
+  /* ─── Utilities ─── */
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -430,8 +600,8 @@
     overflow: hidden;
     line-clamp: 2;
   }
-  
-  /* Desktop-only styles */
+
+  /* ─── Desktop card hover ─── */
   @media (min-width: 768px) {
     .group {
       border: 2px solid transparent;
@@ -441,7 +611,7 @@
       border-color: #ff003c;
       box-shadow: 0 0 0 2px #ff003c44, 0 4px 24px #ff003c22;
     }
-    
+
     @supports (backdrop-filter: blur(10px)) {
       .backdrop-blur-sm {
         backdrop-filter: blur(4px);

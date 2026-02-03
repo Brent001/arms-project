@@ -121,7 +121,12 @@
   let pageTimeout: ReturnType<typeof setTimeout> | null = null;
 
   async function goToPage(newPage: number) {
-    if (newPage >= 1 && newPage <= totalPages && newPage !== page) {
+    if (newPage >= 1 && newPage !== page) {
+      // Allow backward navigation always; for forward, check totalPages
+      if (newPage > page && newPage > totalPages) {
+        return; // Don't go forward beyond totalPages
+      }
+
       if (pageTimeout) {
         clearTimeout(pageTimeout);
       }
@@ -413,7 +418,7 @@
         {/if}
         
         <!-- Pagination: show after manga results (or after hanime section if no manga) -->
-        {#if totalPages > 1}
+        {#if totalPages > 1 || page > 1}
           <section class="flex justify-center items-center mt-6 gap-1 sm:gap-2 flex-wrap">
             {#if page > 1}
               <button
