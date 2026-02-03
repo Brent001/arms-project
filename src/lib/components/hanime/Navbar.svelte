@@ -1,6 +1,9 @@
 <script lang="ts">
-  import NavBarSidebar from '$lib/components/hanime/NavBar-Sidebar.svelte';
+  import { onMount } from 'svelte';
+  import { browser } from '$app/environment';
 
+  let NavBarSidebar: any;
+  let mounted = false;
   let mobileMenuOpen = false;
   let mobileSearchOpen = false;
   let searchQuery = '';
@@ -15,6 +18,15 @@
   } else {
     currentLogoSrc = '/assets/logo.png';
   }
+
+  // Dynamically import sidebar component on mount to avoid SSR issues
+  onMount(async () => {
+    if (browser) {
+      const module = await import('$lib/components/hanime/NavBar-Sidebar.svelte');
+      NavBarSidebar = module.default;
+      mounted = true;
+    }
+  });
 
   function toggleMobileMenu() {
     mobileMenuOpen = !mobileMenuOpen;
@@ -36,7 +48,9 @@
   }
 
   function toggleSidebar() {
+    console.log('Toggle sidebar clicked, current isOpen:', isOpen); // Debug log
     isOpen = !isOpen;
+    console.log('New isOpen value:', isOpen); // Debug log
   }
 
   async function handleSearch(event: Event) {
@@ -52,7 +66,7 @@
     <!-- Left: Logo & Hamburger -->
     <div class="flex items-center gap-3 z-50 flex-shrink-0">
       <!-- Hamburger Icon -->
-      <button class="p-2" on:click={toggleSidebar} aria-label="Toggle sidebar">
+      <button class="p-2 hover:bg-[#ff003c]/10 rounded transition-colors" on:click={toggleSidebar} aria-label="Toggle sidebar">
         <svg class="h-6 w-6 text-[#ff003c]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <line x1="4" y1="6" x2="20" y2="6" />
           <line x1="4" y1="12" x2="20" y2="12" />
@@ -117,8 +131,10 @@
   {/if}
 </nav>
 
-<!-- Sidebar -->
-<NavBarSidebar {isOpen} onClose={() => (isOpen = false)} />
+<!-- Sidebar - Only render after component is mounted -->
+{#if mounted && NavBarSidebar}
+  <svelte:component this={NavBarSidebar} {isOpen} onClose={() => (isOpen = false)} />
+{/if}
 
 <style>
   .animate-fade-in-down {
