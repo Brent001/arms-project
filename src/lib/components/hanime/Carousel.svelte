@@ -57,15 +57,15 @@
 
           <div class="absolute left-0 bottom-0 w-full px-4 pt-4 pb-8 sm:p-10 z-20 content-container flex flex-col items-start gap-0.5 sm:gap-2">
             <div class="flex items-center gap-2 sm:gap-3 text-white text-xs sm:text-base font-medium anime-badges opacity-0 mt-6 sm:mt-0">
-               <span class="flex items-center gap-1 bg-[#ff003c] text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-bold shadow">
-                Rank #{anime.rank || 'N/A'}
+              <span class="flex items-center gap-1 bg-[#ff003c] text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-bold shadow">
+                Rank #{i + 1}
               </span>
               <span class="flex items-center gap-1 bg-black/30 text-orange-300 px-2 sm:px-3 py-1 rounded text-xs episode-badge">
                 HD
               </span>
             </div>
 
-            <h2 class="text-white text-lg sm:text-3xl md:text-4xl font-bold truncate drop-shadow anime-title max-w-[90%] -mt-1 sm:mt-0">
+            <h2 class="text-white text-lg sm:text-3xl md:text-4xl font-bold drop-shadow anime-title line-clamp-2 max-w-[90%] -mt-1 sm:mt-0">
               {anime.name}
             </h2>
 
@@ -74,7 +74,7 @@
             </p>
 
             <button
-              class="absolute right-3 sm:right-10 bottom-3 sm:bottom-10 z-10 flex items-center gap-2 sm:gap-3 bg-[#ff003c] hover:bg-[#d90033] text-white font-bold px-4 py-2 sm:px-8 sm:py-4 rounded-lg transition-all duration-300 shadow-[0_0_15px_rgba(255,0,60,0.3)] hover:shadow-[0_0_25px_rgba(255,0,60,0.6)] active:scale-95"
+              class="watch-now-btn absolute right-3 sm:right-10 bottom-3 sm:bottom-10 z-10 flex items-center gap-2 sm:gap-3 bg-[#ff003c] hover:bg-[#d90033] text-white font-bold px-4 py-2 sm:px-8 sm:py-4 rounded-lg transition-all duration-300 shadow-[0_0_15px_rgba(255,0,60,0.3)] hover:shadow-[0_0_25px_rgba(255,0,60,0.6)] active:scale-95"
               on:click|preventDefault={() => onWatch(anime.id)}
             >
               <svg class="w-4 h-4 sm:w-6 sm:h-6 fill-current transition-transform duration-300" viewBox="0 0 20 20"><path d="M6 4l12 6-12 6V4z"/></svg>
@@ -86,10 +86,10 @@
     </div>
   {/each}
 
-  <button on:click|stopPropagation={prevSlide} class="absolute left-2 sm:left-8 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-orange-400 text-white hover:text-gray-900 rounded-full w-8 sm:w-14 h-8 sm:h-14 flex items-center justify-center shadow-lg transition z-10 border-2 border-white/10 hover:border-orange-400 carousel-control" aria-label="Previous Slide">
+  <button on:click|stopPropagation={prevSlide} class="absolute left-2 sm:left-8 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-[#ff003c] text-white hover:text-white rounded-full w-8 sm:w-14 h-8 sm:h-14 flex items-center justify-center shadow-lg transition z-10 border-2 border-white/10 hover:border-[#ff003c] carousel-control" aria-label="Previous Slide">
     <svg class="w-5 h-5 sm:w-8 sm:h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" /></svg>
   </button>
-  <button on:click|stopPropagation={nextSlide} class="absolute right-2 sm:right-8 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-orange-400 text-white hover:text-gray-900 rounded-full w-8 sm:w-14 h-8 sm:h-14 flex items-center justify-center shadow-lg transition z-10 border-2 border-white/10 hover:border-orange-400 carousel-control" aria-label="Next Slide">
+  <button on:click|stopPropagation={nextSlide} class="absolute right-2 sm:right-8 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-[#ff003c] text-white hover:text-white rounded-full w-8 sm:w-14 h-8 sm:h-14 flex items-center justify-center shadow-lg transition z-10 border-2 border-white/10 hover:border-[#ff003c] carousel-control" aria-label="Next Slide">
     <svg class="w-5 h-5 sm:w-8 sm:h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" /></svg>
   </button>
 
@@ -119,7 +119,7 @@
   .carousel-slide.active .anime-badges { animation: fadeSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards; }
   .carousel-slide.active .anime-title { opacity: 0; animation: fadeSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards; }
   .carousel-slide.active .anime-description { opacity: 0; animation: fadeSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; }
-  .carousel-slide.active button[on\:click] { opacity: 0; animation: fadeSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards; }
+  .carousel-slide.active .watch-now-btn { opacity: 0; animation: fadeSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards; }
 
   @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -131,6 +131,46 @@
   @media (max-width: 640px) {
     button[aria-label="Previous Slide"], button[aria-label="Next Slide"] {
       opacity: 1 !important; width: 2.5rem; height: 2.5rem; background: rgba(0,0,0,0.4);
+    }
+  }
+
+  /* Local two-line clamp for carousel titles; reserve space for the CTA button so
+     the title will truncate with an ellipsis when it reaches the button. */
+  .anime-title.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+    line-height: 1.15; /* slightly tighter to fit two lines */
+    text-overflow: ellipsis;
+    /* Reserve space for the WATCH NOW button (approx 140px on desktop) */
+    max-width: calc(100% - 140px);
+    display: block; /* ensure block-level for max-width */
+  }
+
+  /* Adjust reserved space for medium screens */
+  @media (max-width: 1024px) {
+    .anime-title.line-clamp-2 { max-width: calc(100% - 120px); }
+  }
+
+  /* Mobile: smaller button and padding, reduce reserved width */
+  @media (max-width: 640px) {
+    .anime-title.line-clamp-2 { max-width: calc(100% - 80px); }
+  }
+  /* Explicitly enforce two-line clamp + ellipsis on small screens */
+  @media (max-width: 480px) {
+    /* On very small screens, show a single-line title with ellipsis to preserve space */
+    .anime-title.line-clamp-2 {
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      /* keep a fallback clamp property for browsers that support it */
+      -webkit-line-clamp: 1;
+      line-clamp: 1;
+      max-width: calc(100% - 60px);
     }
   }
 </style>

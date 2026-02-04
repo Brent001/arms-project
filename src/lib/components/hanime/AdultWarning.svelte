@@ -7,8 +7,10 @@
   <div class="bg-gradient-to-br from-[#2a0008] via-[#3a0d16] to-[#1a0106] border border-[#ff003c]/40 rounded-2xl shadow-2xl p-4 max-w-xs w-full text-center animate-fade-in">
     <div class="flex flex-col items-center mb-2">
       <div class="bg-[#ff003c]/10 p-1.5 rounded-full border border-[#ff003c]/30 mb-2">
-        <svg class="w-7 h-7 text-[#ff003c]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/>
+        <svg class="w-7 h-7 text-[#ff003c]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          <path d="M12 9v4" />
+          <path d="M12 17h.01" />
         </svg>
       </div>
       <h2 class="text-base font-bold text-[#ff003c] mb-1 tracking-tight">18+ Content</h2>
