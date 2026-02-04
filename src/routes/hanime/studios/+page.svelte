@@ -130,9 +130,9 @@
       <div class="container-custom">
         <!-- Studios List Section -->
         <section id="studios-list" class="mb-12">
-          <div class="mb-6 flex items-center gap-3 mt-4">
-            <div class="w-1 h-8 bg-[#ff003c] rounded-full"></div>
-            <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">Browse Studios</h2>
+          <div class="mb-2 flex items-center gap-3 mt-4">
+            <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full"></div>
+            <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-white">Browse Studios</h2>
             <span class="bg-[#ff003c]/20 text-[#ff003c] px-3 py-1 rounded-full text-sm font-medium">
                 {filteredBrands.length} items
             </span>

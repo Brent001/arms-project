@@ -214,14 +214,19 @@
             </button>
           </div>
         {:else}
-          <section class="mb-4 sm:mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-[#ff003c] mb-4 capitalize">
-              {data?.genre || 'Genre'}
-            </h1>
-            <p class="text-[#ffb3c6] text-sm sm:text-base">
-              Explore the best hanime in the <span class="font-bold text-[#ff003c] capitalize">{data.genre}</span> genre.
+          <section class="mb-8">
+            <div class="flex items-center gap-2 sm:gap-3 mb-2">
+              <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
+              <div class="flex-1">
+                <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-white capitalize">
+                  {data?.genre || 'Genre'}
+                </h1>
+              </div>
+            </div>
+            <p class="text-[#ffb3c6] text-sm sm:text-base ml-4">
+              Explore the best hanime in the <span class="font-bold capitalize">{data.genre}</span> genre.
             </p>
-            <p class="text-[#ffb3c6]/80 text-xs mt-2">
+            <p class="text-[#ffb3c6]/80 text-xs mt-1 ml-4">
               Page {data.currentPage} of {data.totalPages} • {animeCount} titles
             </p>
           </section>
@@ -248,7 +253,7 @@
                         height="400"
                         on:load={() => handleImageLoad(anime.id)}
                       />
-                      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent overlay"></div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent overlay"></div>
                       <div class="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
                         <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow badge">
                           Hanime
@@ -261,7 +266,7 @@
                         </span>
                       </div>
                       <div class="absolute bottom-0 left-0 right-0 p-2 card-info">
-                        <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 group-hover:text-[#ffb3c6] transition-colors" title={anime.title}>
+                        <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 drop-shadow-lg group-hover:text-[#ffb3c6] transition-colors" title={anime.title}>
                           {anime.title}
                         </h3>
                         <div class="flex items-center justify-between">
