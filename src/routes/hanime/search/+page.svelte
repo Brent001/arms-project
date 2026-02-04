@@ -299,12 +299,12 @@
       <div class="max-w-[125rem] mx-auto flex flex-col gap-6 sm:gap-10 px-2">
         <!-- Hanime Results Section -->
         <section class="max-w-7xl mx-auto w-full">
-          <h1 class="text-xl sm:text-2xl font-bold text-[#ff003c] mb-4 sm:mb-6 flex items-center gap-3">
-            <svg class="w-6 h-6 sm:w-7 sm:h-7 text-[#ff003c]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            Hanime Results for "{query}"
-          </h1>
+          <div class="flex items-center gap-2 sm:gap-3 mb-2">
+            <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
+            <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-white">
+              Search Results for "{query}"
+            </h1>
+          </div>
           
           {#if !hasResults}
             <div class="text-[#ffb3c6] text-center py-12">
@@ -336,7 +336,7 @@
                       height="400"
                       on:load={() => handleImageLoad(`hanime-${hanime.id}`)}
                     />
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent overlay"></div>
+                      <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent overlay"></div>
                     <div class="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
                       <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow badge">
                         Hanime
@@ -349,7 +349,7 @@
                       </span>
                     </div>
                     <div class="absolute bottom-0 left-0 right-0 p-2 card-info">
-                      <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 group-hover:text-[#ffb3c6] transition-colors" title={hanime.title}>
+                       <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 drop-shadow-lg group-hover:text-[#ffb3c6] transition-colors" title={hanime.title}>
                         {hanime.title}
                       </h3>
                       <div class="flex items-center justify-between">
@@ -396,14 +396,14 @@
                       height="400"
                       on:load={() => handleImageLoad(`manga-${manga.slug}`)}
                     />
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent overlay"></div>
+                      <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent overlay"></div>
                     <div class="absolute top-2 left-2">
                       <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow badge">
                         Manga
                       </span>
                     </div>
                     <div class="absolute bottom-0 left-0 right-0 p-2 card-info">
-                      <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 group-hover:text-[#ffb3c6] transition-colors" title={manga.title}>
+                       <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 drop-shadow-lg group-hover:text-[#ffb3c6] transition-colors" title={manga.title}>
                         {manga.title}
                       </h3>
                       <div class="flex items-center justify-between">

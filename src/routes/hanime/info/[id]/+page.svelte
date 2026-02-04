@@ -295,7 +295,10 @@
               <!-- Episodes Section -->
                   {#if episodes.length}
                 <section>
-                  <h2 class="text-2xl font-bold text-[#ff003c] mb-4">Episodes</h2>
+                  <div class="flex items-center gap-2 sm:gap-3 mb-3">
+                    <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
+                    <h2 class="text-lg sm:text-xl font-bold text-white">Episodes</h2>
+                  </div>
                   <!-- Mobile: 2 cols, Desktop: 7 cols -->
                   <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-1">
                     {#each episodes as episode}
@@ -315,10 +318,10 @@
                             on:error={handleImageError}
                             on:load={() => handleImageLoad(episode.slug)}
                           />
-                          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent"></div>
                         </div>
                         <div class="absolute bottom-0 left-0 right-0 p-2">
-                          <h3 class="font-semibold text-white text-sm mb-1 group-hover:text-[#ffb3c6] transition-colors" title={episode.title}>
+                            <h3 class="font-semibold text-white text-sm mb-1 drop-shadow-lg group-hover:text-[#ffb3c6] transition-colors" title={episode.title}>
                             {episode.number}
                           </h3>
                           <div class="flex flex-wrap gap-1">
@@ -346,7 +349,10 @@
               <!-- Similar Series -->
               {#if similarSeries.length}
                 <section>
-                  <h2 class="text-2xl font-bold text-[#ff003c] mb-4">Similar Series</h2>
+                  <div class="flex items-center gap-2 sm:gap-3 mb-3">
+                    <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
+                    <h2 class="text-lg sm:text-xl font-bold text-white">Similar Series</h2>
+                  </div>
                   <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-1">
                     {#each similarSeries as series}
                       <a
@@ -366,10 +372,10 @@
                             on:error={handleImageError}
                             on:load={() => handleImageLoad(series.slug)}
                           />
-                          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent"></div>
                         </div>
                         <div class="absolute bottom-0 left-0 right-0 p-2">
-                          <h3 class="font-semibold text-white text-xs truncate group-hover:text-[#ffb3c6] transition-colors" title={series.title}>
+                            <h3 class="font-semibold text-white text-xs truncate drop-shadow-lg group-hover:text-[#ffb3c6] transition-colors" title={series.title}>
                             {safeTruncate(series.title, 60)}
                           </h3>
                           <span class="bg-[#ff003c] text-white px-1.5 py-0.5 rounded text-[10px] font-bold inline-block">

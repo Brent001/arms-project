@@ -427,7 +427,10 @@
           <!-- Related Episodes Section -->
           {#if relatedEpisodes.length}
             <section class="flex flex-col gap-2 mt-2">
-              <h2 class="text-2xl font-bold text-[#ff003c] mb-4">Related Episodes</h2>
+              <div class="flex items-center gap-2 sm:gap-3 mb-3">
+                <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
+                <h2 class="text-lg sm:text-xl font-bold text-white">Related Episodes</h2>
+              </div>
               <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1 md:gap-2">
                 {#each relatedEpisodes as ep, idx}
                   <a
@@ -463,7 +466,10 @@
           <!-- Similar Series Section -->
           {#if similarSeries.length}
             <section class="flex flex-col gap-2 mt-2">
-              <h2 class="text-xl font-bold text-[#ff003c] mb-2">Similar Series</h2>
+              <div class="flex items-center gap-2 sm:gap-3 mb-3">
+                <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
+                <h2 class="text-lg sm:text-xl font-bold text-white">Similar Series</h2>
+              </div>
               <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-1 md:gap-2">
                 {#each similarSeries as series, idx}
                   <a
@@ -482,14 +488,14 @@
                         on:load={() => handleImageLoad(series.slug)}
                         on:error={handleImageError}
                       />
-                      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent"></div>
                       <div class="absolute top-2 left-2">
                         <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded-sm text-[10px] font-semibold shadow">
                           Series
                         </span>
                       </div>
                       <div class="absolute bottom-0 left-0 right-0 p-2">
-                        <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 group-hover:text-[#ffb3c6] transition-colors" title={series.title}>
+                        <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 drop-shadow-lg group-hover:text-[#ffb3c6] transition-colors" title={series.title}>
                           {series.title}
                         </h3>
                       </div>

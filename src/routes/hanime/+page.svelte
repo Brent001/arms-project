@@ -175,7 +175,7 @@
               <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
               <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-white">Monthly Releases</h2>
             </div>
-            <a href="/hanime#monthly" class="see-more-btn flex-shrink-0">
+            <a href="/hanime/monthly-releases" class="see-more-btn flex-shrink-0">
               <span>See More</span>
               <svg class="see-more-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -201,7 +201,7 @@
                     decoding="async"
                     on:load={() => handleImageLoad(item.slug)}
                   />
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent"></div>
                   <div class="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
                     <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow">
                       Monthly
@@ -214,10 +214,10 @@
                     </span>
                   </div>
                   <div class="absolute bottom-0 left-0 right-0 p-2">
-                    <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 {isMobile ? '' : 'group-hover:text-[#ffb3c6] transition-colors'}" title={item.seriesTitle}>
+                    <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 drop-shadow-lg {isMobile ? '' : 'group-hover:text-[#ffb3c6] transition-colors'}" title={item.seriesTitle}>
                       {item.seriesTitle}
                     </h3>
-                    <p class="text-[#ffb3c6] text-[10px] mb-1">{item.episodeTitle}</p>
+                    <p class="text-[#ffb3c6] text-[10px] mb-1 drop-shadow">{item.episodeTitle}</p>
                     <div class="flex items-center justify-between">
                       <span class="bg-[#ff003c] text-white px-1.5 py-0.5 rounded text-[10px] font-bold">18+</span>
                       <span class="text-[#ffb3c6] text-[10px]">{item.releaseDate || '--'}</span>
@@ -236,7 +236,7 @@
               <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
               <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-white">Recent Uncensored</h2>
             </div>
-            <a href="/hanime#uncensored" class="see-more-btn flex-shrink-0">
+            <a href="/hanime/genre/uncensored" class="see-more-btn flex-shrink-0">
               <span>See More</span>
               <svg class="see-more-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -262,7 +262,7 @@
                     decoding="async"
                     on:load={() => handleImageLoad(item.slug)}
                   />
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent"></div>
                   <div class="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
                     <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow">
                       Uncensored
@@ -275,10 +275,10 @@
                     </span>
                   </div>
                   <div class="absolute bottom-0 left-0 right-0 p-2">
-                    <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 {isMobile ? '' : 'group-hover:text-[#ffb3c6] transition-colors'}" title={item.seriesTitle}>
+                    <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 drop-shadow-lg {isMobile ? '' : 'group-hover:text-[#ffb3c6] transition-colors'}" title={item.seriesTitle}>
                       {item.seriesTitle}
                     </h3>
-                    <p class="text-[#ffb3c6] text-[10px] mb-1">{item.episodeTitle}</p>
+                    <p class="text-[#ffb3c6] text-[10px] mb-1 drop-shadow">{item.episodeTitle}</p>
                     <div class="flex items-center justify-between">
                       <span class="bg-[#ff003c] text-white px-1.5 py-0.5 rounded text-[10px] font-bold">18+</span>
                       <span class="text-[#ffb3c6] text-[10px]">{item.releaseDate || '--'}</span>
@@ -297,7 +297,7 @@
               <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
               <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-white">Recent Series</h2>
             </div>
-            <a href="/hanime#series" class="see-more-btn flex-shrink-0">
+            <a href="/hanime/tvshows" class="see-more-btn flex-shrink-0">
               <span>See More</span>
               <svg class="see-more-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -323,7 +323,7 @@
                     decoding="async"
                     on:load={() => handleImageLoad(item.slug)}
                   />
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent"></div>
                   <div class="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
                     <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow">
                       Series
@@ -336,7 +336,7 @@
                     </span>
                   </div>
                   <div class="absolute bottom-0 left-0 right-0 p-2">
-                    <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 {isMobile ? '' : 'group-hover:text-[#ffb3c6] transition-colors'}" title={item.title}>
+                    <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 drop-shadow-lg {isMobile ? '' : 'group-hover:text-[#ffb3c6] transition-colors'}" title={item.title}>
                       {item.title}
                     </h3>
                     <div class="flex items-center justify-between">
@@ -357,7 +357,7 @@
               <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
               <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-white">Recent Episodes</h2>
             </div>
-            <a href="/hanime#episodes" class="see-more-btn flex-shrink-0">
+            <a href="/hanime/recent-ep" class="see-more-btn flex-shrink-0">
               <span>See More</span>
               <svg class="see-more-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -383,7 +383,7 @@
                     decoding="async"
                     on:load={() => handleImageLoad(item.slug)}
                   />
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent"></div>
                   <div class="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
                     <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow">
                       Episode
@@ -395,10 +395,10 @@
                     {/if}
                   </div>
                   <div class="absolute bottom-0 left-0 right-0 p-2">
-                    <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 {isMobile ? '' : 'group-hover:text-[#ffb3c6] transition-colors'}" title={item.seriesTitle}>
+                    <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 drop-shadow-lg {isMobile ? '' : 'group-hover:text-[#ffb3c6] transition-colors'}" title={item.seriesTitle}>
                       {item.seriesTitle}
                     </h3>
-                    <p class="text-[#ffb3c6] text-[10px]">{item.episodeTitle}</p>
+                    <p class="text-[#ffb3c6] text-[10px] drop-shadow">{item.episodeTitle}</p>
                   </div>
                 </div>
               </a>

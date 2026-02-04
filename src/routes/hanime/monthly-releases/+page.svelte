@@ -8,16 +8,19 @@
   import { onMount, onDestroy } from 'svelte';
 
   export let data: {
-    brand: string;
+    title: string;
     animes: Array<{
       duration: string;
       id: string;
+      slug: string;
       title: string;
       image: string;
       views: number;
-      slug?: string;
-      year?: string;
-      rating?: string;
+      episodeTitle?: string;
+      releaseDate?: string;
+      rating?: string | number | null;
+      year?: string | null;
+      genres?: string[];
     }>;
     currentPage: number;
     totalPages: number;
@@ -178,11 +181,11 @@
 </script>
 
 <svelte:head>
-  <title>{data.brand || 'Brand'} | ARMS Hentai</title>
-  <meta name="description" content={`Explore the best hanime from the ${data.brand} brand.`}>
-  <meta property="og:title" content={`${data.brand || 'Brand'} | ARMS Hanime`}>
-  <meta property="og:description" content={`Explore the best hanime from the ${data.brand} brand.`}>  
-  <meta property="og:url" content={data ? `/hanime/studio/${data.brand}` : ''}>
+  <title>{data.title || 'Monthly Releases'} | ARMS Hentai</title>
+  <meta name="description" content="Latest monthly hentai releases. New episodes updated regularly.">
+  <meta property="og:title" content={`${data.title || 'Monthly Releases'} | ARMS Hanime`}>
+  <meta property="og:description" content="Latest monthly hentai releases. New episodes updated regularly.">
+  <meta property="og:url" content="/hanime/monthly-release">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 </svelte:head>
 
@@ -221,13 +224,13 @@
             <div class="flex items-center gap-2 sm:gap-3 mb-2">
               <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
               <div class="flex-1">
-                <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-white capitalize">
-                  {data?.brand || 'Brand'}
+                <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-white">
+                  {data?.title || 'Monthly Releases'}
                 </h1>
               </div>
             </div>
             <p class="text-[#ffb3c6] text-sm sm:text-base ml-4">
-              Explore the best hanime from the <span class="font-bold capitalize">{data.brand}</span> brand.
+              Latest hentai episodes released this month
             </p>
             <p class="text-[#ffb3c6]/80 text-xs mt-1 ml-4">
               Page {data.currentPage} of {data.totalPages} • {animeCount} titles
@@ -259,22 +262,25 @@
                         <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent overlay"></div>
                       <div class="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
                         <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow badge">
-                          Hanime
+                          New
                         </span>
                         <span class="bg-black/70 backdrop-blur-sm text-[#ffb3c6] px-2 py-0.5 rounded text-[10px] flex items-center gap-1 badge">
                           <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                            <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 18.657l-6.828-6.829a4 4 0 010-5.656z"/>
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                           </svg>
-                          {anime.views?.toLocaleString() || '0'}
+                          {anime.rating || '0'}
                         </span>
                       </div>
                       <div class="absolute bottom-0 left-0 right-0 p-2 card-info">
-                        <h3 class="font-semibold text-white text-xs mb-1 line-clamp-2 drop-shadow-lg group-hover:text-[#ffb3c6] transition-colors" title={anime.title}>
+                        <h3 class="font-semibold text-white text-xs mb-0.5 line-clamp-1 drop-shadow-lg group-hover:text-[#ffb3c6] transition-colors" title={anime.title}>
                           {anime.title}
                         </h3>
-                        <div class="flex items-center justify-between">
+                        {#if anime.episodeTitle}
+                          <p class="text-[#ffb3c6] text-[9px] mb-1 drop-shadow line-clamp-1">{anime.episodeTitle}</p>
+                        {/if}
+                        <div class="flex items-center justify-between gap-1">
                           <span class="bg-[#ff003c] text-white px-1.5 py-0.5 rounded text-[10px] font-bold badge">18+</span>
-                          <span class="text-[#ffb3c6] text-[10px]">{anime.year || anime.duration || '--:--'}</span>
+                          <span class="text-[#ffb3c6] text-[9px] drop-shadow ml-auto">{anime.releaseDate || '--'}</span>
                         </div>
                       </div>
                     </div>
@@ -283,7 +289,7 @@
               </div>
             {:else}
               <div class="text-center py-12">
-                <p class="text-[#ffb3c6] text-lg">No hanime found for this brand.</p>
+                <p class="text-[#ffb3c6] text-lg">No monthly releases found.</p>
               </div>
             {/if}
           </section>
