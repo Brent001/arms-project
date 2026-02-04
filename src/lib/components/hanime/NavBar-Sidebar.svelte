@@ -263,13 +263,18 @@
         </button>
       </li>
       <li in:fly={{ x: -100, duration: 300, delay: 175 }}>
-        <button class="menu-item" on:click={() => navigateTo('/hanime/random')} aria-label="Go to Random Hanime">
-          Random
+        <button class="menu-item" on:click={() => navigateTo('/hanime/studios')} aria-label="Go to Random Hanime">
+          Studios
         </button>
       </li>
       <li in:fly={{ x: -100, duration: 300, delay: 200 }}>
-        <button class="menu-item" on:click={() => navigateTo('/hanime/studios')} aria-label="Go to Studios">
-          Studios
+        <button class="menu-item" on:click={() => navigateTo('/hanime/tvshows')} aria-label="Go to TV Shows">
+          TV Shows
+        </button>
+      </li>
+      <li in:fly={{ x: -100, duration: 300, delay: 200 }}>
+        <button class="menu-item" on:click={() => navigateTo('/hanime/monthly-releases')} aria-label="Go to Studios">
+          New Releases
         </button>
       </li>
       <li in:fly={{ x: -100, duration: 300, delay: 225 }}>
