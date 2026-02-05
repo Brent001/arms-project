@@ -17,6 +17,7 @@
       image: string;
       views: number;
       episodeTitle?: string;
+      status?: string | null;
       releaseDate?: string;
       rating?: string | number | null;
       year?: string | null;
@@ -242,7 +243,7 @@
               <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-6 gap-2 lg:gap-2 anime-grid">
                 {#each data.animes as anime, index (anime.id)}
                   <a
-                    href={`/hanime/info/${anime.slug || anime.id}`}
+                    href={`/hanime/watch/${anime.slug || anime.id}`}
                     class="anime-card group relative bg-[#1a0106] rounded-xl overflow-hidden shadow transition-transform duration-200 border border-transparent hover:border-[#ff003c] hover:shadow-[#ff003c]/40 cursor-pointer block"
                   >
                     <div class="relative aspect-[3/4]">
@@ -262,7 +263,9 @@
                         <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent overlay"></div>
                       <div class="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
                         <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow badge">
-                          New
+                          {#if anime.status}
+                            {anime.status.toUpperCase()}
+                          {/if}
                         </span>
                         <span class="bg-black/70 backdrop-blur-sm text-[#ffb3c6] px-2 py-0.5 rounded text-[10px] flex items-center gap-1 badge">
                           <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">

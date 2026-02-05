@@ -295,9 +295,11 @@
               <!-- Episodes Section -->
                   {#if episodes.length}
                 <section>
-                  <div class="flex items-center gap-2 sm:gap-3 mb-3">
-                    <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
-                    <h2 class="text-lg sm:text-xl font-bold text-white">Episodes</h2>
+                  <div class="flex items-center gap-2 sm:gap-3 mb-6">
+                    <div class="flex items-center gap-2 sm:gap-3">
+                      <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
+                      <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-white">Episodes</h2>
+                    </div>
                   </div>
                   <!-- Mobile: 2 cols, Desktop: 7 cols -->
                   <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-1">
@@ -349,9 +351,11 @@
               <!-- Similar Series -->
               {#if similarSeries.length}
                 <section>
-                  <div class="flex items-center gap-2 sm:gap-3 mb-3">
-                    <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
-                    <h2 class="text-lg sm:text-xl font-bold text-white">Similar Series</h2>
+                  <div class="flex items-center gap-2 sm:gap-3 mb-6">
+                    <div class="flex items-center gap-2 sm:gap-3">
+                      <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
+                      <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-white">Similar Series</h2>
+                    </div>
                   </div>
                   <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-1">
                     {#each similarSeries as series}

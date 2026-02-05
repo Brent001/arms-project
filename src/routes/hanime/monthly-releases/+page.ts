@@ -48,7 +48,8 @@ export const load: PageLoad = async ({ params, url, fetch }) => {
       views: item.views || 0,
       rating: item.rating || null,
       year: item.year || null,
-      genres: item.genres || []
+      genres: item.genres || [],
+      status: item.status ?? null
     }));
 
     return {

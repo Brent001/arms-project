@@ -13,6 +13,7 @@
   $: videoSrc = data?.videoSrc ?? '';
   $: relatedEpisodes = data?.relatedEpisodes ?? [];
   $: similarSeries = data?.similarSeries ?? [];
+  $: episodes = info?.episodes ?? relatedEpisodes ?? [];
 
   $: poster = info?.posterUrl ?? '';
   $: description = info?.description ?? '';
@@ -33,6 +34,15 @@
   let imageLoadedStates: { [key: string]: boolean } = {};
 
   $: isLongDescription = !!description && description.length > DESCRIPTION_LIMIT;
+
+  function saveToggle(key: string, value: boolean) {
+    localStorage.setItem(key, value ? '1' : '0');
+  }
+  function loadToggle(key: string, fallback = false): boolean {
+    if (typeof localStorage === 'undefined') return fallback;
+    const v = localStorage.getItem(key);
+    return v === '1' ? true : v === '0' ? false : fallback;
+  }
 
   function updateIsMobile() {
     if (typeof window !== 'undefined') {
@@ -121,7 +131,6 @@
       if (Array.isArray(mp4Arr) && mp4Arr.length) {
         return mp4Arr.map((m: any, mi: number) => ({
           serverId: `${idx}-${mi}`,
-          // unique token used for selection; includes original server name and mirror index
           serverName: `${serverDisplay}__mirror__${mi + 1}`,
           displayName: `HD-${mi + 1}`,
           category: s.category || 'sub',
@@ -129,7 +138,6 @@
         }));
       }
 
-      // Fallback: if no mp4Sources, fall back to iframeSources or a single server entry
       const iframeArr = s.iframeSources ?? s.sources ?? [];
       if (Array.isArray(iframeArr) && iframeArr.length) {
         return iframeArr.map((m: any, mi: number) => ({
@@ -154,24 +162,20 @@
   let currentServerName = '';
   let currentCategory: 'sub' | 'dub' | 'raw' = 'sub';
 
-  // Set default selected server metadata (do not override videoSrc on load)
   $: if (serversList && serversList.length && !currentServerName) {
     currentServerName = serversList[0].serverName;
     currentCategory = serversList[0].category ?? 'sub';
   }
 
   function handleChangeServer(name: string, category: 'sub' | 'dub' | 'raw') {
-    // Find matching server entry in info.videoServers
     currentServerName = name;
     currentCategory = category;
-    // Attempt to parse mirror token like "ServerName__mirror__2"
     let picked: any = null;
     const mirrorMatch = typeof name === 'string' && name.match(/(.+)__mirror__([0-9]+)/);
     if (mirrorMatch) {
       const serverDisplay = mirrorMatch[1];
       const mirrorIndex = parseInt(mirrorMatch[2], 10);
 
-      // Find the corresponding videoServers entry by display name
       const vs = (info?.videoServers ?? []).find((s: any) => {
         const sName = s.server || s.serverName || s.name || '';
         return sName === serverDisplay;
@@ -188,20 +192,17 @@
       }
     }
 
-    // If not found via mirror token, try to find in expanded serversList
     if (!picked && Array.isArray(serversList)) {
       const sEntry = serversList.find((s: any) => s.serverName === name || s.displayName === name);
       if (sEntry) picked = sEntry.source || sEntry;
     }
 
-    // Final fallback: use top-level videoSources
     if (!picked && Array.isArray(info?.videoSources)) {
       picked = info.videoSources.find((x: any) => x.type === 'mp4' || (typeof x.url === 'string' && x.url.includes('.mp4'))) || info.videoSources[0];
     }
 
     if (picked) {
       let url = picked.url ?? picked;
-      // assign to reactive videoSrc so Player updates
       videoSrc = url;
     }
   }
@@ -238,7 +239,7 @@
         {#if info}
           <section class="flex-1 flex flex-col gap-3 mb-6">
             <!-- Player Card -->
-            <div class="player-card-mobile flex flex-col gap-2 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-sm shadow-2xl border border-[#ff003c]/20 p-1.5 sm:p-6">
+            <div class="player-card-mobile flex flex-col gap-1 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-lg shadow-2xl p-1.5 sm:p-6">
               {#key `${info?.id ?? title}-${videoSrc}`}
                 <PlayerCard
                   videoSrc={videoSrc}
@@ -248,17 +249,17 @@
               {/key}
             </div>
 
-                    
-                      {#if info}
-                        <div class="mt-2 px-2 sm:px-0">
-                          <ServerSelector
-                            servers={serversList}
-                            currentServer={currentServerName}
-                            category={currentCategory}
-                            changeServerManual={handleChangeServer}
-                          />
-                        </div>
-                      {/if}
+            <!-- Server Selector -->
+            {#if info}
+              <div class="bg-[#1a0106] rounded-lg pt-3 px-4 pb-4 shadow-lg border border-[#ff003c]/20">
+                <ServerSelector
+                  servers={serversList}
+                  currentServer={currentServerName}
+                  category={currentCategory}
+                  changeServerManual={handleChangeServer}
+                />
+              </div>
+            {/if}
 
                     <!-- Gallery / Screenshots -->
                     {#if info?.galleryImages && info.galleryImages.length}
@@ -279,12 +280,12 @@
                           </div>
                         {:else}
                           <!-- Horizontal scroll for desktop or more than 2 images on mobile -->
-                          <div class="flex gap-2 overflow-x-auto pb-2 flex-nowrap gallery-strip">
+                          <div class="flex gap-0.5 md:gap-2 overflow-x-auto pb-2 flex-nowrap gallery-strip">
                             {#each info.galleryImages as img, i}
                               <img
                                 src={img}
                                 alt={`screenshot-${i}`}
-                                class="h-20 md:h-28 rounded-md object-cover border border-transparent hover:border-[#ff003c]/40 flex-shrink-0 inline-block w-auto"
+                                class="h-30 md:h-28 rounded-md object-cover border border-transparent hover:border-[#ff003c]/40 flex-shrink-0 inline-block w-auto"
                                 on:load={() => handleImageLoad(`gallery-${i}`)}
                                 on:error={handleImageError}
                               />
@@ -295,7 +296,7 @@
                     {/if}
 
             <!-- Info Card -->
-            <div class="flex flex-col md:flex-row gap-4 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-lg shadow-2xl p-6 md:p-10 border border-[#ff003c]/20">
+            <div class="flex flex-col md:flex-row gap-4 bg-gradient-to-br from-[#1a0106] via-[#2a0008] to-[#3a0d16] rounded-lg shadow-2xl p-4 md:p-10 border border-[#ff003c]/20">
               <!-- Poster -->
               <div class="relative w-64 h-96 flex-shrink-0 mx-auto md:mx-0">
                 {#if !imageLoadedStates[info.id]}
@@ -312,7 +313,7 @@
               <!-- Details -->
               <div class="flex-1 space-y-3">
                 <!-- Title -->
-                <div class="flex items-center gap-2 sm:gap-3 md:ml-0 ml-[-8px]">
+                <div class="flex items-center gap-2 sm:gap-3">
                   <h1 class="text-xl sm:text-3xl font-bold text-[#ff003c] {isMobile ? 'w-full text-center' : ''}">
                     {title}
                   </h1>
@@ -321,7 +322,7 @@
                 <div class="space-y-3">
                   <!-- Genres -->
                   {#if genres.length}
-                    <div class="flex flex-wrap gap-1.5 md:ml-0 ml-[-8px]">
+                    <div class="flex flex-wrap gap-1.5">
                       {#each (isMobile && !showAllGenres ? genres.slice(0, 3) : genres) as genre}
                         <a
                           href={`/hanime/genre/${genre.replace(/\s+/g, '-').toLowerCase()}`}
@@ -345,7 +346,7 @@
 
                   <!-- Brand/Studio -->
                   {#if studio}
-                    <div class="text-sm flex flex-wrap items-center gap-2 md:ml-0 ml-[-8px]">
+                    <div class="text-sm flex flex-wrap items-center gap-2">
                       <span class="text-[#ff003c] font-medium">Studio:</span>
                       <a
                         href={`/hanime/studio/${studio.replace(/\s+/g, '-').toLowerCase()}`}
@@ -358,44 +359,40 @@
                   {/if}
                   
                   <!-- Overview -->
-                  <span class="text-[#ff003c] font-semibold block mb-1 md:ml-0 ml-[-8px]">Overview:</span>
-                  {#if isMobile}
-                    <div
-                      class="text-[#ffb3c6] text-sm leading-tight md:ml-0 ml-[-8px]"
-                      style="max-height: 220px; overflow-y: auto; line-height: 1.4;"
-                    >
-                      {description || 'No description available.'}
-                    </div>
-                  {:else if isLongDescription && !showFullDescription}
-                    <div
-                      class="text-[#ffb3c6] text-sm leading-tight md:ml-0 ml-[-8px]"
-                      style="line-height: 1.4; position: relative;"
-                    >
-                      <span>{description?.slice(0, DESCRIPTION_LIMIT) || 'No description available.'}...</span>
-                      <button
-                        class="text-[#ff003c] hover:text-[#c2002e] text-xs font-semibold mt-1 block"
-                        on:click={() => (showFullDescription = true)}
-                        style="background: none; border: none; cursor: pointer; padding: 0; margin: 0;"
-                      >
-                        + More
-                      </button>
-                    </div>
-                  {:else if isLongDescription && showFullDescription}
-                    <div class="text-[#ffb3c6] text-sm leading-tight md:ml-0 ml-[-8px]" style="line-height: 1.4;">
-                      <span>{description}</span>
-                      <button
-                        class="text-[#ff003c] hover:text-[#c2002e] text-xs font-semibold mt-1 block"
-                        on:click={() => (showFullDescription = false)}
-                        style="background: none; border: none; cursor: pointer; padding: 0; margin: 0;"
-                      >
-                        - Less
-                      </button>
-                    </div>
-                  {:else}
-                    <div class="text-[#ffb3c6] text-sm leading-tight md:ml-0 ml-[-8px]" style="line-height: 1.4;">
-                      {description || 'No description available.'}
-                    </div>
-                  {/if}
+                  <div class="overview-section">
+                    <span class="text-[#ff003c] font-semibold block mb-1">Overview:</span>
+                    {#if isMobile}
+                      <div class="text-[#ffb3c6] text-sm leading-relaxed max-h-[220px] overflow-y-auto">
+                        {description || 'No description available.'}
+                      </div>
+                    {:else if isLongDescription && !showFullDescription}
+                      <div class="text-[#ffb3c6] text-sm leading-relaxed">
+                        <span>{description?.slice(0, DESCRIPTION_LIMIT) || 'No description available.'}...</span>
+                        <button
+                          class="text-[#ff003c] hover:text-[#c2002e] text-xs font-semibold mt-1 block"
+                          on:click={() => (showFullDescription = true)}
+                          style="background: none; border: none; cursor: pointer; padding: 0; margin: 0;"
+                        >
+                          + More
+                        </button>
+                      </div>
+                    {:else if isLongDescription && showFullDescription}
+                      <div class="text-[#ffb3c6] text-sm leading-relaxed">
+                        <span>{description}</span>
+                        <button
+                          class="text-[#ff003c] hover:text-[#c2002e] text-xs font-semibold mt-1 block"
+                          on:click={() => (showFullDescription = false)}
+                          style="background: none; border: none; cursor: pointer; padding: 0; margin: 0;"
+                        >
+                          - Less
+                        </button>
+                      </div>
+                    {:else}
+                      <div class="text-[#ffb3c6] text-sm leading-relaxed">
+                        {description || 'No description available.'}
+                      </div>
+                    {/if}
+                  </div>
 
                   <!-- Stats Grid -->
                   <div class="grid grid-cols-2 sm:grid-cols-3 gap-1 text-xs">
@@ -427,9 +424,11 @@
           <!-- Related Episodes Section -->
           {#if relatedEpisodes.length}
             <section class="flex flex-col gap-2 mt-2">
-              <div class="flex items-center gap-2 sm:gap-3 mb-3">
-                <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
-                <h2 class="text-lg sm:text-xl font-bold text-white">Related Episodes</h2>
+              <div class="flex items-center gap-2 sm:gap-3 mb-6">
+                <div class="flex items-center gap-2 sm:gap-3">
+                  <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
+                  <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-white">Episodes</h2>
+                </div>
               </div>
               <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1 md:gap-2">
                 {#each relatedEpisodes as ep, idx}
@@ -466,9 +465,11 @@
           <!-- Similar Series Section -->
           {#if similarSeries.length}
             <section class="flex flex-col gap-2 mt-2">
-              <div class="flex items-center gap-2 sm:gap-3 mb-3">
-                <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
-                <h2 class="text-lg sm:text-xl font-bold text-white">Similar Series</h2>
+              <div class="flex items-center gap-2 sm:gap-3 mb-6">
+                <div class="flex items-center gap-2 sm:gap-3">
+                  <div class="w-1 h-7 sm:h-8 bg-[#ff003c] rounded-full flex-shrink-0"></div>
+                  <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-white">Similar Series</h2>
+                </div>
               </div>
               <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-1 md:gap-2">
                 {#each similarSeries as series, idx}
@@ -575,5 +576,17 @@
   }
   .gallery-strip img {
     display: inline-block;
+  }
+
+  /* Overview section text wrapping */
+  .overview-section {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    width: 100%;
+  }
+
+  .overview-section div {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 </style>

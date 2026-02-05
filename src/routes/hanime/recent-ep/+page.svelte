@@ -39,6 +39,11 @@
     imageLoadedStates = { ...imageLoadedStates, [id]: true };
   }
 
+  function badgeTextForEpisode(item: any) {
+    const s = item?.status ?? item?.streamType ?? item?.type ?? item?.format;
+    return s ? String(s).toUpperCase() : 'EPISODE';
+  }
+
   async function loadPage(newPage: number) {
     if (isNavigating) return;
     
@@ -114,7 +119,7 @@
                   <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent"></div>
                   <div class="absolute top-2 left-2 right-2 flex items-center justify-between gap-2">
                     <span class="bg-[#ff003c] text-white px-2 py-0.5 rounded text-[10px] font-semibold shadow">
-                      NEW
+                      {badgeTextForEpisode(episode)}
                     </span>
                     <div class="flex items-center gap-1">
                       {#if episode.rating}
