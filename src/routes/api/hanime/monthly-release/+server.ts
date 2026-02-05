@@ -30,7 +30,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
       const resultsRaw: any[] = dataWrapper?.results || [];
       const pagination = dataWrapper?.pagination || {};
 
-      // Map upstream result fields (seriesTitle, episodeTitle, slug, imageUrl, rating, releaseDate) to frontend shape
+      // Map upstream result fields (seriesTitle, episodeTitle, slug, imageUrl, rating, releaseDate, status) to frontend shape
       const results = resultsRaw.map((item: any) => ({
         id: item.slug || '',
         image: item.imageUrl || '',
@@ -41,7 +41,8 @@ export const GET: RequestHandler = async ({ params, url }) => {
         duration: '--:--',
         views: 0,
         year: null,
-        genres: []
+        genres: [],
+        status: item.status ?? null
       }));
 
       // Extract pagination info
@@ -85,7 +86,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
     const resultsRaw: any[] = dataWrapper?.results || [];
     const pagination = dataWrapper?.pagination || {};
 
-    // Map upstream result fields (seriesTitle, episodeTitle, slug, imageUrl, rating, releaseDate) to frontend shape
+    // Map upstream result fields (seriesTitle, episodeTitle, slug, imageUrl, rating, releaseDate, status) to frontend shape
     const results = resultsRaw.map((item: any) => ({
       id: item.slug || '',
       image: item.imageUrl || '',
@@ -96,7 +97,8 @@ export const GET: RequestHandler = async ({ params, url }) => {
       duration: '--:--',
       views: 0,
       year: null,
-      genres: []
+      genres: [],
+      status: item.status ?? null
     }));
 
     // Extract pagination info
